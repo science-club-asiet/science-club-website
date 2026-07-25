@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const stats = [
   { value: "240+", label: "Active Members" },
@@ -43,10 +44,12 @@ export function AboutSection() {
             transition={{ duration: 0.65, delay: 0.05 }}
             className="relative rounded-3xl overflow-hidden min-h-[420px] lg:min-h-0"
           >
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1400&auto=format&fit=crop"
               alt="Science Club Members"
-              className="absolute inset-0 w-full h-full object-cover"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/20 to-transparent" />

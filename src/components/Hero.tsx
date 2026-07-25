@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import Image from "next/image";
 
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,10 +24,13 @@ export function Hero() {
         style={{ y }}
         className="absolute top-0 left-0 h-[120%] w-full opacity-0 origin-center transition-opacity duration-1000 ease-in opacity-100 scale-100 hover:scale-105 duration-[20000ms] pointer-events-none"
       >
-        <img 
-          src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070&auto=format&fit=crop" 
-          alt="Science Hub" 
-          className="w-full h-full object-cover"
+        <Image
+          src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070&auto=format&fit=crop"
+          alt="Science Hub"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
       </motion.div>
 

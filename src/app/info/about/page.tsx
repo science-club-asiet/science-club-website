@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -103,9 +104,9 @@ export default function AboutPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let ctx = gsap.context(() => {
+    const ctx = gsap.context(() => {
 
-      let mm = gsap.matchMedia();
+      const mm = gsap.matchMedia();
 
       // DESKTOP ANIMATIONS
       mm.add("(min-width: 768px)", () => {
@@ -328,6 +329,11 @@ export default function AboutPage() {
   return (
     <div className="bg-navy text-white selection:bg-red selection:text-white">
 
+      {/* Warm up the cross-origin connections used on this page (hoisted to
+          <head> by React 19): the hero video CDN and the brand-logo SVG CDN. */}
+      <link rel="preconnect" href="https://cdn.pixabay.com" />
+      <link rel="preconnect" href="https://cdn.simpleicons.org" />
+
       {/* GLOBAL FILM GRAIN */}
       <div className="fixed inset-0 pointer-events-none z-50 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
 
@@ -340,13 +346,17 @@ export default function AboutPage() {
         {/* Central Parallax Video */}
         <div ref={heroImgRef} className="absolute z-10 w-[90vw] h-[40vh] md:w-[60vw] md:h-[60vh] overflow-hidden transform-gpu rounded-sm border border-white/10 shadow-2xl bg-black">
           <video
-            ref={(el) => { if (el) { el.play().catch(() => { }); } }}
             autoPlay
             loop
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             disablePictureInPicture
+            // Poster paints instantly so the hero isn't blank while the video
+            // buffers; `preload="metadata"` avoids eagerly downloading the whole
+            // clip. autoPlay + muted starts playback without the old per-render
+            // .play() ref callback (which fired on every re-render).
+            poster="https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1200&auto=format&fit=crop"
             className="w-full h-full object-cover scale-[1.05]"
           >
             {/* Optimized small version of the video for faster loading */}
@@ -389,10 +399,12 @@ export default function AboutPage() {
                 className="absolute inset-0 transform-gpu overflow-hidden"
                 style={{ zIndex: i, clipPath: i === 0 ? "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)" : "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)" }}
               >
-                <img
+                <Image
                   src={era.img}
                   alt={era.title}
-                  className="w-full h-full object-cover origin-center"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover origin-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-navy/90 via-navy/30 to-transparent mix-blend-multiply" />
               </div>
@@ -434,7 +446,7 @@ export default function AboutPage() {
           {storyEras.map((era, i) => (
             <div key={`mob-${i}`} className="w-full flex flex-col min-h-[100dvh]">
               <div className="w-full h-[50vh] relative">
-                <img src={era.img} className="w-full h-full object-cover" />
+                <Image src={era.img} alt={era.title} fill sizes="100vw" className="object-cover" />
                 <div className="absolute inset-0 bg-navy/20 mix-blend-multiply" />
               </div>
               <div className="w-full flex-1 bg-[#FAF9F8] p-8 flex flex-col justify-center relative overflow-hidden border-b border-gray-200">
@@ -461,17 +473,11 @@ export default function AboutPage() {
       {/* 3. MANIFESTO REVEAL */}
       <section className="py-40 md:py-56 bg-navy flex items-center justify-center relative overflow-hidden z-30">
         <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
-          <img src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2000&auto=format&fit=crop" className="w-full h-full object-cover blur-sm" alt="" />
+          <Image src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2000&auto=format&fit=crop" fill sizes="100vw" className="object-cover blur-sm" alt="" />
         </div>
 
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <div ref={manifestoRef} className="font-oswald text-4xl md:text-6xl lg:text-7xl font-bold uppercase leading-[1.1] tracking-tighter text-white max-w-6xl mx-auto flex flex-wrap justify-center text-center" style={{ perspective: "1200px" }}>
-            <style dangerouslySetInnerHTML={{
-              __html: `
-              @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
-              .font-playfair { font-family: 'Playfair Display', serif; text-transform: lowercase; }
-              .stroke-white { -webkit-text-stroke: 2px white; }
-            `}} />
             {manifestoWords.map((word, i) => (
               <span
                 key={i}
@@ -494,7 +500,7 @@ export default function AboutPage() {
                 By The<br />Numbers
               </h2>
               <p className="font-inter text-white/90 font-medium text-lg max-w-sm">
-                We don't measure success by meetings held. We measure it by projects shipped and skills learned.
+                We don&apos;t measure success by meetings held. We measure it by projects shipped and skills learned.
               </p>
             </div>
 

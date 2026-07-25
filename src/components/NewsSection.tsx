@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const NEWS_INTERVAL = 6000; // 6 seconds per article
@@ -82,10 +83,12 @@ export function NewsSection() {
     <section className="relative w-full bg-[#FCFCFD] py-24 md:py-32 isolate">
       {/* ── Subtle Translucent Global Texture ── */}
       <div className="absolute inset-0 z-[-1] pointer-events-none overflow-hidden">
-        <img 
-          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop" 
-          alt="Abstract Background"
-          className="w-full h-full object-cover opacity-[0.04] grayscale mix-blend-multiply" 
+        <Image
+          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover opacity-[0.04] grayscale mix-blend-multiply"
         />
       </div>
 
@@ -121,7 +124,7 @@ export function NewsSection() {
                   isExpanded ? "opacity-100" : "opacity-0"
                 )}>
                   {/* Photo bleeds through the navy at ~35% — faint enough to keep text crisp */}
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
+                  <Image src={item.img} alt={item.title} fill sizes="100vw" className="object-cover" />
                   <div className="absolute inset-0 bg-navy/75" />
                 </div>
 

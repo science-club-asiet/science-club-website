@@ -60,19 +60,33 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Reset scroll to top immediately upon route change
+  // Reset scroll to top and re-sync measurements upon route change
   useEffect(() => {
-    if (lenisRef.current) {
-      window.scrollTo(0, 0); // Native scroll to top
-      lenisRef.current.scrollTo(0, { immediate: true });
-      
-      // Give the new page's DOM time to mount and then refresh ScrollTrigger markers
-      const timeout = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 100);
+    const lenis = lenisRef.current;
+    if (!lenis) return;
 
-      return () => clearTimeout(timeout);
-    }
+    // Reset through Lenis ONLY. A native window.scrollTo(0,0) here fights Lenis'
+    // own RAF loop and causes the "jumps back/forward" glitch during navigation.
+    lenis.scrollTo(0, { immediate: true, force: true });
+
+    // The incoming page registers its pinned ScrollTriggers inside its own
+    // effects (some behind a ~100ms setTimeout). We must re-measure AFTER those
+    // exist, otherwise pin-spacer heights and Lenis' scroll `limit` go stale and
+    // the page "stops scrolling" partway down. Refresh twice: once after paint,
+    // once after the deferred triggers have been created.
+    const rafId = requestAnimationFrame(() => {
+      lenis.resize();
+      ScrollTrigger.refresh();
+    });
+    const lateId = setTimeout(() => {
+      lenis.resize();
+      ScrollTrigger.refresh();
+    }, 350);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(lateId);
+    };
   }, [pathname]);
 
   return <>{children}</>;

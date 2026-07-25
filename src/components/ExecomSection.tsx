@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight, Flame, Droplet, Zap, Fingerprint, Activity } from "lucide-react";
@@ -87,10 +88,12 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
           className="absolute inset-0 bg-gray-200 overflow-hidden transform-gpu"
           style={{ clipPath: "url(#dossier-cutout)" }}
         >
-          <img 
-            src={member.img} 
-            alt={member.name} 
-            className="w-full h-full object-cover transition-transform duration-[800ms] ease-[0.22,1,0.36,1] group-hover:scale-105" 
+          <Image
+            src={member.img}
+            alt={member.name}
+            fill
+            sizes="(max-width: 1024px) 175px, 230px"
+            className="object-cover transition-transform duration-[800ms] ease-[0.22,1,0.36,1] group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-navy/5 group-hover:bg-transparent transition-colors duration-500 pointer-events-none" />
         </div>
@@ -184,73 +187,62 @@ export function ExecomSection() {
   const trackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Only GSAP animate on large screens
-    if (typeof window === "undefined" || window.innerWidth < 1024) return;
-    
+    if (typeof window === "undefined") return;
+
     const container = containerRef.current;
     const track = trackRef.current;
     if (!container || !track) return;
 
-    let timeoutId: NodeJS.Timeout;
+    const panels = teams.length;
 
-    const ctx = gsap.context(() => {
-      const initScroll = () => {
-        // We do NOT use ScrollTrigger.getAll().kill() as it destroys other pages' triggers!
-        // gsap.context will automatically clean up triggers created inside this scope on unmount.
-        
-        const panels = teams.length;
+    // gsap.matchMedia only runs the horizontal-pin setup at >=1024px and
+    // automatically reverts it when the viewport crosses back below the
+    // breakpoint. The old raw `innerWidth < 1024` guard never re-ran on resize,
+    // leaving a broken/absent pin (and a stuck scroll height) after a resize.
+    const mm = gsap.matchMedia();
 
-        gsap.to(track, {
-          // Use functional values so invalidateOnRefresh recalculates it properly on resize
-          x: () => -((panels - 1) * window.innerWidth),
-          ease: "none",
+    mm.add("(min-width: 1024px)", () => {
+      // Horizontal pinned track. NOTE: intentionally NO ScrollTrigger `snap` —
+      // ScrollTrigger's snap animates the native scroll position, which fights
+      // Lenis' smooth-scroll RAF and makes the page oscillate back/forth on its
+      // own once the user stops scrolling. Let Lenis own the scroll entirely.
+      gsap.to(track, {
+        x: () => -((panels - 1) * window.innerWidth),
+        ease: "none",
+        scrollTrigger: {
+          id: "execom-st",
+          trigger: container,
+          start: "top top",
+          end: () => `+=${(panels - 1) * window.innerWidth}`,
+          scrub: 1.0,
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // Lightweight Header Fade Out
+      const header = document.getElementById("main-nav-header");
+      if (header) {
+        gsap.to(header, {
+          y: -80,
+          opacity: 0,
+          pointerEvents: "none",
+          duration: 0.4,
+          ease: "power2.inOut",
           scrollTrigger: {
-            id: "execom-st",
             trigger: container,
-            start: "top top",
-            end: () => `+=${(panels - 1) * window.innerWidth}`,
-            scrub: 1.0,          
-            pin: true,           
-            pinSpacing: true,    
-            anticipatePin: 1,
+            start: "top 10%",
+            end: () => `+=${((panels - 1) * window.innerWidth) + window.innerHeight * 0.8}`,
+            toggleActions: "play reverse play reverse",
             invalidateOnRefresh: true,
-            snap: {
-              snapTo: 1 / (panels - 1),
-              duration: { min: 0.2, max: 0.6 },
-              delay: 0.1,    
-              ease: "power1.inOut"
-            }
           },
         });
-
-        // Lightweight Header Fade Out
-        const header = document.getElementById("main-nav-header");
-        if (header) {
-          gsap.to(header, {
-            y: -80,
-            opacity: 0,
-            pointerEvents: "none",
-            duration: 0.4,
-            ease: "power2.inOut",
-            scrollTrigger: {
-              trigger: container,
-              start: "top 10%",
-              end: () => `+=${((panels - 1) * window.innerWidth) + window.innerHeight * 0.8}`,
-              toggleActions: "play reverse play reverse",
-              invalidateOnRefresh: true,
-            }
-          });
-        }
-      };
-
-      // Delay to ensure DOM is ready
-      timeoutId = setTimeout(initScroll, 100);
+      }
     });
 
-    return () => {
-      clearTimeout(timeoutId);
-      ctx.revert();
-    };
+    return () => mm.revert();
   }, []);
 
   return (

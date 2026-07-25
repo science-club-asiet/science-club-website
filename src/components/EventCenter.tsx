@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { eventsData as events } from "@/lib/events";
@@ -268,11 +269,12 @@ export function EventCenter() {
                 
                 {/* Full Bleed Background Image & Gradients */}
                 <div className="absolute inset-0 z-0 bg-navy/20">
-                  <img 
-                    src={event.img} 
-                    alt={event.title} 
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-[1.5s] ease-[0.22,1,0.36,1] group-hover:scale-105" 
+                  <Image
+                    src={event.img}
+                    alt={event.title}
+                    fill
+                    sizes="(max-width: 640px) 78vw, (max-width: 1024px) 58vw, 440px"
+                    className="object-cover transition-transform duration-[1.5s] ease-[0.22,1,0.36,1] group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-transparent opacity-90 transition-opacity duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent opacity-60" />

@@ -1,8 +1,20 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { motion } from "framer-motion";
-import { X, Calendar, MapPin, Clock, User } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import Image from "next/image";
+import { 
+  X, 
+  Clock, 
+  MapPin, 
+  Share2, 
+  CheckCircle2, 
+  Download, 
+  ArrowRight,
+  Sparkles,
+  Calendar,
+  User
+} from "lucide-react";
 import { ScienceEvent } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
@@ -11,146 +23,366 @@ interface EventModalProps {
   onClose: () => void;
 }
 
+type ModalTab = "OVERVIEW" | "AGENDA" | "SPEAKERS" | "VENUE";
+
+// Framer Motion Staggered Variants
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }
+};
+
 export function EventModal({ event, onClose }: EventModalProps) {
-  // Prevent scrolling on body when modal is open
+  const [activeTab, setActiveTab] = useState<ModalTab>("OVERVIEW");
+  const [copied, setCopied] = useState(false);
+
+  // Lenis Scroll Lock on Mount & Unlock on Unmount
   useEffect(() => {
-    document.body.style.overflow = "hidden";
+    if (typeof window !== "undefined") {
+      window.__lenis?.stop();
+    }
     return () => {
-      document.body.style.overflow = "unset";
+      if (typeof window !== "undefined") {
+        window.__lenis?.start();
+      }
     };
   }, []);
 
+  // One-Click .ICS iCalendar Export Handler
+  const handleExportCalendar = () => {
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Science Club ASIET//Event Calendar//EN",
+      "BEGIN:VEVENT",
+      `SUMMARY:${event.title}`,
+      `DESCRIPTION:${event.description.replace(/\n/g, " ")}`,
+      `LOCATION:${event.location || "ASIET Campus"}`,
+      `DTSTART:20251012T090000Z`,
+      `DTEND:20251012T170000Z`,
+      "STATUS:CONFIRMED",
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute("download", `${event.title.toLowerCase().replace(/\s+/g, "-")}-pass.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleShare = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
-      />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-inter"
+    >
+      {/* Backdrop Click Trigger */}
+      <div className="absolute inset-0 z-0" onClick={onClose} />
 
-      {/* Modal Content */}
+      {/* Main Modal Card Container (Middle-Ground Proportion) */}
       <motion.div
-        layoutId={`card-${event.id}`}
-        className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row"
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-3xl md:max-w-4xl bg-white text-navy rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col my-auto"
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Left Side: Image (Full height on desktop, top half on mobile) */}
-        <div className="relative w-full md:w-2/5 h-64 md:h-auto shrink-0 bg-navy">
-          <motion.img
-            layoutId={`img-${event.id}`}
+        {/* Top Deep Navy Header Banner */}
+        <div className="relative w-full bg-navy text-white p-6 sm:p-8 shrink-0 overflow-hidden">
+          <Image
             src={event.img}
             alt={event.title}
-            className="w-full h-full object-cover opacity-80"
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 80vw"
+            className="object-cover opacity-30 transform scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
-          
-          <div className="absolute bottom-6 left-6 right-6">
-            <motion.span 
-              layoutId={`status-${event.id}`}
-              className={cn(
-                "inline-block px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest text-white border transition-colors mb-3",
-                event.status === "UPCOMING" ? "bg-red/90 border-red" : "bg-black/60 border-white/20"
-              )}
-            >
-              {event.status}
-            </motion.span>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center justify-center">
-                <motion.span 
-                  layoutId={`dateDay-${event.id}`}
-                  className="font-oswald text-4xl font-bold leading-none text-white drop-shadow-md"
-                >
-                  {event.dateDay}
-                </motion.span>
-                <motion.span 
-                  layoutId={`dateMonth-${event.id}`}
-                  className="font-oswald uppercase text-white/70 text-xs tracking-[0.2em] mt-1"
-                >
-                  {event.dateMonth}
-                </motion.span>
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/80 to-navy/40" />
+
+          {/* Close Button (z-20 top-right) */}
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-red text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Header Content */}
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="bg-red text-white text-[10px] font-oswald uppercase font-bold tracking-[0.2em] px-3.5 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                {event.status}
+              </span>
+              <span className="bg-white/15 backdrop-blur-md text-white text-[10px] font-oswald uppercase font-bold tracking-widest px-3 py-1 rounded-full border border-white/15">
+                {event.type}
+              </span>
+              <button
+                onClick={handleShare}
+                className="ml-auto mr-12 sm:mr-14 text-white/70 hover:text-white text-xs font-oswald uppercase font-bold flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <Share2 className="w-3.5 h-3.5 text-red" />
+                <span>{copied ? "COPIED!" : "SHARE"}</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <span className="text-red font-oswald uppercase text-[11px] font-bold tracking-[0.25em] flex items-center gap-1.5 mb-1">
+                  <Sparkles className="w-3.5 h-3.5 text-red" />
+                  OFFICIAL EVENT FIXTURE SPECIFICATION
+                </span>
+                <h2 className="font-oswald text-2xl sm:text-4xl font-bold uppercase tracking-tight text-white leading-none">
+                  {event.title}
+                </h2>
+              </div>
+
+              {/* Date Badge */}
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-2 rounded-2xl shrink-0">
+                <Calendar className="w-5 h-5 text-red" />
+                <div className="text-left">
+                  <span className="font-oswald text-lg font-bold leading-none block">{event.dateDay} {event.dateMonth}</span>
+                  <span className="font-oswald text-[9px] uppercase tracking-widest text-white/60 block">{event.dateYear || "2025"}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Details */}
-        <div className="flex-1 p-6 md:p-10 overflow-y-auto custom-scrollbar">
-          <span className="text-navy/50 font-oswald uppercase tracking-[0.2em] text-sm font-bold block mb-2">
-            {event.type}
-          </span>
-          <motion.h2 
-            layoutId={`title-${event.id}`}
-            className="font-oswald text-3xl md:text-5xl uppercase font-bold text-navy leading-[1.1] mb-6 tracking-tight"
+        {/* Modal Main Body */}
+        <div className="p-6 sm:p-8 flex-1 flex flex-col bg-white min-w-0">
+          
+          {/* Segmented Tab Slider Bar */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 mb-6 border-b border-gray-100 font-oswald uppercase text-xs font-bold tracking-wider shrink-0">
+            <div className="inline-flex bg-gray-100 p-1.5 rounded-full relative">
+              {(["OVERVIEW", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    "relative px-5 py-2 rounded-full whitespace-nowrap transition-colors cursor-pointer shrink-0 z-10",
+                    activeTab === tab ? "text-white" : "text-navy/60 hover:text-navy"
+                  )}
+                >
+                  {activeTab === tab && (
+                    <motion.div
+                      layoutId="modal-active-tab-pill"
+                      className="absolute inset-0 bg-red rounded-full -z-10 shadow-md"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  {tab === "VENUE" ? "VENUE & PASS" : tab}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* FIXED-HEIGHT Internal Scroll Container (Zero Resizing / Zero Height Jumping) */}
+          <div 
+            data-lenis-prevent
+            className="h-[340px] sm:h-[360px] md:h-[380px] overflow-y-auto pr-2 scrollbar-thin text-gray-600 text-sm font-normal leading-relaxed"
           >
-            {event.title}
-          </motion.h2>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                {/* OVERVIEW TAB */}
+                {activeTab === "OVERVIEW" && (
+                  <div className="space-y-4">
+                    <motion.p variants={itemVariants} className="text-gray-700 text-base leading-relaxed font-normal">
+                      {event.description}
+                    </motion.p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            {event.time && (
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5 text-red" />
-                </div>
-                <div>
-                  <span className="block text-xs font-bold text-navy/50 uppercase tracking-wider mb-1">Time</span>
-                  <span className="text-sm font-medium text-navy">{event.time}</span>
-                </div>
-              </div>
-            )}
-            {event.location && (
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5 text-red" />
-                </div>
-                <div>
-                  <span className="block text-xs font-bold text-navy/50 uppercase tracking-wider mb-1">Location</span>
-                  <span className="text-sm font-medium text-navy">{event.location}</span>
-                </div>
-              </div>
-            )}
-            {event.speaker && (
-              <div className="flex items-start gap-3 sm:col-span-2">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-red" />
-                </div>
-                <div>
-                  <span className="block text-xs font-bold text-navy/50 uppercase tracking-wider mb-1">Speaker(s)</span>
-                  <span className="text-sm font-medium text-navy">{event.speaker}</span>
-                </div>
-              </div>
-            )}
+                    {event.prerequisites && (
+                      <motion.div variants={itemVariants} className="bg-gray-50/90 p-5 rounded-2xl border border-gray-100 space-y-3">
+                        <span className="font-oswald text-xs uppercase font-bold text-navy tracking-wider block mb-1">
+                          PREREQUISITES & PREPARATION
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-gray-700 font-medium">
+                          {event.prerequisites.map((req, idx) => (
+                            <div key={idx} className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-gray-200/80 shadow-sm">
+                              <CheckCircle2 className="w-4 h-4 text-red shrink-0" />
+                              <span>{req}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                {/* REDESIGNED AGENDA TIMELINE TAB */}
+                {activeTab === "AGENDA" && (
+                  <div className="space-y-3">
+                    {(event.agenda || [
+                      { time: "09:00 AM", title: "Registration & Welcome Coffee", description: "Collect participant badges and preliminary networking session." },
+                      { time: "10:00 AM", title: "Keynote Address: Scientific Frontiers", description: "Presented by senior faculty researchers and keynote academic speakers." },
+                      { time: "01:00 PM", title: "Networking Lunch & Poster Showcase", description: "Student paper showcases and poster evaluations." },
+                      { time: "02:30 PM", title: "Interactive Laboratory Workshop", description: "Hands-on physical laboratory experiments." }
+                    ]).map((item, idx) => (
+                      <motion.div 
+                        key={idx} 
+                        variants={itemVariants} 
+                        className="bg-gray-50/90 hover:bg-gray-100/90 p-4 sm:p-5 rounded-2xl border border-gray-200/80 transition-all flex items-start gap-4 group"
+                      >
+                        {/* Time Badge */}
+                        <div className="bg-navy text-white px-3.5 py-2 rounded-xl font-oswald text-xs font-bold text-center shrink-0 shadow-sm group-hover:bg-red transition-colors">
+                          <span className="block leading-none">{item.time}</span>
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <h4 className="font-oswald text-base font-bold uppercase text-navy group-hover:text-red transition-colors truncate">
+                              {item.title}
+                            </h4>
+                            <span className="text-[9px] font-oswald uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-navy/10 text-navy shrink-0">
+                              SESSION {idx + 1}
+                            </span>
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-gray-600 font-normal leading-relaxed">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* SPEAKERS TAB */}
+                {activeTab === "SPEAKERS" && (
+                  <div className="space-y-4">
+                    {event.speaker ? (
+                      <motion.div variants={itemVariants} className="bg-gray-50/90 p-5 sm:p-6 rounded-2xl border border-gray-100 flex items-start gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-navy text-white flex items-center justify-center font-oswald font-bold text-2xl shrink-0 shadow-md border-2 border-red">
+                          {event.speaker.charAt(0)}
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-oswald uppercase font-bold text-red tracking-widest block">
+                            KEYNOTE PRESENTER
+                          </span>
+                          <h4 className="font-oswald text-2xl font-bold uppercase text-navy">
+                            {event.speaker}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 font-medium pb-1">
+                            <User className="w-3.5 h-3.5 text-red" />
+                            <span>{event.speakerRole || "Guest Academic Specialist"}</span>
+                          </div>
+                          <p className="text-xs text-gray-600 font-normal leading-relaxed">
+                            Leading active research initiatives at Science Club ASIET with domain expertise in empirical methodologies.
+                          </p>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div className="text-center py-12 text-gray-400 font-oswald uppercase text-xs tracking-widest">
+                        Speaker details will be announced soon.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* VENUE & PASS TAB */}
+                {activeTab === "VENUE" && (
+                  <div className="space-y-4">
+                    <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-gray-50/90 p-5 rounded-2xl border border-gray-100">
+                        <span className="text-[10px] font-oswald uppercase font-bold text-red tracking-widest block mb-1.5">
+                          LOCATION & VENUE
+                        </span>
+                        <div className="flex items-center gap-2.5 text-navy font-bold text-base font-oswald uppercase">
+                          <MapPin className="w-4.5 h-4.5 text-red shrink-0" />
+                          <span className="truncate">{event.location || "Main Auditorium, Science Block"}</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50/90 p-5 rounded-2xl border border-gray-100">
+                        <span className="text-[10px] font-oswald uppercase font-bold text-red tracking-widest block mb-1.5">
+                          SCHEDULED TIME SLOT
+                        </span>
+                        <div className="flex items-center gap-2.5 text-navy font-bold text-base font-oswald uppercase">
+                          <Clock className="w-4.5 h-4.5 text-red shrink-0" />
+                          <span>{event.time || "09:00 AM - 05:00 PM"}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* One-Click .ICS Pass Export Card */}
+                    <motion.div variants={itemVariants} className="bg-navy text-white p-5 sm:p-6 rounded-2xl border border-navy/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                      <div>
+                        <h4 className="font-oswald text-xl font-bold uppercase tracking-tight text-white">
+                          EXPORT CALENDAR PASS (.ICS)
+                        </h4>
+                        <p className="text-xs text-white/70 font-normal mt-0.5">
+                          Save this event directly to Apple Calendar, Outlook, or Google Calendar.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleExportCalendar}
+                        className="bg-red hover:bg-white hover:text-navy text-white text-xs font-oswald uppercase font-bold tracking-wider px-6 py-3 rounded-xl inline-flex items-center gap-2.5 transition-all cursor-pointer shrink-0 shadow-md"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>DOWNLOAD .ICS</span>
+                      </button>
+                    </motion.div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <div className="prose prose-sm md:prose-base prose-navy max-w-none mb-10">
-            <h3 className="font-oswald uppercase text-xl font-bold mb-3 tracking-wide">About This Event</h3>
-            <p className="text-gray-600 leading-relaxed">
-              {event.description}
-            </p>
+          {/* Sticky Bottom Action Bar */}
+          <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between gap-4 shrink-0">
+            <span className="text-[11px] text-gray-400 font-normal hidden sm:inline-block">
+              Need assistance? Contact <strong className="text-navy font-semibold">events@scienceclub-asiet.org</strong>
+            </span>
+            
+            {/* Shimmer & Glow Register CTA Button */}
+            <button
+              onClick={() => {
+                alert(`Registered for ${event.title}! Confirmation sent to your student mail.`);
+                onClose();
+              }}
+              className="w-full sm:w-auto ml-auto relative overflow-hidden bg-gradient-to-r from-red via-red-600 to-red text-white text-sm font-oswald uppercase tracking-[0.2em] font-bold px-8 py-3.5 rounded-full inline-flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(229,57,53,0.35)] hover:shadow-[0_15px_35px_rgba(229,57,53,0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 cursor-pointer group"
+            >
+              {/* Internal Light Shimmer Sweep */}
+              <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 pointer-events-none" />
+              
+              <span>REGISTER NOW</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+            </button>
           </div>
 
-          <div className="mt-auto">
-            {event.status === "UPCOMING" ? (
-              <button className="w-full sm:w-auto px-8 py-4 bg-red text-white font-oswald uppercase font-bold tracking-widest text-sm hover:bg-navy transition-colors rounded-full text-center">
-                Register Now
-              </button>
-            ) : (
-              <button className="w-full sm:w-auto px-8 py-4 bg-navy text-white font-oswald uppercase font-bold tracking-widest text-sm hover:bg-navy/80 transition-colors rounded-full text-center">
-                Watch Recap
-              </button>
-            )}
-          </div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }

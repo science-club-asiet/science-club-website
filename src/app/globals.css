@@ -55,6 +55,16 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   text-transform: uppercase;
 }
 
+/* Playfair accent (About manifesto) — font is loaded via next/font in layout.tsx */
+.font-playfair {
+  font-family: var(--font-playfair), serif;
+  text-transform: lowercase;
+}
+
+.stroke-white {
+  -webkit-text-stroke: 2px white;
+}
+
 /* Utility for dynamic images overlay */
 .brand-gradient {
   background: linear-gradient(0deg, rgba(0, 28, 88, 0.95) 0%, rgba(0, 28, 88, 0.4) 40%, transparent 100%);
@@ -160,4 +170,10 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 @keyframes astrolabe-spin-anim {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Marquee Scroll */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-33.3333%); }
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 
 const perks = [
   "Access to all club workshops and seminars",
@@ -35,7 +36,7 @@ export default function JoinPage() {
       {/* Hero */}
       <section className="bg-navy text-white py-32 md:py-44 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-1/2 h-full opacity-10 pointer-events-none">
-          <img src="https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?q=80&w=1200&auto=format&fit=crop" className="w-full h-full object-cover" alt="" />
+          <Image src="https://images.unsplash.com/photo-1581093450021-4a7360e9a6b5?q=80&w=1200&auto=format&fit=crop" fill sizes="50vw" className="object-cover" alt="" />
         </div>
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>

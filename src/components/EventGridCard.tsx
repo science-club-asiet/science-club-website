@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScienceEvent } from "@/lib/events";
@@ -29,12 +30,12 @@ export function EventGridCard({ event, onClick }: EventGridCardProps) {
     >
       {/* Full Bleed Background Image & Gradients */}
       <div className="absolute inset-0 z-0 bg-navy/20">
-        <motion.img 
-          layoutId={`img-${event.id}`}
-          src={event.img} 
-          alt={event.title} 
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-[1.5s] ease-[0.22,1,0.36,1] group-hover:scale-105" 
+        <Image
+          src={event.img}
+          alt={event.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-transform duration-[1.5s] ease-[0.22,1,0.36,1] group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-transparent opacity-90 transition-opacity duration-700" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent opacity-60" />
