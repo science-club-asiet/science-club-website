@@ -57,6 +57,20 @@ const pillars = [
 export function CorePillars() {
   const [activePillar, setActivePillar] = useState<number>(0);
 
+  const handlePillarClick = (index: number) => {
+    setActivePillar(index);
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      const el = document.getElementById("pillar-spotlight");
+      if (el) {
+        if (window.__lenis) {
+          window.__lenis.scrollTo(el, { offset: -90, duration: 0.8 });
+        } else {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    }
+  };
+
   return (
     <section className="py-24 md:py-36 bg-[#FAF9F8] text-navy relative overflow-hidden">
       <div className="container mx-auto px-4 lg:px-8">
@@ -111,13 +125,13 @@ export function CorePillars() {
               return (
                 <motion.button
                   key={item.num}
-                  onClick={() => setActivePillar(index)}
+                  onClick={() => handlePillarClick(index)}
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.45, delay: index * 0.08 }}
                   className={cn(
-                    "w-full text-left p-6 rounded-2xl border transition-all flex items-center justify-between group",
+                    "w-full text-left p-6 rounded-2xl border transition-all flex items-center justify-between group cursor-pointer",
                     isActive
                       ? "bg-navy text-white border-navy shadow-xl scale-[1.01]"
                       : "bg-white text-navy border-gray-200/80 hover:border-red/40 hover:shadow-sm"
@@ -160,7 +174,7 @@ export function CorePillars() {
           </div>
 
           {/* Active Pillar Feature Spotlight Card */}
-          <div className="lg:col-span-6 sticky top-28">
+          <div id="pillar-spotlight" className="lg:col-span-6 sticky top-28">
             <AnimatePresence mode="wait">
               {pillars[activePillar] && (
                 <motion.div

@@ -79,18 +79,18 @@ export function MissionCta() {
             <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1] z-0 rounded-full" />
 
             <div className="relative z-10 flex flex-col items-center justify-center overflow-hidden h-10 mb-2">
-              {/* Staggered text flip */}
-              <span className="font-oswald text-2xl lg:text-3xl text-white font-bold tracking-widest uppercase transition-transform duration-500 ease-[0.22,1,0.36,1] group-hover:-translate-y-full block">
+              {/* Staggered text flip (Desktop only flip; clean static text on mobile) */}
+              <span className="font-oswald text-2xl lg:text-3xl text-white font-bold tracking-widest uppercase transition-transform duration-500 ease-[0.22,1,0.36,1] md:group-hover:-translate-y-full block">
                 Join Us
               </span>
-              <span className="absolute top-0 font-oswald text-2xl lg:text-3xl text-navy font-bold tracking-widest uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1] block">
+              <span className="hidden md:block absolute top-0 font-oswald text-2xl lg:text-3xl text-navy font-bold tracking-widest uppercase translate-y-full md:group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1]">
                 Join Us
               </span>
             </div>
 
             <div className="relative z-10 overflow-hidden w-8 h-8 flex items-center justify-center">
-              <ArrowRight className="absolute w-8 h-8 text-white transition-transform duration-500 ease-[0.22,1,0.36,1] group-hover:translate-x-[150%] -rotate-45" />
-              <ArrowRight className="absolute w-8 h-8 text-navy transition-transform duration-500 ease-[0.22,1,0.36,1] -translate-x-[150%] group-hover:translate-x-0 -rotate-45" />
+              <ArrowRight className="w-7 h-7 md:w-8 md:h-8 text-white transition-transform duration-500 ease-[0.22,1,0.36,1] md:group-hover:translate-x-[150%] -rotate-45" />
+              <ArrowRight className="hidden md:block absolute w-8 h-8 text-navy transition-transform duration-500 ease-[0.22,1,0.36,1] -translate-x-[150%] md:group-hover:translate-x-0 -rotate-45" />
             </div>
           </Link>
         </motion.div>

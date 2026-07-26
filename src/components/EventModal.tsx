@@ -95,7 +95,7 @@ export function EventModal({ event, onClose }: EventModalProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-inter"
+      className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-6 overflow-y-auto font-inter pt-16 sm:pt-6"
     >
       {/* Backdrop Click Trigger */}
       <div className="absolute inset-0 z-0" onClick={onClose} />
@@ -106,10 +106,10 @@ export function EventModal({ event, onClose }: EventModalProps) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-3xl md:max-w-4xl bg-white text-navy rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col my-auto"
+        className="relative z-10 w-full max-w-3xl md:max-w-4xl max-h-[85vh] sm:max-h-[90vh] bg-white text-navy rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col my-auto"
       >
         {/* Top Deep Navy Header Banner */}
-        <div className="relative w-full bg-navy text-white p-6 sm:p-8 shrink-0 overflow-hidden">
+        <div className="relative w-full bg-navy text-white p-4 sm:p-8 shrink-0 overflow-hidden">
           <Image
             src={event.img}
             alt={event.title}
@@ -124,46 +124,46 @@ export function EventModal({ event, onClose }: EventModalProps) {
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-red text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-red text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Header Content */}
           <div className="relative z-10 flex flex-col justify-between h-full">
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="bg-red text-white text-[10px] font-oswald uppercase font-bold tracking-[0.2em] px-3.5 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
+              <span className="bg-red text-white text-[10px] font-oswald uppercase font-bold tracking-[0.2em] px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full shadow-sm flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 {event.status}
               </span>
-              <span className="bg-white/15 backdrop-blur-md text-white text-[10px] font-oswald uppercase font-bold tracking-widest px-3 py-1 rounded-full border border-white/15">
+              <span className="bg-white/15 backdrop-blur-md text-white text-[10px] font-oswald uppercase font-bold tracking-widest px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-white/15">
                 {event.type}
               </span>
               <button
                 onClick={handleShare}
-                className="ml-auto mr-12 sm:mr-14 text-white/70 hover:text-white text-xs font-oswald uppercase font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                className="ml-auto mr-10 sm:mr-14 text-white/70 hover:text-white text-xs font-oswald uppercase font-bold flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5 text-red" />
                 <span>{copied ? "COPIED!" : "SHARE"}</span>
               </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
               <div>
-                <span className="text-red font-oswald uppercase text-[11px] font-bold tracking-[0.25em] flex items-center gap-1.5 mb-1">
+                <span className="text-red font-oswald uppercase text-[10px] sm:text-[11px] font-bold tracking-[0.25em] flex items-center gap-1.5 mb-1">
                   <Sparkles className="w-3.5 h-3.5 text-red" />
                   OFFICIAL EVENT FIXTURE SPECIFICATION
                 </span>
-                <h2 className="font-oswald text-2xl sm:text-4xl font-bold uppercase tracking-tight text-white leading-none">
+                <h2 className="font-oswald text-xl sm:text-4xl font-bold uppercase tracking-tight text-white leading-tight sm:leading-none">
                   {event.title}
                 </h2>
               </div>
 
               {/* Date Badge */}
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-2 rounded-2xl shrink-0">
-                <Calendar className="w-5 h-5 text-red" />
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl shrink-0 self-start sm:self-auto">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-red" />
                 <div className="text-left">
-                  <span className="font-oswald text-lg font-bold leading-none block">{event.dateDay} {event.dateMonth}</span>
+                  <span className="font-oswald text-base sm:text-lg font-bold leading-none block">{event.dateDay} {event.dateMonth}</span>
                   <span className="font-oswald text-[9px] uppercase tracking-widest text-white/60 block">{event.dateYear || "2025"}</span>
                 </div>
               </div>
@@ -172,17 +172,20 @@ export function EventModal({ event, onClose }: EventModalProps) {
         </div>
 
         {/* Modal Main Body */}
-        <div className="p-6 sm:p-8 flex-1 flex flex-col bg-white min-w-0">
+        <div className="p-4 sm:p-8 flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
           
-          {/* Segmented Tab Slider Bar */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 mb-6 border-b border-gray-100 font-oswald uppercase text-xs font-bold tracking-wider shrink-0">
-            <div className="inline-flex bg-gray-100 p-1.5 rounded-full relative">
+          {/* Segmented Tab Slider Bar with Touch Pan & Lenis Protection */}
+          <div 
+            data-lenis-prevent
+            className="w-full overflow-x-auto touch-pan-x pb-2 mb-4 border-b border-gray-100 font-oswald uppercase text-xs font-bold tracking-wider shrink-0 no-scrollbar"
+          >
+            <div className="inline-flex bg-gray-100 p-1 rounded-full relative min-w-max">
               {(["OVERVIEW", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={cn(
-                    "relative px-5 py-2 rounded-full whitespace-nowrap transition-colors cursor-pointer shrink-0 z-10",
+                    "relative px-4 sm:px-5 py-2 rounded-full whitespace-nowrap transition-colors cursor-pointer shrink-0 z-10 text-[11px] sm:text-xs",
                     activeTab === tab ? "text-white" : "text-navy/60 hover:text-navy"
                   )}
                 >
@@ -199,10 +202,10 @@ export function EventModal({ event, onClose }: EventModalProps) {
             </div>
           </div>
 
-          {/* FIXED-HEIGHT Internal Scroll Container (Zero Resizing / Zero Height Jumping) */}
+          {/* Flexible Internal Scroll Container */}
           <div 
             data-lenis-prevent
-            className="h-[340px] sm:h-[360px] md:h-[380px] overflow-y-auto pr-2 scrollbar-thin text-gray-600 text-sm font-normal leading-relaxed"
+            className="flex-1 min-h-[200px] max-h-[300px] sm:max-h-[360px] overflow-y-auto pr-1 sm:pr-2 scrollbar-thin text-gray-600 text-sm font-normal leading-relaxed"
           >
             <AnimatePresence mode="wait">
               <motion.div

@@ -183,22 +183,7 @@ const PAST_EXECOM = [
 type CategoryFilter = "ALL" | "CORE LEADERSHIP" | "TECHNICAL LABS" | "MEDIA & CREATIVE" | "OPERATIONS & EVENTS";
 
 // --- ANIMATION VARIANTS ---
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-  }
-};
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  show: { 
-    opacity: 1, 
-    y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 }
-  }
-};
 
 const fadeUpVariant: Variants = {
   hidden: { opacity: 0, y: 40 },
@@ -257,6 +242,15 @@ export default function ExecomPage() {
   
   // Accordion state for past years
   const [openYear, setOpenYear] = useState<string>("2023-24");
+
+  const togglePastYear = (year: string) => {
+    setOpenYear(prev => (prev === year ? "" : year));
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        window.__lenis?.resize();
+      }
+    }, 320);
+  };
 
   // Interactive Mouse Trail & Idle State for Hero
   const [trailCards, setTrailCards] = useState<CandidTrailCard[]>([]);
@@ -332,7 +326,6 @@ export default function ExecomPage() {
     offset: ["start start", "end start"]
   });
   const heroY = useTransform(heroScrollY, [0, 1], ["0%", "20%"]);
-  const heroCardY = useTransform(heroScrollY, [0, 1], ["0%", "-15%"]);
   const heroOpacity = useTransform(heroScrollY, [0, 0.8], [1, 0]);
 
   // Scroll parallax for CTA section
@@ -754,7 +747,7 @@ export default function ExecomPage() {
               >
                 {/* Accordion Header */}
                 <button
-                  onClick={() => setOpenYear(openYear === year ? "" : year)}
+                  onClick={() => togglePastYear(year)}
                   className="w-full flex items-center justify-between p-6 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-6">
@@ -766,42 +759,41 @@ export default function ExecomPage() {
                   <ChevronDown className={cn("w-6 h-6 text-navy/40 transition-transform duration-300", openYear === year ? "rotate-180" : "")} />
                 </button>
                 
-                {/* Accordion Body (Core Team with Photos + View Roster Button) */}
-                <AnimatePresence>
-                  {openYear === year && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-6 sm:p-8 pt-0 border-t border-gray-100 mt-2">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 mb-8">
-                          {members.filter(m => m.category === "Core").slice(0, 4).map((member, j) => (
-                            <div key={j} className="flex flex-col items-center text-center group">
-                              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-4 relative shadow-md border-2 border-gray-200">
-                                <Image src={member.img} alt={member.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                              </div>
-                              <span className="font-oswald text-lg font-bold text-navy uppercase block truncate w-full group-hover:text-red transition-colors">
-                                {member.name}
-                              </span>
-                              <span className="font-inter text-[10px] font-bold text-red uppercase tracking-widest block truncate w-full mt-1">
-                                {member.role}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex justify-center pb-4">
-                          <Link href={`/info/execom/${year.replace("-", "")}`} className="flex items-center gap-2 font-oswald text-sm font-bold uppercase tracking-widest text-white bg-navy hover:bg-red transition-colors px-8 py-3.5 rounded-full shadow-md">
-                            <span>VIEW FULL ROSTER</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </Link>
-                        </div>
-                      </div>
-                    </motion.div>
+                {/* GPU-Accelerated CSS Grid Accordion Container (Zero Lag) */}
+                <div
+                  className={cn(
+                    "grid transition-[grid-template-rows,opacity] duration-300 ease-out border-t border-gray-100",
+                    openYear === year
+                      ? "grid-rows-[1fr] opacity-100 mt-2"
+                      : "grid-rows-[0fr] opacity-0 mt-0"
                   )}
-                </AnimatePresence>
+                >
+                  <div className="overflow-hidden">
+                    <div className="p-6 sm:p-8 pt-0">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 mb-8">
+                        {members.filter(m => m.category === "Core").slice(0, 4).map((member, j) => (
+                          <div key={j} className="flex flex-col items-center text-center group">
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-4 relative shadow-md border-2 border-gray-200">
+                              <Image src={member.img} alt={member.name} fill sizes="(max-width: 640px) 96px, 128px" className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                            </div>
+                            <span className="font-oswald text-lg font-bold text-navy uppercase block truncate w-full group-hover:text-red transition-colors">
+                              {member.name}
+                            </span>
+                            <span className="font-inter text-[10px] font-bold text-red uppercase tracking-widest block truncate w-full mt-1">
+                              {member.role}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-center pb-4">
+                        <Link href={`/info/execom/${year.replace("-", "")}`} className="flex items-center gap-2 font-oswald text-sm font-bold uppercase tracking-widest text-white bg-navy hover:bg-red transition-colors px-8 py-3.5 rounded-full shadow-md">
+                          <span>VIEW FULL ROSTER</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
