@@ -12,7 +12,6 @@ import {
   GraduationCap, 
   Cpu, 
   Globe, 
-  ShieldCheck,
   Search,
   ChevronDown
 } from "lucide-react";
@@ -206,6 +205,49 @@ const fadeUpVariant: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
 };
 
+// Candid Group & Event Photos for Interactive Hero Canvas
+const EXECOM_CANDID_PHOTOS = [
+  {
+    url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
+    caption: "HACKATHON NIGHT 2024",
+    tag: "STUDENT LABS"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+    caption: "ANNUAL SYMPOSIUM PLANNING",
+    tag: "SEMINAR HALL"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop",
+    caption: "ROBOTICS WORKSHOP DEMO",
+    tag: "PHYSICS LAB B"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1200&auto=format&fit=crop",
+    caption: "EXECOM RETREAT & CELEBRATION",
+    tag: "OUTDOOR CAMPUS"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop",
+    caption: "NATIONAL CHAMPIONSHIP WIN",
+    tag: "NEW DELHI"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200&auto=format&fit=crop",
+    caption: "CROSS-DISCIPLINARY BRAINSTORM",
+    tag: "INNOVATION HUB"
+  }
+];
+
+interface CandidTrailCard {
+  id: number;
+  x: number;
+  y: number;
+  rotation: number;
+  photo: typeof EXECOM_CANDID_PHOTOS[0];
+  duration: number; // Dynamic fade duration based on mouse velocity
+}
+
 export default function ExecomPage() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -215,6 +257,83 @@ export default function ExecomPage() {
   
   // Accordion state for past years
   const [openYear, setOpenYear] = useState<string>("2023-24");
+
+  // Interactive Mouse Trail & Idle State for Hero
+  const [trailCards, setTrailCards] = useState<CandidTrailCard[]>([]);
+  const [isIdle, setIsIdle] = useState(false);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPosRef = useRef({ x: 0, y: 0, time: 0 });
+  const photoIndexRef = useRef(0);
+  const cardIdRef = useRef(0);
+
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Reset idle state on mouse move
+    if (isIdle) setIsIdle(false);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+    // Set 650ms idle timer to smoothly fade out images when mouse becomes still
+    idleTimerRef.current = setTimeout(() => {
+      setIsIdle(true);
+    }, 650);
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const now = Date.now();
+
+    const dx = x - lastPosRef.current.x;
+    const dy = y - lastPosRef.current.y;
+    const dt = Math.max(now - (lastPosRef.current.time || now), 10);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Calculate mouse velocity in px/ms
+    const velocity = dist / dt;
+
+    // Spawn card after mouse moves ~220px (spacious, strictly max 2 visible)
+    if (dist > 220) {
+      lastPosRef.current = { x, y, time: now };
+
+      const photo = EXECOM_CANDID_PHOTOS[photoIndexRef.current % EXECOM_CANDID_PHOTOS.length];
+      photoIndexRef.current += 1;
+
+      // Disappearance duration inversely proportional to velocity:
+      // Fast mouse movement (velocity > 1.5) = short fade duration (~0.4s)
+      // Slow mouse movement (velocity < 0.3) = long, lingering fade duration (~1.2s)
+      const fadeDuration = Math.min(Math.max(1.2 - velocity * 0.5, 0.4), 1.2);
+
+      const rotation = (Math.random() - 0.5) * 20; // -10deg to +10deg
+      const newCard: CandidTrailCard = {
+        id: cardIdRef.current++,
+        x,
+        y,
+        rotation,
+        photo,
+        duration: fadeDuration
+      };
+
+      setTrailCards(prev => {
+        const updated = [...prev, newCard];
+        if (updated.length > 2) {
+          return updated.slice(updated.length - 2); // Strictly max 2 cards!
+        }
+        return updated;
+      });
+    }
+  };
+
+  const handleHeroMouseLeave = () => {
+    setIsIdle(true);
+  };
+
+  // Scroll parallax for Hero section
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroScrollY } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+  const heroY = useTransform(heroScrollY, [0, 1], ["0%", "20%"]);
+  const heroCardY = useTransform(heroScrollY, [0, 1], ["0%", "-15%"]);
+  const heroOpacity = useTransform(heroScrollY, [0, 0.8], [1, 0]);
 
   // Scroll parallax for CTA section
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -251,61 +370,164 @@ export default function ExecomPage() {
   }, []);
 
   return (
-    <div className="bg-navy text-white font-inter min-h-screen selection:bg-red selection:text-white -mt-24">
+    <div className="bg-white text-navy font-inter min-h-screen selection:bg-red selection:text-white -mt-24">
       
-      {/* Global Ambient Background Effects */}
-      <div className="fixed inset-0 pointer-events-none z-0 opacity-20 mix-blend-screen">
-         <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-red/20 blur-[120px]" />
-         <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-500/10 blur-[120px]" />
-      </div>
+      {/* ─── 01. INTERACTIVE MOUSE-TRAIL HERO (Candid Group Photos Canvas) ─── */}
+      <section 
+        ref={heroRef}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={handleHeroMouseLeave}
+        className="pt-36 pb-20 md:pt-48 md:pb-28 px-4 lg:px-8 relative z-10 bg-navy text-white border-b border-white/10 overflow-hidden min-h-[85vh] lg:min-h-[90vh] flex flex-col justify-between cursor-crosshair"
+      >
+        {/* Subtle Architectural Grid Lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:5rem_5rem] pointer-events-none" />
 
-      {/* ─── 01. HERO TYPOGRAPHY ─── */}
-      <section className="pt-40 pb-16 md:pt-52 md:pb-24 px-4 lg:px-8 relative z-10 bg-navy border-b border-white/10">
-        <div className="container mx-auto relative">
-          
-          {/* Animated SVG Astrolabe Background */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-10 pointer-events-none hidden lg:block text-white">
-            <svg viewBox="0 0 500 500" className="w-full h-full stroke-current stroke-[0.5] fill-none astrolabe-spin">
-              <circle cx="250" cy="250" r="230" strokeDasharray="3 6" />
-              <circle cx="250" cy="250" r="185" strokeDasharray="10 3" />
-              <circle cx="250" cy="250" r="140" />
-              <circle cx="250" cy="250" r="90" strokeDasharray="2 3" />
-              <circle cx="250" cy="250" r="5" className="fill-red stroke-none" />
-              <line x1="250" y1="10" x2="250" y2="490" />
-              <line x1="10" y1="250" x2="490" y2="250" />
-            </svg>
+        {/* Ambient SVG Astrolabe Wireframe */}
+        <div className="absolute right-[-8%] top-1/2 -translate-y-1/2 w-[750px] h-[750px] opacity-10 pointer-events-none hidden lg:block text-white">
+          <svg viewBox="0 0 500 500" className="w-full h-full stroke-current stroke-[0.5] fill-none astrolabe-spin">
+            <circle cx="250" cy="250" r="230" strokeDasharray="3 6" />
+            <circle cx="250" cy="250" r="185" strokeDasharray="10 3" />
+            <circle cx="250" cy="250" r="140" />
+            <circle cx="250" cy="250" r="90" strokeDasharray="2 3" />
+            <circle cx="250" cy="250" r="5" className="fill-red stroke-none" />
+            <line x1="250" y1="10" x2="250" y2="490" />
+            <line x1="10" y1="250" x2="490" y2="250" />
+          </svg>
+        </div>
+
+        {/* Spawned Interactive Mouse Trail Candid Photos (Max 2 cards with velocity fade) */}
+        <AnimatePresence>
+          {trailCards.map((card, index) => {
+            const isOldest = trailCards.length > 1 && index === 0;
+
+            return (
+              <motion.div
+                key={card.id}
+                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                animate={{ 
+                  opacity: (isIdle || isOldest) ? 0 : 1, 
+                  scale: (isIdle || isOldest) ? 0.85 : 1, 
+                  y: (isIdle || isOldest) ? -15 : 0, 
+                  rotate: card.rotation 
+                }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ 
+                  duration: isOldest ? card.duration : 0.4, 
+                  ease: [0.22, 1, 0.36, 1] 
+                }}
+                style={{
+                  left: card.x - 130,
+                  top: card.y - 140,
+                  position: "absolute"
+                }}
+                className="pointer-events-none z-20 w-60 sm:w-72 aspect-[16/11] rounded-2xl overflow-hidden border border-white/20 bg-navy/90 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-xl"
+              >
+                <Image
+                  src={card.photo.url}
+                  alt={card.photo.caption}
+                  fill
+                  sizes="300px"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/30 to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 text-white">
+                  <span className="font-oswald text-[9px] text-red font-bold uppercase tracking-widest block mb-0.5">
+                    {card.photo.tag}
+                  </span>
+                  <h4 className="font-oswald text-xs sm:text-sm font-bold uppercase tracking-tight truncate">
+                    {card.photo.caption}
+                  </h4>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        <motion.div 
+          style={{ opacity: heroOpacity, y: heroY }}
+          className="container mx-auto relative z-10 flex flex-col justify-between flex-grow"
+        >
+          {/* Top Eyebrow Header Row */}
+          <div className="flex items-center justify-between border-b border-white/10 pb-6 mb-8 pointer-events-none">
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-[2px] bg-red" />
+              <span className="font-oswald text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-red">
+                EXECUTIVE COMMITTEE
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center gap-6 font-oswald text-xs uppercase tracking-[0.25em] text-white/40 font-bold">
+              <span>EST. 2012</span>
+              <span>•</span>
+              <span>TERM 2024 — 2025</span>
+            </div>
           </div>
 
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="max-w-6xl relative z-10"
-          >
-            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
-              <div className="w-2.5 h-2.5 rounded-full bg-red animate-pulse" />
-              <span className="font-oswald text-red font-bold uppercase tracking-[0.3em] text-sm md:text-base">
-                EXECUTIVE COMMITTEE 2024-25
+          {/* Center Stage Mega Display Headline */}
+          <div className="my-auto py-8 text-center flex flex-col items-center pointer-events-none">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 shadow-inner pointer-events-auto">
+              <span className="w-2.5 h-2.5 rounded-full bg-red animate-pulse" />
+              <span className="font-oswald text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/90">
+                INTERACTIVE TEAM CANVAS • 2024-25
               </span>
-            </motion.div>
+            </div>
 
             <motion.h1 
-              variants={itemVariants}
-              className="font-oswald text-[4.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11rem] font-bold text-white uppercase leading-[0.85] tracking-tighter"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="font-oswald text-[11vw] sm:text-[9.5vw] lg:text-[8vw] font-bold text-white uppercase leading-[0.82] tracking-tighter mb-6 select-none max-w-6xl"
             >
               THE MINDS<br/>
-              <span className="text-transparent stroke-white" style={{ WebkitTextStroke: "2px rgba(255,255,255,0.25)" }}>BEHIND THE</span><br/>
-              SCIENCE.
+              <span className="text-transparent stroke-white" style={{ WebkitTextStroke: "2px rgba(255,255,255,0.3)" }}>
+                BEHIND THE
+              </span><br/>
+              SCIENCE<span className="text-red">.</span>
             </motion.h1>
-          </motion.div>
-        </div>
+
+            <p className="font-inter text-base sm:text-lg text-white/70 max-w-xl font-normal leading-relaxed mb-8 pointer-events-auto">
+              12 student officers and faculty advisors steering applied physical science research, cross-disciplinary engineering labs, and campus symposiums at ASIET.
+            </p>
+
+            {/* Interactive Prompt Capsule */}
+            <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-lg font-oswald text-xs uppercase tracking-[0.25em] text-white/80 pointer-events-auto shadow-lg hover:border-red/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-red" />
+              <span>MOVE CURSOR AROUND TO REVEAL OFFICERS</span>
+            </div>
+          </div>
+
+          {/* Bottom Roster Specs Footer */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end pt-6 border-t border-white/10 pointer-events-none">
+            <div className="md:col-span-6">
+              <span className="font-oswald text-xs text-white/40 uppercase tracking-[0.25em] block">
+                DEPARTMENT OF PHYSICAL SCIENCE • ASIET
+              </span>
+            </div>
+            <div className="md:col-span-6 flex items-center md:justify-end gap-8 font-oswald text-sm sm:text-base uppercase tracking-widest text-white/60">
+              <div>
+                <span className="text-white font-bold block text-xl sm:text-2xl leading-none">12</span>
+                <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">OFFICERS</span>
+              </div>
+              <div className="w-[1px] h-8 bg-white/10" />
+              <div>
+                <span className="text-red font-bold block text-xl sm:text-2xl leading-none">04</span>
+                <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">DIVISIONS</span>
+              </div>
+              <div className="w-[1px] h-8 bg-white/10" />
+              <div>
+                <span className="text-white font-bold block text-xl sm:text-2xl leading-none">2024-25</span>
+                <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">ACADEMIC YEAR</span>
+              </div>
+            </div>
+          </div>
+
+        </motion.div>
       </section>
 
-      {/* ─── 02. EDITORIAL ROSTER (SPLIT SCREEN) ─── */}
-      <section className="pb-32 pt-8 relative z-10 bg-navy">
+      {/* ─── 02. EDITORIAL ROSTER (Clean White Section) ─── */}
+      <section className="py-24 relative z-10 bg-white text-navy border-b border-gray-200/80">
         
         {/* Sticky Filter Bar */}
-        <div className="sticky top-20 z-40 bg-navy/90 backdrop-blur-xl border-y border-white/10 py-4 mb-16 shadow-2xl">
+        <div className="sticky top-20 z-40 bg-white/90 backdrop-blur-xl border-y border-gray-200/80 py-4 mb-16 shadow-sm">
           <div className="container mx-auto px-4 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             
             {/* Category Track */}
@@ -316,7 +538,7 @@ export default function ExecomPage() {
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
                     "relative px-5 py-2.5 text-[11px] font-oswald uppercase font-bold tracking-widest rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 border",
-                    activeCategory === cat ? "bg-red text-white border-red shadow-[0_0_15px_rgba(218,41,28,0.4)]" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:text-white"
+                    activeCategory === cat ? "bg-red text-white border-red shadow-md" : "bg-gray-100 text-navy/70 border-gray-200 hover:border-navy/30 hover:text-navy"
                   )}
                 >
                   {cat === "CORE LEADERSHIP" ? "CORE" : cat === "TECHNICAL LABS" ? "TECH" : cat === "MEDIA & CREATIVE" ? "MEDIA" : cat === "OPERATIONS & EVENTS" ? "EVENTS" : "ALL"}
@@ -326,13 +548,13 @@ export default function ExecomPage() {
 
             {/* Search */}
             <div className="relative w-full md:w-64 shrink-0">
-              <Search className="w-4 h-4 text-white/40 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-navy/40 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="SEARCH ROSTER..."
-                className="w-full bg-white/5 text-white placeholder:text-white/40 pl-11 pr-4 py-2.5 rounded-full border border-white/10 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-all font-oswald text-xs tracking-widest uppercase"
+                className="w-full bg-gray-100 text-navy placeholder:text-navy/40 pl-11 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:border-red focus:ring-1 focus:ring-red transition-all font-oswald text-xs tracking-widest uppercase"
               />
             </div>
 
@@ -354,7 +576,7 @@ export default function ExecomPage() {
                   className="space-y-0"
                 >
                   {filteredMembers.length === 0 ? (
-                    <div className="py-20 text-white/40 font-oswald text-2xl uppercase font-bold tracking-tight">
+                    <div className="py-20 text-navy/40 font-oswald text-2xl uppercase font-bold tracking-tight">
                       No matches found.
                     </div>
                   ) : (
@@ -362,7 +584,7 @@ export default function ExecomPage() {
                       <div 
                         key={member.id}
                         onMouseEnter={() => setHoveredMemberId(member.id)}
-                        className="group border-b border-white/10 py-8 lg:py-10 cursor-pointer relative"
+                        className="group border-b border-gray-200/80 py-8 lg:py-10 cursor-pointer relative"
                       >
                         {/* Desktop layout: huge name */}
                         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 relative z-10">
@@ -370,24 +592,24 @@ export default function ExecomPage() {
                             <span className="font-oswald text-[10px] text-red font-bold uppercase tracking-[0.25em] mb-2 block sm:hidden">
                               {member.role}
                             </span>
-                            <h3 className="font-oswald text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold uppercase text-white/60 group-hover:text-white transition-colors duration-300 leading-[0.9]">
+                            <h3 className="font-oswald text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold uppercase text-navy/70 group-hover:text-navy transition-colors duration-300 leading-[0.9]">
                               {member.name}
                             </h3>
                           </div>
                           
                           <div className="hidden sm:block text-right shrink-0 pb-1">
-                            <span className="block font-oswald text-xl font-bold text-white/70 group-hover:text-red transition-colors">
+                            <span className="block font-oswald text-xl font-bold text-navy/80 group-hover:text-red transition-colors">
                               {member.role}
                             </span>
-                            <span className="block font-inter text-[10px] uppercase font-bold tracking-[0.2em] text-white/40 mt-1">
+                            <span className="block font-inter text-[10px] uppercase font-bold tracking-[0.2em] text-navy/40 mt-1">
                               {member.category}
                             </span>
                           </div>
                         </div>
 
-                        {/* Mobile: Accordion Image Reveal (Hidden on large screens) */}
+                        {/* Mobile: Accordion Image Reveal */}
                         <div className="block lg:hidden mt-6 overflow-hidden">
-                          <div className="aspect-[4/5] sm:aspect-video relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                          <div className="aspect-[4/5] sm:aspect-video relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
                             <Image src={member.img} alt={member.name} fill className="object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/40 to-transparent" />
                             
@@ -416,9 +638,9 @@ export default function ExecomPage() {
               </AnimatePresence>
             </div>
 
-            {/* RIGHT: STICKY HUGE PORTRAIT (Desktop Only) */}
+            {/* RIGHT: STICKY HUGE PORTRAIT (Desktop Only - Dark Accent Card) */}
             <div className="hidden lg:block lg:col-span-5 relative self-start sticky top-28">
-              <div className="h-[calc(100vh-9rem)] min-h-[500px] w-full rounded-3xl overflow-hidden bg-navy/80 shadow-2xl border border-white/10 group relative">
+              <div className="h-[calc(100vh-9rem)] min-h-[500px] w-full rounded-3xl overflow-hidden bg-navy shadow-2xl border border-gray-200/20 group relative">
                 <AnimatePresence>
                   {activeHoveredMember && (
                     <motion.div
@@ -481,8 +703,8 @@ export default function ExecomPage() {
         </div>
       </section>
 
-      {/* ─── 03. MINIMAL ACHIEVEMENTS MARQUEE ─── */}
-      <section className="py-16 bg-navy border-y border-white/10 overflow-hidden relative flex items-center z-10 shadow-2xl">
+      {/* ─── 03. ACHIEVEMENTS MARQUEE (Dark Ribbon Section) ─── */}
+      <section className="py-16 bg-[#1a1c22] text-white border-y border-white/10 overflow-hidden relative flex items-center z-10 shadow-xl">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         <div className="flex whitespace-nowrap animate-[marquee_30s_linear_infinite] hover:[animation-play-state:paused] relative z-10">
           {[...ACHIEVEMENTS, ...ACHIEVEMENTS, ...ACHIEVEMENTS].map((achieve, idx) => (
@@ -502,8 +724,8 @@ export default function ExecomPage() {
         </div>
       </section>
 
-      {/* ─── 04. DIRECTORY OF HERITAGE ─── */}
-      <section className="py-32 bg-navy relative z-10 border-b border-white/10">
+      {/* ─── 04. DIRECTORY OF HERITAGE (Warm Off-White Section) ─── */}
+      <section className="py-32 bg-[#FAF9F8] text-navy relative z-10 border-b border-gray-200/80">
         <div className="container mx-auto px-4 lg:px-8 max-w-5xl">
           <motion.div 
             initial="hidden"
@@ -515,7 +737,7 @@ export default function ExecomPage() {
             <span className="text-red font-oswald uppercase font-bold text-xs tracking-[0.25em] mb-4">
               THE ARCHIVES
             </span>
-            <h2 className="font-oswald text-5xl sm:text-7xl font-bold text-white uppercase tracking-tight">
+            <h2 className="font-oswald text-5xl sm:text-7xl font-bold text-navy uppercase tracking-tight">
               PAST LEADERSHIP
             </h2>
           </motion.div>
@@ -528,20 +750,20 @@ export default function ExecomPage() {
                 whileInView="show"
                 viewport={{ once: true }}
                 variants={fadeUpVariant}
-                className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all duration-300"
+                className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md"
               >
                 {/* Accordion Header */}
                 <button
                   onClick={() => setOpenYear(openYear === year ? "" : year)}
-                  className="w-full flex items-center justify-between p-6 sm:p-8 cursor-pointer hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center justify-between p-6 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-6">
-                    <h3 className="font-oswald text-3xl font-bold text-white tracking-widest">{year}</h3>
-                    <div className="px-3 py-1 rounded-full bg-white/10 text-white/60 font-oswald text-xs uppercase tracking-widest">
+                    <h3 className="font-oswald text-3xl font-bold text-navy tracking-widest">{year}</h3>
+                    <div className="px-3 py-1 rounded-full bg-gray-100 text-navy/70 font-oswald text-xs uppercase tracking-widest border border-gray-200">
                       {members.length} Members
                     </div>
                   </div>
-                  <ChevronDown className={cn("w-6 h-6 text-white/40 transition-transform duration-300", openYear === year ? "rotate-180" : "")} />
+                  <ChevronDown className={cn("w-6 h-6 text-navy/40 transition-transform duration-300", openYear === year ? "rotate-180" : "")} />
                 </button>
                 
                 {/* Accordion Body (Core Team with Photos + View Roster Button) */}
@@ -554,24 +776,24 @@ export default function ExecomPage() {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <div className="p-6 sm:p-8 pt-0 border-t border-white/5 mt-2">
+                      <div className="p-6 sm:p-8 pt-0 border-t border-gray-100 mt-2">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 mb-8">
                           {members.filter(m => m.category === "Core").slice(0, 4).map((member, j) => (
                             <div key={j} className="flex flex-col items-center text-center group">
-                              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-4 relative shadow-lg border border-white/20">
+                              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-4 relative shadow-md border-2 border-gray-200">
                                 <Image src={member.img} alt={member.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                               </div>
-                              <span className="font-oswald text-lg font-bold text-white uppercase block truncate w-full">
+                              <span className="font-oswald text-lg font-bold text-navy uppercase block truncate w-full group-hover:text-red transition-colors">
                                 {member.name}
                               </span>
-                              <span className="font-inter text-[10px] font-bold text-white/50 uppercase tracking-widest block truncate w-full mt-1">
+                              <span className="font-inter text-[10px] font-bold text-red uppercase tracking-widest block truncate w-full mt-1">
                                 {member.role}
                               </span>
                             </div>
                           ))}
                         </div>
                         <div className="flex justify-center pb-4">
-                          <Link href={`/info/execom/${year.replace("-", "")}`} className="flex items-center gap-2 font-oswald text-sm font-bold uppercase tracking-widest text-red hover:text-white transition-colors border border-red/40 hover:border-red px-6 py-3 rounded-full bg-red/10">
+                          <Link href={`/info/execom/${year.replace("-", "")}`} className="flex items-center gap-2 font-oswald text-sm font-bold uppercase tracking-widest text-white bg-navy hover:bg-red transition-colors px-8 py-3.5 rounded-full shadow-md">
                             <span>VIEW FULL ROSTER</span>
                             <ArrowRight className="w-4 h-4" />
                           </Link>
@@ -586,7 +808,7 @@ export default function ExecomPage() {
         </div>
       </section>
 
-      {/* ─── 05. JOIN CTA (Inspired by CtaSection) ─── */}
+      {/* ─── 05. JOIN CTA (High-Energy Red Section) ─── */}
       <section 
         ref={ctaRef}
         className="bg-red text-white py-32 lg:py-48 relative overflow-hidden flex flex-col items-center border-t border-red-500/30"
