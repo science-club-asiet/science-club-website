@@ -11,11 +11,11 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { 
     name: "NEWS", 
-    href: "#news",
+    href: "/news",
     subLinks: [
-      { name: "Latest Announcements", href: "/news/latest" },
-      { name: "Research Papers", href: "/news/research" },
-      { name: "Alumni Stories", href: "/news/alumni" }
+      { name: "Latest Announcements", href: "/news" },
+      { name: "Research Papers", href: "/news" },
+      { name: "Alumni Stories", href: "/news" }
     ]
   },
   { 
@@ -67,15 +67,15 @@ const FULL_STAGE_ITEMS: NavigationCategory[] = [
     id: "news",
     num: "02",
     name: "NEWS",
-    href: "#news",
+    href: "/news",
     badge: "ANNOUNCEMENTS",
     description: "Stay informed with campus research publications, competition victories, student breakthroughs, and alumni success stories.",
     img: "https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=1200&auto=format&fit=crop",
     stats: "WEEKLY UPDATES",
     subLinks: [
-      { name: "Latest Announcements", href: "/news/latest" },
-      { name: "Research Papers", href: "/news/research" },
-      { name: "Alumni Stories", href: "/news/alumni" }
+      { name: "Latest Announcements", href: "/news" },
+      { name: "Research Papers", href: "/news" },
+      { name: "Alumni Stories", href: "/news" }
     ]
   },
   {
@@ -387,17 +387,19 @@ export function Header() {
                 </motion.span>
               </motion.button>
 
-              {/* User Profile Circular Button */}
-              <motion.button 
+              {/* Account — redirects to /login when signed out */}
+              <motion.a
+                href="/account"
+                aria-label="My account"
                 style={{ color: iconColor, backgroundColor: isHomePage || isScrolled ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)" }}
                 className="transition-colors hidden sm:flex items-center justify-center p-2 w-10 h-10 rounded-full cursor-pointer"
               >
                 <User className="w-5 h-5 hover:text-red transition-colors" />
-              </motion.button>
+              </motion.a>
 
               {/* Join Us Red Pill CTA */}
               <motion.a
-                href="#join"
+                href="/info/join"
                 className="hidden md:flex items-center gap-2 bg-red text-white px-8 py-2.5 uppercase text-[17px] font-bold tracking-wide rounded-full overflow-hidden relative group"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.97 }}

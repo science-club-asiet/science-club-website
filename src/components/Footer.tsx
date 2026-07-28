@@ -3,7 +3,8 @@
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import { Atom, Globe, MessageCircle, Share2 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 const footerLinks = [
   {
@@ -23,6 +24,23 @@ const footerLinks = [
 export function Footer() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
+  const [subState, setSubState] = useState<"idle" | "done" | "error">("idle");
+
+  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formEl = e.currentTarget;
+    if ((formEl.querySelector<HTMLInputElement>("#nl_hp")?.value ?? "").trim()) return; // honeypot
+    const email = (formEl.querySelector<HTMLInputElement>("#nl_email")?.value ?? "").trim();
+    if (!email) return;
+    const { error } = await createClient().from("newsletter_subscribers").insert({ email });
+    // Duplicate email (already subscribed) counts as success.
+    if (error && error.code !== "23505") {
+      setSubState("error");
+      return;
+    }
+    formEl.reset();
+    setSubState("done");
+  };
 
   return (
     <footer ref={ref} className="bg-navy pt-24 pb-12 font-inter text-white">
@@ -101,9 +119,12 @@ export function Footer() {
             <p className="opacity-60 mb-6 font-medium text-sm leading-relaxed">
               Subscribe for the latest campus science news and tech updates.
             </p>
-            <form className="flex w-full rounded-2xl overflow-hidden border border-white/10 focus-within:border-red transition-colors duration-300">
+            <form onSubmit={handleSubscribe} className="flex w-full rounded-2xl overflow-hidden border border-white/10 focus-within:border-red transition-colors duration-300">
+              <input id="nl_hp" name="company" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
               <input
+                id="nl_email"
                 type="email"
+                required
                 placeholder="Enter your email"
                 className="bg-white/5 px-4 py-3 outline-none focus:bg-white/10 transition-colors flex-1 min-w-0 text-sm"
               />
@@ -117,6 +138,8 @@ export function Footer() {
                 Go
               </motion.button>
             </form>
+            {subState === "done" && <p className="text-xs mt-3 text-white/60">Thanks — you&apos;re subscribed.</p>}
+            {subState === "error" && <p className="text-xs mt-3 text-red">Couldn&apos;t subscribe. Try again.</p>}
           </motion.div>
         </div>
 

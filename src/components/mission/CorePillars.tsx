@@ -2,59 +2,15 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Compass, Hammer, Unlock, Users2, Rocket, ArrowRight } from "lucide-react";
+import { Compass, Hammer, Unlock, Users2, Rocket, ArrowRight, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import type { Pillar } from "@/lib/data/content";
 
-const pillars = [
-  {
-    num: "01",
-    icon: Compass,
-    title: "Curiosity First",
-    short: "Every question is worth asking. Intellectual curiosity is celebrated, never suppressed.",
-    detail: "We encourage questions that break conventional course boundaries. Whether exploring quantum computing, autonomous robotics, or synthetic biology, curiosity drives our agenda.",
-    image: "https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=800&auto=format&fit=crop",
-    tag: "EXPLORATION",
-  },
-  {
-    num: "02",
-    icon: Hammer,
-    title: "Build, Don't Just Study",
-    short: "Learning accelerates 10× when you make something real. Prototypes and code are our curriculum.",
-    detail: "Textbooks give foundation, but building gives understanding. Every member works on tangible prototypes, hardware assemblies, or computational models throughout the year.",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800&auto=format&fit=crop",
-    tag: "PROTOTYPING",
-  },
-  {
-    num: "03",
-    icon: Unlock,
-    title: "Radical Openness",
-    short: "Our research, code, and findings are openly shared with the global scientific community.",
-    detail: "Knowledge shouldn't sit behind closed doors. We host open GitHub repositories, publish open-access project documentations, and encourage peer critique.",
-    image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop",
-    tag: "OPEN SOURCE",
-  },
-  {
-    num: "04",
-    icon: Users2,
-    title: "Zero Hierarchy of Ideas",
-    short: "The best idea wins — regardless of department, year of study, or title.",
-    detail: "In Science Club, first-year insights carry equal weight to senior wisdom. We foster an environment where technical logic and evidence always triumph over authority.",
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=800&auto=format&fit=crop",
-    tag: "INCLUSIVITY",
-  },
-  {
-    num: "05",
-    icon: Rocket,
-    title: "Tangible Execution",
-    short: "We measure progress by completed projects, publications, and real-world demonstrations.",
-    detail: "Ideas are only beginnings. We hold ourselves accountable to shipping finished work, entering technical competitions, and hosting public science exhibitions.",
-    image: "https://images.unsplash.com/photo-1517976487492-5750f3195933?q=80&w=800&auto=format&fit=crop",
-    tag: "EXECUTION",
-  },
-];
+// Icon column is stored as a name string in the DB → map to the lucide component.
+const ICON_MAP: Record<string, LucideIcon> = { Compass, Hammer, Unlock, Users2, Rocket };
 
-export function CorePillars() {
+export function CorePillars({ pillars }: { pillars: Pillar[] }) {
   const [activePillar, setActivePillar] = useState<number>(0);
 
   const handlePillarClick = (index: number) => {
@@ -119,7 +75,7 @@ export function CorePillars() {
           {/* Pillar Selector List */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             {pillars.map((item, index) => {
-              const Icon = item.icon;
+              const Icon = ICON_MAP[item.icon] ?? Compass;
               const isActive = activePillar === index;
 
               return (

@@ -5,57 +5,16 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import type { NewsItem } from "@/lib/data/posts";
 
 const NEWS_INTERVAL = 6000; // 6 seconds per article
 
-type NewsItem = {
-  id: string;
-  tag: string;
-  date: string;
-  title: string;
-  desc: string;
-  img: string;
-  breaking?: boolean;
-};
+// News items are published posts of type 'news', fetched from Supabase and
+// passed in as `items` (see src/lib/data/posts.ts → getNews()).
 
-const news: NewsItem[] = [
-  {
-    id: "01",
-    tag: "ACHIEVEMENTS",
-    date: "MAR 14",
-    title: "NSF Grant for IoT Architecture",
-    desc: "Science Club ASIET has officially secured a massive endowment from the National Science Foundation. The funds will be purely injected into the new autonomous cross-mesh IoT grid built by our technical core team.",
-    img: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1600&auto=format&fit=crop",
-    breaking: true,
-  },
-  {
-    id: "02",
-    tag: "PROJECTS",
-    date: "FEB 28",
-    title: "Renewable Energy Thermodynamics",
-    desc: "Our thermal dynamics division has successfully finalized a proprietary micro-inverter capable of returning 14% extra payload yield in high-heat thermal zones.",
-    img: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?q=80&w=1600&auto=format&fit=crop",
-  },
-  {
-    id: "03",
-    tag: "INTERVIEW",
-    date: "FEB 12",
-    title: "Dr. Rajan on Quantum Ethics",
-    desc: "A deep dive with our faculty advisor on the moral constraints of unbounded computational speed, and how students must pioneer strict safety protocols inside low-level network architectures.",
-    img: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=1600&auto=format&fit=crop",
-  },
-  {
-    id: "04",
-    tag: "WORKSHOP",
-    date: "JAN 05",
-    title: "Autonomous Swarm Deployment",
-    desc: "Over 40 students converged on the mechanical wing last weekend for a live-flight calibration session. The entire drone swarm achieved perfect collision vectoring without external GPS.",
-    img: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1600&auto=format&fit=crop",
-  },
-];
-
-export function NewsSection() {
-  const [expandedIndex, setExpandedIndex] = useState<string>(news[0].id);
+export function NewsSection({ items }: { items: NewsItem[] }) {
+  const news = items;
+  const [expandedIndex, setExpandedIndex] = useState<string>(items[0]?.id ?? "");
   const [isPaused, setIsPaused] = useState(false);
   const pauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -69,7 +28,7 @@ export function NewsSection() {
       });
     }, NEWS_INTERVAL);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, news]);
 
   const handleManualSelect = useCallback((id: string) => {
     setExpandedIndex(id);
@@ -208,7 +167,7 @@ export function NewsSection() {
                       {/* We make the button interactive since the parent redirects clicks */}
                       {/* Using pointer-events-auto directly overriding the pointer restrictions */}
                       <Link 
-                        href={`/news/${item.id}`} 
+                        href={`/news/${item.slug}`}
                         onClick={(e) => {
                           e.stopPropagation(); // prevent parent expanding click
                         }}

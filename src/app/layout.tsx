@@ -26,8 +26,7 @@ export const metadata: Metadata = {
   description: "Official website of the Science Club. Join us for events, workshops, and cutting-edge projects.",
 };
 
-import { SmoothScroll } from "@/components/SmoothScroll";
-import { Loader } from "@/components/Loader";
+import { SiteChrome } from "@/components/SiteChrome";
 
 export default function RootLayout({
   children,
@@ -40,8 +39,7 @@ export default function RootLayout({
       className={`${oswald.variable} ${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
-        <Loader />
-        <SmoothScroll>{children}</SmoothScroll>
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

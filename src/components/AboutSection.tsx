@@ -5,15 +5,16 @@ import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import type { StatItem } from "@/lib/data/site";
 
-const stats = [
+const DEFAULT_STATS: StatItem[] = [
   { value: "240+", label: "Active Members" },
   { value: "38", label: "Live Projects" },
   { value: "12yrs", label: "Established" },
   { value: "6", label: "Departments" },
 ];
 
-export function AboutSection() {
+export function AboutSection({ stats = DEFAULT_STATS }: { stats?: StatItem[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 

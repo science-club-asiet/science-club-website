@@ -3,25 +3,9 @@
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
 import Image from "next/image";
+import type { Story } from "@/lib/data/content";
 
-const stories = [
-  {
-    quote: "Joining Science Club allowed me to stop just solving practice exam problems and start building actual embedded hardware. Within six months, our team prototyped a modular environmental sensor array.",
-    author: "Ananya Nair",
-    role: "ECE '26 & Hardware Lead",
-    tag: "Hardware Prototype",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    quote: "I thought publishing research was only for PhD candidates. Here, senior members guided me through dataset preparation and paper drafting. We presented our ML paper in our third semester.",
-    author: "Rohan Varghese",
-    role: "CSE '27 & Research Lead",
-    tag: "Peer-Reviewed Paper",
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=800&auto=format&fit=crop",
-  },
-];
-
-export function ImpactStories() {
+export function ImpactStories({ stories }: { stories: Story[] }) {
   return (
     <section className="py-24 md:py-36 bg-[#FAF9F8] text-navy relative overflow-hidden">
       <div className="container mx-auto px-4 lg:px-8">

@@ -4,7 +4,10 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import Image from "next/image";
 
-export function Hero() {
+export function Hero({
+  badge = "Spring Symposium 2026",
+  title = "INNOVATE. DISCOVER. CREATE.",
+}: { badge?: string; title?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { scrollYProgress } = useScroll({
@@ -15,7 +18,7 @@ export function Hero() {
   // Parallax translation for the background image
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
   
-  const textTitle = "INNOVATE. DISCOVER. CREATE.".split(" ");
+  const textTitle = title.split(" ");
 
   return (
     <section ref={containerRef} style={{ position: "relative" }} className="relative h-[85vh] lg:h-screen w-full overflow-hidden bg-navy flex flex-col justify-end">
@@ -46,7 +49,7 @@ export function Hero() {
              transition={{ duration: 0.8, delay: 2.2, ease: [0.76, 0, 0.24, 1] }} 
              className="inline-block bg-white text-red uppercase tracking-widest px-6 py-2 text-sm md:text-base font-bold mb-6 rounded-full shadow-lg"
           >
-            Spring Symposium 2026
+            {badge}
           </motion.div>
           
           <h1 className="text-6xl md:text-8xl lg:text-[10rem] uppercase font-bold leading-[0.85] tracking-tight drop-shadow-lg flex flex-col">

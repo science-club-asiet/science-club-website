@@ -6,68 +6,16 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight, Flame, Droplet, Zap, Fingerprint, Activity } from "lucide-react";
+import type { TeamWithMembers, ExecomMemberCard } from "@/lib/data/execom";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// Teams + current-term members are fetched from Supabase and passed in as a
+// prop (see src/lib/data/execom.ts → getTeamsWithMembers()).
 
-const teams = [
-  {
-    id: "core", label: "01", name: "Core Team",
-    tagline: "The heart of it all.",
-    description: "The core team steers the vision, handles the structure, and makes sure every other team has what they need to succeed.",
-    members: [
-      { name: "Dr. Rajan K.", role: "Faculty Advisor", bio: "15+ years guiding student science projects at ASIET. Expert in applied electronics.", img: "https://i.pravatar.cc/150?img=51" },
-      { name: "Arjun Menon",  role: "Chairperson",    bio: "Led the club to 3 consecutive national awards. Focused on cross-disciplinary tech.",        img: "https://i.pravatar.cc/150?img=11" },
-      { name: "Priya Nair",   role: "Vice Chair",      bio: "Coordinating cross-team strategy and outreach. Former events head.",        img: "https://i.pravatar.cc/150?img=45" },
-      { name: "Rohan Das",    role: "Secretary",       bio: "Keeps the minutes, keeps the peace, and ensures zero operational bottlenecks.",                   img: "https://i.pravatar.cc/150?img=12" },
-      { name: "Sneha Pillai", role: "Treasurer",       bio: "Manages grants, budgets and sponsorship funds with absolute precision.",        img: "https://i.pravatar.cc/150?img=47" },
-      { name: "Aditya Raj",   role: "Jt. Secretary",  bio: "Liaises between departments and schedules all technical workshops.", img: "https://i.pravatar.cc/150?img=13" },
-    ],
-  },
-  {
-    id: "tech", label: "02", name: "Technical",
-    tagline: "Where ideas become code.",
-    description: "Builders, engineers and tinkerers. They own every line of code, every circuit, and every prototype the club ships.",
-    members: [
-      { name: "Kiran Kumar",  role: "Tech Lead",     bio: "Full-stack wizard with a love for low-level systems and embedded C.",   img: "https://i.pravatar.cc/150?img=14" },
-      { name: "Anjali Seth",  role: "Backend Dev",   bio: "Designs APIs that power everything behind the scenes. Node.js expert.",  img: "https://i.pravatar.cc/150?img=46" },
-      { name: "Dev Prakash",  role: "Frontend Dev",  bio: "Turns Figma files into buttery-smooth experiences with React and GSAP.",    img: "https://i.pravatar.cc/150?img=15" },
-      { name: "Mehak Gupta",  role: "AI/ML Lead",    bio: "Training models by night, explaining them by day. Computer vision specialist.",     img: "https://i.pravatar.cc/150?img=48" },
-      { name: "Rahul Varma",  role: "Hardware Lead", bio: "Oscilloscope always in hand, PCB always in progress. Robotics enthusiast.",  img: "https://i.pravatar.cc/150?img=16" },
-      { name: "Tara Bose",    role: "Research Lead", bio: "Papers submitted, patents pending — always curious about the next frontier.",   img: "https://i.pravatar.cc/150?img=49" },
-    ],
-  },
-  {
-    id: "media", label: "03", name: "Media",
-    tagline: "Every frame, a story.",
-    description: "The team putting the club's work into the world — through photography, video, design and social storytelling.",
-    members: [
-      { name: "Nisha Thomas", role: "Media Head",     bio: "Visual director with an eye for cultural nuance and minimalist design.",     img: "https://i.pravatar.cc/150?img=44" },
-      { name: "Jay Krishnan", role: "Photographer",   bio: "Captures the raw energy in every lab setting and large-scale event.",         img: "https://i.pravatar.cc/150?img=17" },
-      { name: "Anika Roy",    role: "Video Editor",   bio: "Cuts content that makes people actually watch twice. Premiere Pro wizard.", img: "https://i.pravatar.cc/150?img=50" },
-      { name: "Sam Philip",   role: "Content Writer", bio: "Turns complex science into engaging, readable narratives for the masses.",      img: "https://i.pravatar.cc/150?img=18" },
-      { name: "Riya Sharma",  role: "Social Media",   bio: "Grew the club's organic reach by 400% in a single semester.",      img: "https://i.pravatar.cc/150?img=43" },
-    ],
-  },
-  {
-    id: "events", label: "04", name: "Events",
-    tagline: "We make it happen.",
-    description: "Logistics, outreach, sponsorship and on-ground execution. They turn every big idea into a live experience.",
-    members: [
-      { name: "Maya Iyer",   role: "Events Head",  bio: "Orchestrated 12 events with zero day-of failures. Master of logistics.",    img: "https://i.pravatar.cc/150?img=42" },
-      { name: "Vivek Soni",  role: "Logistics",    bio: "Loves a clipboard. Hates a last-minute cancellation. Keeps the trains running.", img: "https://i.pravatar.cc/150?img=20" },
-      { name: "Pooja Reddy", role: "Sponsorship",  bio: "Secured 5 major corporate sponsors in a single semester. Excellent negotiator.",  img: "https://i.pravatar.cc/150?img=41" },
-      { name: "Nikhil Babu", role: "Outreach",     bio: "The face the internet sees. Warm, precise, loud. Connects with other colleges.",    img: "https://i.pravatar.cc/150?img=21" },
-      { name: "Kavya Menon", role: "PR Head",      bio: "Writes press releases that actually get picked up by local and national news.",   img: "https://i.pravatar.cc/150?img=40" },
-      { name: "Aman Singh",  role: "Hospitality",  bio: "Ensures every speaker, judge, and attendee leaves with a good memory.",    img: "https://i.pravatar.cc/150?img=22" },
-    ],
-  },
-];
-
-type Member = typeof teams[0]["members"][0];
+type Member = ExecomMemberCard;
 
 const ICONS = [Flame, Droplet, Zap, Fingerprint, Activity];
 
@@ -130,7 +78,7 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
 
 // ─── Team Panel ───────────────────────────────────────────────────────────────
 
-function TeamPanel({ team }: { team: typeof teams[0] }) {
+function TeamPanel({ team }: { team: TeamWithMembers }) {
   const inViewRef = useRef<HTMLDivElement>(null);
   const inView = useInView(inViewRef, { once: true, margin: "-10%" });
 
@@ -182,7 +130,7 @@ function TeamPanel({ team }: { team: typeof teams[0] }) {
 
 // ─── Main Section ─────────────────────────────────────────────────────────────
 
-export function ExecomSection() {
+export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -243,7 +191,7 @@ export function ExecomSection() {
     });
 
     return () => mm.revert();
-  }, []);
+  }, [teams.length]);
 
   return (
     <section className="bg-[#FAF9F8]">

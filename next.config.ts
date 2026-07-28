@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "i.pravatar.cc" },
+      // UploadThing — where all admin-uploaded images live (per the SRS, to keep
+      // off Supabase's thin free-tier storage). New app-scoped host + legacy host.
+      { protocol: "https", hostname: "*.ufs.sh", pathname: "/f/**" },
+      { protocol: "https", hostname: "utfs.io", pathname: "/f/**" },
     ],
   },
 };

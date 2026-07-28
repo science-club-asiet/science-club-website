@@ -6,11 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { eventsData as events } from "@/lib/events";
+import type { ScienceEvent } from "@/lib/events";
 
 const AUTO_SCROLL_INTERVAL = 4000; // 4 seconds per card
 
-export function EventCenter() {
+export function EventCenter({ events }: { events: ScienceEvent[] }) {
   const ref = useRef(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -94,7 +94,7 @@ export function EventCenter() {
     setIsPaused(true);
     if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
     scrollTimerRef.current = setTimeout(() => setIsPaused(false), 6000);
-  }, []);
+  }, [events.length]);
 
   const goTo = (index: number) => {
     setActiveIndex(index);
@@ -142,7 +142,7 @@ export function EventCenter() {
       setActiveIndex(realIndex);
       isAutoScrolling.current = false;
     }, 700);
-  }, []);
+  }, [events.length]);
 
   const handlePrev = useCallback(() => {
     // Current active displayIndex is activeIndex + 2. Prev is activeIndex + 1.

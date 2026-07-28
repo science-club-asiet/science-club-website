@@ -2,8 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export function Marquee() {
-  const text = "SCIENCE CLUB • INNOVATION • DISCOVERY • COMPUTATION • ";
+export function Marquee({ text = "SCIENCE CLUB • INNOVATION • DISCOVERY • COMPUTATION • " }: { text?: string }) {
   
   return (
     <div className="w-[95%] mx-auto rounded-3xl bg-red text-white py-4 overflow-hidden flex whitespace-nowrap z-20 relative my-12 shadow-md">

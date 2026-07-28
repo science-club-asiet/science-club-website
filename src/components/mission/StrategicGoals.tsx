@@ -3,47 +3,9 @@
 import { motion } from "framer-motion";
 import { Clock } from "lucide-react";
 import Image from "next/image";
+import type { Goal } from "@/lib/data/content";
 
-const goals = [
-  {
-    targetYear: "2025",
-    title: "Open-Source Repository Initiative",
-    description: "Launch centralized public GitHub organization for all Science Club projects, hardware schematics, and research codebases.",
-    status: "Active Implementation",
-    progress: 85,
-    category: "Software & Hardware",
-    image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    targetYear: "2026",
-    title: "Student-Run Fabrication Lab",
-    description: "Build a dedicated campus facility equipped with 3D printing, PCB rapid prototyping, and sensor validation benches.",
-    status: "In Progress",
-    progress: 60,
-    category: "Infrastructure",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    targetYear: "2026",
-    title: "Semesterly Peer-Reviewed Papers",
-    description: "Establish a pipeline enabling at least one student-authored research publication per semester in recognized journals.",
-    status: "Underway",
-    progress: 45,
-    category: "Academic Research",
-    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    targetYear: "2027",
-    title: "Statewide Inter-College Science Summit",
-    description: "Establish the largest student-organized inter-college science & engineering festival in Kerala.",
-    status: "Milestone Target",
-    progress: 30,
-    category: "Community & Fest",
-    image: "https://images.unsplash.com/photo-1517976487492-5750f3195933?q=80&w=800&auto=format&fit=crop",
-  },
-];
-
-export function StrategicGoals() {
+export function StrategicGoals({ goals }: { goals: Goal[] }) {
   return (
     <section className="py-24 md:py-36 bg-white text-navy border-t border-gray-100 relative overflow-hidden">
       <div className="container mx-auto px-4 lg:px-8">

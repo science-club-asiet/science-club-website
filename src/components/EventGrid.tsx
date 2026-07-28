@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
-import { eventsData, ScienceEvent } from "@/lib/events";
+import type { ScienceEvent } from "@/lib/events";
 import { EventGridCard } from "./EventGridCard";
 import { EventModal } from "./EventModal";
 import { FeaturedEventFixture } from "./events/FeaturedEventFixture";
@@ -18,10 +18,11 @@ type ViewMode = "GRID" | "LIST";
 const ITEMS_PER_PAGE = 6;
 
 interface EventGridProps {
+  events: ScienceEvent[];
   searchQuery?: string;
 }
 
-export function EventGrid({ searchQuery = "" }: EventGridProps) {
+export function EventGrid({ events, searchQuery = "" }: EventGridProps) {
   const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
   const [viewMode, setViewMode] = useState<ViewMode>("GRID");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -29,12 +30,12 @@ export function EventGrid({ searchQuery = "" }: EventGridProps) {
 
   // Featured event (nearest upcoming event)
   const featuredEvent = useMemo(() => {
-    return eventsData.find((e) => e.status === "UPCOMING") || eventsData[0];
-  }, []);
+    return events.find((e) => e.status === "UPCOMING") || events[0];
+  }, [events]);
 
   // Filtered dataset combining Category Tab and Search Query
   const filteredEvents = useMemo(() => {
-    let result = eventsData;
+    let result = events;
     if (activeTab !== "ALL") {
       result = result.filter((event) => event.status === activeTab);
     }
@@ -49,7 +50,7 @@ export function EventGrid({ searchQuery = "" }: EventGridProps) {
       );
     }
     return result;
-  }, [activeTab, searchQuery]);
+  }, [events, activeTab, searchQuery]);
 
   // Total pages
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE) || 1;
@@ -83,7 +84,7 @@ export function EventGrid({ searchQuery = "" }: EventGridProps) {
         {!searchQuery && (
           <div className="mb-20 md:mb-28">
             <EventCalendarWidget 
-              events={eventsData} 
+              events={events}
               onSelectEvent={(e) => setSelectedEvent(e)} 
             />
           </div>

@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import { MapPin, Navigation, Clock } from "lucide-react";
+import type { LocationContent } from "@/lib/data/site";
 
-export function MapSection() {
+export function MapSection({ location }: { location?: LocationContent }) {
   return (
     <section id="location" className="bg-white py-24 relative overflow-hidden border-t border-gray-200/50">
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
@@ -39,7 +40,7 @@ export function MapSection() {
                 </div>
                 <div>
                   <h4 className="font-oswald text-lg font-bold text-navy uppercase tracking-wide">Campus Address</h4>
-                  <p className="font-inter text-gray-500 mt-1">Adi Shankara Institute of Engineering and Technology,<br />Kalady, Kerala - 683574</p>
+                  <p className="font-inter text-gray-500 mt-1">{location?.address ?? "Adi Shankara Institute of Engineering and Technology, Kalady, Kerala - 683574"}</p>
                 </div>
               </div>
 
@@ -49,13 +50,13 @@ export function MapSection() {
                 </div>
                 <div>
                   <h4 className="font-oswald text-lg font-bold text-navy uppercase tracking-wide">Meetup Timings</h4>
-                  <p className="font-inter text-gray-500 mt-1">Mon - Fri: 9:00 AM - 4:00 PM<br />Weekends: Closed (Except Events)</p>
+                  <p className="font-inter text-gray-500 mt-1 whitespace-pre-line">{location?.hours ?? "Mon - Fri: 9:00 AM - 4:00 PM\nWeekends: Closed (Except Events)"}</p>
                 </div>
               </div>
             </div>
 
             <a 
-              href="https://maps.app.goo.gl/3q4V3fXzX9Vz4H9Y8" 
+              href={location?.maps_url ?? "https://maps.app.goo.gl/3q4V3fXzX9Vz4H9Y8"}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-10 inline-flex items-center gap-2 bg-navy text-white px-8 py-4 font-oswald uppercase tracking-widest font-bold hover:bg-red transition-colors duration-300 w-fit group"
@@ -78,7 +79,7 @@ export function MapSection() {
             <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.1)] pointer-events-none z-10 rounded-3xl"></div>
             
             <iframe 
-              src="https://www.google.com/maps?q=Adi+Shankara+Institute+of+Engineering+and+Technology,Kalady,Kerala&output=embed" 
+              src={location?.embed_url ?? "https://www.google.com/maps?q=Adi+Shankara+Institute+of+Engineering+and+Technology,Kalady,Kerala&output=embed"}
               width="100%" 
               height="100%" 
               style={{ border: 0, filter: "contrast(1.1) saturate(0.9)" }} 
