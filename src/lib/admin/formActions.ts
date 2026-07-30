@@ -29,16 +29,17 @@ function mapField(d: Record<string, unknown>): BuilderField {
 export async function createForm(formData: FormData): Promise<void> {
   const { supabase, user } = await requireAdmin();
   const title = String(formData.get("title") ?? "").trim() || "Untitled form";
-  const slug = String(formData.get("slug") ?? "").trim() || slugify(title);
+  const baseSlug = String(formData.get("slug") ?? "").trim() || slugify(title);
   const purpose = String(formData.get("purpose") ?? "generic");
-  const { data, error } = await supabase
-    .from("forms")
-    .insert({ title, slug, purpose, created_by: user!.id })
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
+  let slug = baseSlug;
+  let inserted = await supabase.from("forms").insert({ title, slug, purpose, created_by: user!.id }).select("id").single();
+  if (inserted.error?.code === "23505") {
+    slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+    inserted = await supabase.from("forms").insert({ title, slug, purpose, created_by: user!.id }).select("id").single();
+  }
+  if (inserted.error) throw new Error(inserted.error.message);
   revalidatePath("/admin/forms");
-  redirect(`/admin/forms/${data.id}`);
+  redirect(`/admin/forms/${inserted.data.id}`);
 }
 
 export async function updateFormSettings(

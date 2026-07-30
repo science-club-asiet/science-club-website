@@ -1,37 +1,33 @@
 import { requireAdmin } from "@/lib/admin/auth";
 import { createForm } from "@/lib/admin/formActions";
+import { PageHeader, Field, Card, inputCls, btnPrimaryCls } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
-
-const input = "w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-navy focus:outline-none focus:border-red";
 
 export default async function NewFormPage() {
   await requireAdmin();
 
   return (
-    <div>
-      <h1 className="font-oswald text-3xl font-bold uppercase mb-8">New Form</h1>
-      <form action={createForm} className="max-w-md space-y-4">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Title</span>
-          <input name="title" required className={input} placeholder="e.g. Workshop Registration" />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Slug</span>
-          <input name="slug" className={input} placeholder="auto from title if blank" />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Purpose</span>
-          <select name="purpose" className={input} defaultValue="generic">
-            <option value="generic">generic</option>
-            <option value="membership">membership</option>
-            <option value="event">event</option>
-          </select>
-        </label>
-        <button type="submit" className="bg-navy text-white px-6 py-2.5 rounded-full font-oswald uppercase tracking-widest text-sm font-bold hover:bg-red transition-colors">
-          Create &amp; add fields
-        </button>
-      </form>
+    <div className="max-w-lg">
+      <PageHeader title="New Form" subtitle="Name it — then build the fields visually." />
+      <Card className="p-6">
+        <form action={createForm} className="space-y-5">
+          <Field label="Title">
+            <input name="title" required placeholder="e.g. Workshop Registration" className={inputCls} />
+          </Field>
+          <Field label="Slug" help="URL: /forms/your-slug — leave blank to auto-generate">
+            <input name="slug" placeholder="workshop-registration" className={inputCls} />
+          </Field>
+          <Field label="Purpose">
+            <select name="purpose" defaultValue="generic" className={inputCls}>
+              <option value="generic">Generic</option>
+              <option value="membership">Membership</option>
+              <option value="event">Event</option>
+            </select>
+          </Field>
+          <button type="submit" className={btnPrimaryCls}>Create &amp; add fields →</button>
+        </form>
+      </Card>
     </div>
   );
 }

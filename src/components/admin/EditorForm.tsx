@@ -3,9 +3,11 @@
 import { useActionState } from "react";
 import type { EditorField } from "@/lib/admin/singletons";
 import type { EditorState } from "@/lib/admin/actions";
+import { toast } from "@/components/ui/Toast";
+import { useEffect } from "react";
 
 const base =
-  "w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-navy focus:outline-none focus:border-red transition-colors";
+  "w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-navy placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-navy/10 focus:border-navy transition-all duration-200 hover:border-gray-300 shadow-sm";
 
 export function EditorForm({
   action,
@@ -20,8 +22,16 @@ export function EditorForm({
 }) {
   const [state, formAction, pending] = useActionState<EditorState, FormData>(action, null);
 
+  useEffect(() => {
+    if (state?.ok) {
+      toast("Saved successfully", "success");
+    } else if (state?.error) {
+      toast(state.error, "error");
+    }
+  }, [state]);
+
   return (
-    <form action={formAction} className="rounded-2xl border border-gray-200 bg-white p-5">
+    <form action={formAction} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <h3 className="font-oswald text-lg font-bold uppercase mb-4">{title}</h3>
       <div className="space-y-4">
         {fields.map((f) => {
@@ -29,7 +39,7 @@ export function EditorForm({
           if (f.type === "boolean") {
             return (
               <label key={f.name} className="flex items-center gap-2.5">
-                <input type="checkbox" name={f.name} defaultChecked={Boolean(v)} className="h-5 w-5 accent-red" />
+                <input type="checkbox" name={f.name} defaultChecked={Boolean(v)} className="h-4 w-4 rounded border-gray-300 text-navy focus:ring-navy/20 transition-all cursor-pointer" />
                 <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">{f.label}</span>
               </label>
             );
@@ -58,12 +68,10 @@ export function EditorForm({
         <button
           type="submit"
           disabled={pending}
-          className="bg-navy text-white px-5 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors disabled:opacity-60"
+          className="bg-navy text-white px-6 py-2.5 rounded-full font-oswald uppercase tracking-widest text-sm font-bold hover:bg-navy/90 hover:shadow-md hover:-translate-y-[1px] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
           {pending ? "Saving…" : "Save"}
         </button>
-        {state?.ok && <span className="text-green-600 text-sm font-medium">Saved ✓</span>}
-        {state?.error && <span className="text-red text-sm">{state.error}</span>}
       </div>
     </form>
   );

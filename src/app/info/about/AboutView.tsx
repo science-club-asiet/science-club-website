@@ -271,7 +271,7 @@ export function AboutView({ storyEras, stats }: { storyEras: StoryEra[]; stats: 
     });
 
     return () => ctx.revert();
-  }, []);
+  }, [storyEras]);
 
   const manifestoWords = [
     { text: "We", style: "" },

@@ -355,7 +355,7 @@ export function Header() {
 
             {/* Center: Logo */}
             <div className="flex-shrink-0 absolute left-1/2 -translate-x-1/2 h-full flex items-center justify-center">
-              <Link href="/" className="flex items-center justify-center h-full cursor-pointer">
+              <Link href="/" aria-label="Home" className="flex items-center justify-center h-full cursor-pointer">
                 <motion.div 
                   style={{ scale: logoScale }}
                   initial={{ rotate: 0 }}
@@ -373,6 +373,7 @@ export function Header() {
               
               {/* Expanding Search Pill */}
               <motion.button 
+                aria-label="Search"
                 style={{ backgroundColor: isHomePage || isScrolled ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }}
                 className="hidden sm:flex items-center justify-start overflow-hidden rounded-full transition-all duration-500 ease-[0.22,1,0.36,1] w-10 h-10 hover:w-[130px] group px-[9px] cursor-pointer"
               >

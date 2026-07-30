@@ -21,6 +21,8 @@ export type Resource = {
   titleField: string;
   statusField?: string; // is_published (bool) or status (text) for the list badge
   orderBy?: { column: string; ascending?: boolean };
+  hideCreate?: boolean; // if true, disables the "New" button in the list view
+  hasBuilder?: boolean; // if true, shows the "Design" link for the BlockBuilder
   revalidate: string[]; // public paths to refresh after a write
   fields: Field[];
 };
@@ -32,6 +34,7 @@ export const RESOURCES: Record<string, Resource> = {
   events: {
     key: "events", label: "Events", table: "events", titleField: "title",
     statusField: "is_published", orderBy: { column: "event_date", ascending: false },
+    hasBuilder: true,
     revalidate: ["/", "/events"],
     fields: [
       { name: "title", label: "Title", type: "text" },
@@ -55,6 +58,7 @@ export const RESOURCES: Record<string, Resource> = {
   posts: {
     key: "posts", label: "Posts", table: "posts", titleField: "title",
     statusField: "status", orderBy: { column: "published_at", ascending: false },
+    hasBuilder: true,
     revalidate: ["/"],
     fields: [
       { name: "title", label: "Title", type: "text" },
@@ -70,24 +74,6 @@ export const RESOURCES: Record<string, Resource> = {
       { name: "is_featured", label: "Featured", type: "boolean" },
       { name: "meta", label: "Meta (JSON: paper→{pdf_url,doi})", type: "json" },
       SORT,
-    ],
-  },
-  execom_members: {
-    key: "execom_members", label: "Execom", table: "execom_members", titleField: "name",
-    statusField: "is_published", orderBy: { column: "display_order", ascending: true },
-    revalidate: ["/", "/info/execom"],
-    fields: [
-      { name: "name", label: "Name", type: "text" },
-      { name: "position", label: "Position", type: "text" },
-      { name: "role_type", label: "Role type", type: "select", options: ["student", "faculty_advisor"] },
-      { name: "team_slug", label: "Team", type: "select", options: ["core", "tech", "media", "events"] },
-      { name: "term", label: "Term", type: "text", help: "e.g. 2025-26" },
-      { name: "bio", label: "Bio", type: "textarea" },
-      { name: "photo_url", label: "Photo URL", type: "image" },
-      { name: "email", label: "Email", type: "text" },
-      { name: "linkedin", label: "LinkedIn URL", type: "text" },
-      { name: "display_order", label: "Display order", type: "number" },
-      PUBLISHED,
     ],
   },
   pillars: {

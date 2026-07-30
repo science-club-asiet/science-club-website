@@ -9,8 +9,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2, Plus } from "lucide-react";
 import { addFieldAction, updateFieldAction, deleteFieldAction, reorderFieldsAction } from "@/lib/admin/formActions";
 import { FIELD_TYPES, FIELDS_WITH_OPTIONS, type BuilderField } from "@/lib/admin/formTypes";
+import { toast } from "@/components/ui/Toast";
 
-const input = "bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-navy focus:outline-none focus:border-red";
+const input = "w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-navy placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-navy/10 focus:border-navy transition-all duration-200 hover:border-gray-300 shadow-sm";
 
 function FieldCard({
   formId, field, onPatch, onDelete,
@@ -21,15 +22,13 @@ function FieldCard({
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
-  const [saved, setSaved] = useState(false);
   const [, start] = useTransition();
 
   const save = (patch: Partial<BuilderField>) => {
     onPatch(patch);
     start(async () => {
       await updateFieldAction(formId, field.id, patch);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1200);
+      toast("Field updated", "success");
     });
   };
 
@@ -59,7 +58,7 @@ function FieldCard({
           {FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <label className="flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap">
-          <input type="checkbox" defaultChecked={field.required} onChange={(e) => save({ required: e.target.checked })} className="accent-red" />
+          <input type="checkbox" defaultChecked={field.required} onChange={(e) => save({ required: e.target.checked })} className="h-4 w-4 rounded border-gray-300 text-navy focus:ring-navy/20 transition-all cursor-pointer" />
           Required
         </label>
         <button onClick={onDelete} className="text-gray-300 hover:text-red" aria-label="Delete field">
@@ -91,8 +90,6 @@ function FieldCard({
           className={`${input} w-full mt-2`}
         />
       )}
-
-      {saved && <span className="text-green-600 text-xs mt-2 inline-block">Saved ✓</span>}
     </div>
   );
 }

@@ -1,48 +1,92 @@
 import Link from "next/link";
 import { getSessionProfile } from "@/lib/admin/auth";
+import { Calendar, ClipboardList, Inbox, Users, Plus, ArrowRight, type LucideIcon } from "lucide-react";
+import { Card, EmptyState, btnGhostCls } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
 
-export default async function Dashboard() {
-  const { profile, supabase } = await getSessionProfile();
+const IST = "Asia/Kolkata";
+const fmt = (iso: string) =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: IST, day: "2-digit", month: "short" }).format(new Date(iso));
 
-  const tables: { table: string; label: string; href: string }[] = [
-    { table: "events", label: "Events", href: "/admin/events" },
-    { table: "posts", label: "Posts", href: "/admin/posts" },
-    { table: "execom_members", label: "Execom", href: "/admin/execom_members" },
-    { table: "membership_applications", label: "Applications", href: "/admin/applications" },
+function Panel({ title, href, icon: Icon, count, children }: {
+  title: string; href: string; icon: LucideIcon; count: number; children: React.ReactNode;
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100">
+        <Icon className="w-4 h-4 text-navy/45" />
+        <h2 className="font-oswald text-sm font-bold uppercase tracking-wide">{title}</h2>
+        {count > 0 && <span className="text-[10px] font-bold bg-red/10 text-red rounded-full px-2 py-0.5">{count}</span>}
+        <Link href={href} className="ml-auto text-navy/35 hover:text-red transition-colors"><ArrowRight className="w-4 h-4" /></Link>
+      </div>
+      <div className="divide-y divide-gray-50">{children}</div>
+    </Card>
+  );
+}
+function Row({ title, sub, right }: { title: string; sub?: string; right?: string }) {
+  return (
+    <div className="flex items-center gap-3 px-5 py-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{title}</p>
+        {sub && <p className="text-xs text-gray-400 truncate">{sub}</p>}
+      </div>
+      {right && <span className="text-xs text-gray-400 shrink-0">{right}</span>}
+    </div>
+  );
+}
+
+export default async function Home() {
+  const { profile, supabase } = await getSessionProfile();
+  const nowIso = new Date().toISOString();
+
+  const [pendingApps, upcoming, draftPosts, draftEvents, members] = await Promise.all([
+    supabase.from("membership_applications").select("id, name, email, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
+    supabase.from("events").select("id, title, event_date").gt("event_date", nowIso).order("event_date", { ascending: true }).limit(5),
+    supabase.from("posts").select("id, title").eq("status", "draft").limit(4),
+    supabase.from("events").select("id, title").eq("is_published", false).limit(4),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+  ]);
+
+  const pending = pendingApps.data ?? [];
+  const events = upcoming.data ?? [];
+  const drafts = [
+    ...(draftPosts.data ?? []).map((d) => ({ id: d.id, title: d.title, type: "Post" })),
+    ...(draftEvents.data ?? []).map((d) => ({ id: d.id, title: d.title, type: "Event" })),
+  ];
+  const firstName = profile?.full_name?.split(" ")[0];
+  const quick: [string, string][] = [
+    ["Event", "/admin/events/new"], ["Post", "/admin/posts/new"],
+    ["Form", "/admin/forms/new"], ["Page", "/admin/pages"],
   ];
 
-  const counts = await Promise.all(
-    tables.map(async (t) => {
-      const { count } = await supabase.from(t.table).select("*", { count: "exact", head: true });
-      return { ...t, count: count ?? 0 };
-    })
-  );
-
   return (
-    <div>
-      <span className="font-oswald uppercase tracking-[0.3em] text-red text-xs font-bold">
-        Science Club · Admin
-      </span>
-      <h1 className="font-oswald text-4xl font-bold uppercase mt-2 mb-1">
-        Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}
-      </h1>
-      <p className="text-gray-500 text-sm mb-10">
-        Signed in as <span className="font-bold uppercase text-navy">{profile?.role}</span>
-      </p>
+    <div className="max-w-5xl">
+      <h1 className="font-oswald text-3xl font-bold uppercase tracking-tight">Good to see you{firstName ? `, ${firstName}` : ""}</h1>
+      <p className="text-gray-500 text-sm mt-1 mb-7">Here&apos;s what needs your attention.</p>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {counts.map((c) => (
-          <Link
-            key={c.table}
-            href={c.href}
-            className="rounded-2xl border border-gray-200 bg-white p-6 hover:border-red transition-colors"
-          >
-            <p className="font-oswald text-4xl font-bold">{c.count}</p>
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mt-1">{c.label}</p>
-          </Link>
+      <div className="flex flex-wrap gap-2 mb-8">
+        {quick.map(([label, href]) => (
+          <Link key={href} href={href} className={btnGhostCls}><Plus className="w-3.5 h-3.5" /> {label}</Link>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Panel title="Pending applications" href="/admin/applications" icon={Inbox} count={pending.length}>
+          {pending.length === 0 ? <div className="p-3"><EmptyState title="Nothing to review 🎉" /></div> :
+            pending.map((a) => <Row key={a.id} title={a.name} sub={a.email} right={fmt(a.created_at)} />)}
+        </Panel>
+        <Panel title="Drafts to finish" href="/admin/posts" icon={ClipboardList} count={drafts.length}>
+          {drafts.length === 0 ? <div className="p-3"><EmptyState title="No drafts" /></div> :
+            drafts.map((d) => <Row key={d.type + d.id} title={d.title} sub={d.type} right="Draft" />)}
+        </Panel>
+        <Panel title="Upcoming events" href="/admin/events" icon={Calendar} count={events.length}>
+          {events.length === 0 ? <div className="p-3"><EmptyState title="No upcoming events" /></div> :
+            events.map((e) => <Row key={e.id} title={e.title} right={fmt(e.event_date)} />)}
+        </Panel>
+        <Panel title="Members" href="/admin/members" icon={Users} count={members.count ?? 0}>
+          <p className="px-5 py-6 text-sm text-gray-500">Manage roles, membership and access.</p>
+        </Panel>
       </div>
     </div>
   );

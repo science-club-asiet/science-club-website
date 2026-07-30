@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { cn } from "@/lib/utils";
+import { MediaPickerModal } from "./media/MediaPickerModal";
 
 /**
  * Drag-and-drop image field. Renders a hidden input (so the value flows into the
@@ -14,6 +15,7 @@ export function ImageUploader({ name, initial }: { name: string; initial?: strin
   const [url, setUrl] = useState(initial ?? "");
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
@@ -80,12 +82,27 @@ export function ImageUploader({ name, initial }: { name: string; initial?: strin
         </div>
       )}
 
-      <input
-        type="url"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="…or paste an image URL"
-        className="mt-2 w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-navy focus:outline-none focus:border-red"
+      <div className="flex gap-2 mt-2">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="…or paste an image URL"
+          className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs text-navy focus:outline-none focus:border-red"
+        />
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="bg-gray-100 hover:bg-gray-200 border border-gray-200 text-navy rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap"
+        >
+          Browse Library
+        </button>
+      </div>
+
+      <MediaPickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(newUrl) => setUrl(newUrl)}
       />
     </div>
   );

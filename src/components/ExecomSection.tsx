@@ -48,7 +48,7 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
 
         {/* Top-Left Nested Button */}
         {/* Pushed negatively to perfectly nest inside the white cavity without overlapping the image */}
-        <button className="absolute -top-2 -left-2 md:-top-3 md:-left-3 w-8 h-8 md:w-10 md:h-10 lg:w-[clamp(2.5rem,5vh,3.5rem)] lg:h-[clamp(2.5rem,5vh,3.5rem)] bg-[#1a1c22] rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-300 hover:bg-red shadow-lg group-hover:-translate-y-0.5 z-20">
+        <button aria-label={`View ${member.name}'s profile`} className="absolute -top-2 -left-2 md:-top-3 md:-left-3 w-8 h-8 md:w-10 md:h-10 lg:w-[clamp(2.5rem,5vh,3.5rem)] lg:h-[clamp(2.5rem,5vh,3.5rem)] bg-[#1a1c22] rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-300 hover:bg-red shadow-lg group-hover:-translate-y-0.5 z-20">
           <ArrowUpRight className="w-4 h-4 xl:w-5 xl:h-5" />
         </button>
 

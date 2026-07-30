@@ -28,6 +28,14 @@ export const ourFileRouter = {
       return { userId: user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
+      const supabase = await createClient();
+      await supabase.from("media_assets").insert({
+        url: file.ufsUrl,
+        name: file.name,
+        mime: file.type ?? "image/jpeg",
+        size: file.size,
+        created_by: metadata.userId,
+      });
       return { url: file.ufsUrl, uploadedBy: metadata.userId };
     }),
 } satisfies FileRouter;

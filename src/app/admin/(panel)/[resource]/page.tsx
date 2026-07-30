@@ -37,12 +37,14 @@ export default async function ResourceListPage({
     <div>
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-oswald text-3xl font-bold uppercase">{res.label}</h1>
-        <Link
-          href={`/admin/${res.key}/new`}
-          className="bg-navy text-white px-5 py-2.5 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors"
-        >
-          + New
-        </Link>
+        {!res.hideCreate && (
+          <Link
+            href={`/admin/${res.key}/new`}
+            className="bg-navy text-white px-5 py-2.5 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors"
+          >
+            + New
+          </Link>
+        )}
       </div>
       {sortable && <p className="text-xs text-gray-400 mb-4">Drag the handle to reorder — saved automatically.</p>}
       {!sortable && <div className="mb-4" />}
@@ -54,6 +56,7 @@ export default async function ResourceListPage({
           rows={rows}
           sortable={sortable}
           showRegistrations={res.key === "events"}
+          hasBuilder={!!res.hasBuilder}
         />
       </div>
     </div>

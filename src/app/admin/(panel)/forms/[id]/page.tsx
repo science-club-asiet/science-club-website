@@ -48,6 +48,7 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
       <div className="flex items-center justify-between gap-4 mt-3 mb-8">
         <h1 className="font-oswald text-3xl font-bold uppercase">{form.title}</h1>
         <div className="flex items-center gap-4">
+          <Link href={`/admin/pagebuilder/form/${id}`} className="text-xs font-bold uppercase tracking-widest text-red hover:underline">✦ Visual builder</Link>
           <a href={`/forms/${form.slug}`} target="_blank" rel="noreferrer" className="text-xs font-semibold uppercase tracking-widest text-navy/60 hover:text-red">View public</a>
           <Link href={`/admin/forms/${id}/submissions`} className="text-xs font-semibold uppercase tracking-widest text-navy/60 hover:text-red">Submissions</Link>
         </div>

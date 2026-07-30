@@ -1,6 +1,7 @@
 import "server-only";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { ScienceEvent, EventType, EventStatus, AgendaItem } from "@/lib/events";
+import type { Block } from "@/lib/blocks/types";
 
 const IST = "Asia/Kolkata";
 
@@ -69,4 +70,12 @@ export async function getEvents(): Promise<ScienceEvent[]> {
   });
 
   return rows.map(mapRow);
+}
+
+/** A single published event + its block tree, for the public /events/[slug] page. */
+export async function getEventPage(slug: string): Promise<{ event: ScienceEvent; blocks: Block[]; layout?: unknown } | null> {
+  const sb = createPublicClient();
+  const { data, error } = await sb.from("events").select("*").eq("slug", slug).eq("is_published", true).maybeSingle();
+  if (error || !data) return null;
+  return { event: mapRow(data), blocks: Array.isArray(data.blocks) ? (data.blocks as Block[]) : [], layout: data.layout ?? null };
 }

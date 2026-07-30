@@ -57,7 +57,7 @@ export type PostSummary = {
   tag: string;
   date: string;
 };
-export type PostFull = PostSummary & { body: string };
+export type PostFull = PostSummary & { body: string; blocks?: unknown[]; layout?: unknown };
 
 function mapSummary(p: Record<string, unknown>): PostSummary {
   return {
@@ -95,5 +95,5 @@ export async function getPostBySlug(slug: string): Promise<PostFull | null> {
     .eq("status", "published")
     .maybeSingle();
   if (error || !data) return null;
-  return { ...mapSummary(data), body: (data.body as string) ?? "" };
+  return { ...mapSummary(data), body: (data.body as string) ?? "", blocks: (data.blocks as unknown[]) ?? [], layout: data.layout ?? null };
 }

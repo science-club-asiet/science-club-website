@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import type { Data } from "@measured/puck";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FormRenderer } from "@/components/FormRenderer";
+import { PuckFormRender } from "@/components/builder/PuckFormRender";
 import { getFormBySlug } from "@/lib/data/forms";
 
 export const revalidate = 300;
@@ -33,11 +35,17 @@ export default async function PublicFormPage({
             {form.title}
           </h1>
           {form.description && <p className="text-gray-500 mb-10 max-w-xl">{form.description}</p>}
-          {form.fields.length === 0 ? (
-            <p className="text-gray-400">This form has no fields yet.</p>
-          ) : (
-            <FormRenderer form={form} eventId={event} />
-          )}
+          {(() => {
+            const layout = form.layout as { content?: unknown[] } | null;
+            if (layout?.content?.length) {
+              return <PuckFormRender formId={form.id} data={layout as unknown as Data} eventId={event} />;
+            }
+            return form.fields.length === 0 ? (
+              <p className="text-gray-400">This form has no fields yet.</p>
+            ) : (
+              <FormRenderer form={form} eventId={event} />
+            );
+          })()}
         </div>
       </main>
       <div className="md:sticky md:bottom-0 md:z-0 z-10 relative">

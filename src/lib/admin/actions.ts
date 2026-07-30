@@ -134,6 +134,29 @@ export async function setApplicationStatus(
   revalidatePath("/admin/applications");
 }
 
+export async function setApplicationStage(
+  id: string,
+  stage: string
+): Promise<{ error?: string }> {
+  const { supabase, user } = await requireAdmin();
+  
+  let status = "pending";
+  if (stage === "accepted") status = "approved";
+  else if (stage === "rejected") status = "rejected";
+
+  const { error } = await supabase
+    .from("membership_applications")
+    .update({ stage, status, reviewed_by: user!.id })
+    .eq("id", id);
+    
+  if (error) {
+    return { error: error.message };
+  }
+  
+  revalidatePath("/admin/applications");
+  return {};
+}
+
 // ─── Members / profiles ─────────────────────────────────────────────────────
 
 export async function setMembership(profileId: string, isMember: boolean): Promise<void> {
@@ -147,6 +170,37 @@ export async function setRole(profileId: string, formData: FormData): Promise<vo
   const role = String(formData.get("role") ?? "member");
   await supabase.from("profiles").update({ role }).eq("id", profileId);
   revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${profileId}`);
+}
+
+export async function updateProfile(profileId: string, formData: FormData): Promise<{ error?: string }> {
+  const { supabase } = await requireAdmin();
+  const full_name = String(formData.get("full_name") ?? "").trim() || null;
+  const department = String(formData.get("department") ?? "").trim() || null;
+  const year_of_study = String(formData.get("year_of_study") ?? "").trim() || null;
+  
+  const { error } = await supabase
+    .from("profiles")
+    .update({ full_name, department, year_of_study })
+    .eq("id", profileId);
+    
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/members`);
+  revalidatePath(`/admin/members/${profileId}`);
+  return {};
+}
+
+export async function updateTags(profileId: string, tags: string[]): Promise<{ error?: string }> {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ tags })
+    .eq("id", profileId);
+    
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/members`);
+  revalidatePath(`/admin/members/${profileId}`);
+  return {};
 }
 
 // ─── Attendance ─────────────────────────────────────────────────────────────

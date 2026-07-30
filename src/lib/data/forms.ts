@@ -17,6 +17,7 @@ export type PublicForm = {
   slug: string;
   description: string;
   fields: PublicFormField[];
+  layout?: unknown; // Puck layout tree (visual builder), when present
 };
 
 /** An active form + its fields, for public rendering at /forms/[slug]. */
@@ -41,6 +42,7 @@ export async function getFormBySlug(slug: string): Promise<PublicForm | null> {
     title: form.title,
     slug: form.slug,
     description: form.description ?? "",
+    layout: form.layout ?? null,
     fields: (fields ?? []).map((f) => ({
       id: f.id,
       label: f.label,
