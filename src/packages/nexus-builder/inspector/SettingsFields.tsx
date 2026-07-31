@@ -2,6 +2,7 @@ import React from "react";
 import { useNode } from "@craftjs/core";
 import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { InspectorImage } from "@/components/admin/builder/InspectorImage";
+import { ICONS, ICON_NAMES } from "../registry/icons";
 import type { FieldSchema } from "../registry/types";
 
 const labelCls = "block text-[10px] text-gray-400 uppercase font-semibold mb-1 tracking-wider";
@@ -115,11 +116,112 @@ function Field({
           <InspectorImage value={value ?? ""} onChange={setValue} />
         </div>
       );
+    case "icon":
+      return (
+        <div>
+          <span className={labelCls}>{field.label}</span>
+          <div className="grid grid-cols-7 gap-1 max-h-40 overflow-y-auto p-1 bg-gray-50 border border-gray-200 rounded">
+            {ICON_NAMES.map((name) => {
+              const Ico = ICONS[name];
+              const selected = value === name;
+              return (
+                <button
+                  key={name}
+                  title={name}
+                  onClick={() => setValue(name)}
+                  className={`flex items-center justify-center aspect-square rounded ${selected ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-200"}`}
+                >
+                  <Ico size={15} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    case "linkTarget":
+      return <LinkTargetControl label={field.label} />;
+    case "visibility":
+      return <VisibilityControl label={field.label} />;
     case "array":
       return <ArrayField field={field} value={value ?? []} setValue={setValue} />;
     default:
       return null;
   }
+}
+
+/** Webflow-style link picker: type + value + open-in-new + nofollow. Manages the
+ * node's `url` / `target` / `rel` props together. */
+function LinkTargetControl({ label }: { label: string }) {
+  const { url, target, rel, actions } = useNode((node) => ({
+    url: node.data.props.url as string | undefined,
+    target: node.data.props.target as string | undefined,
+    rel: node.data.props.rel as string | undefined,
+  }));
+  const u = url ?? "";
+  const type = u.startsWith("mailto:") ? "email" : u.startsWith("tel:") ? "phone" : u.startsWith("#") ? "section" : u.startsWith("/") ? "page" : "url";
+  const raw = type === "email" ? u.replace(/^mailto:/, "") : type === "phone" ? u.replace(/^tel:/, "") : u;
+
+  const setUrl = (v: string) => actions.setProp((p: any) => (p.url = v));
+  const onType = (t: string) =>
+    setUrl(t === "email" ? "mailto:" : t === "phone" ? "tel:" : t === "section" ? "#" : t === "page" ? "/" : "");
+  const onValue = (v: string) => setUrl(type === "email" ? `mailto:${v}` : type === "phone" ? `tel:${v}` : v);
+
+  const placeholder =
+    type === "email" ? "name@example.com" : type === "phone" ? "+1 555 000 0000" :
+    type === "section" ? "#section-id" : type === "page" ? "/about" : "https://…";
+
+  return (
+    <div>
+      <span className={labelCls}>{label}</span>
+      <div className="space-y-2">
+        <select value={type} onChange={(e) => onType(e.target.value)} className={inputCls}>
+          <option value="url">External URL</option>
+          <option value="page">Page (path)</option>
+          <option value="section">Section anchor</option>
+          <option value="email">Email</option>
+          <option value="phone">Phone</option>
+        </select>
+        <input type="text" value={raw} placeholder={placeholder} onChange={(e) => onValue(e.target.value)} className={inputCls} />
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="text-gray-500 text-xs">Open in new tab</span>
+          <input type="checkbox" checked={target === "_blank"} onChange={(e) => actions.setProp((p: any) => (p.target = e.target.checked ? "_blank" : "_self"))} className="w-4 h-4 accent-blue-600" />
+        </label>
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="text-gray-500 text-xs">Nofollow</span>
+          <input type="checkbox" checked={(rel ?? "").includes("nofollow")} onChange={(e) => actions.setProp((p: any) => (p.rel = e.target.checked ? "nofollow noopener" : ""))} className="w-4 h-4 accent-blue-600" />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/** Per-breakpoint hide toggles → `props.hideOn`. */
+function VisibilityControl({ label }: { label: string }) {
+  const { hideOn, actions } = useNode((node) => ({ hideOn: (node.data.props.hideOn as Record<string, boolean>) || {} }));
+  const bps: { id: string; label: string }[] = [
+    { id: "desktop", label: "Desktop" }, { id: "tablet", label: "Tablet" }, { id: "mobile", label: "Mobile" },
+  ];
+  return (
+    <div>
+      <span className={labelCls}>{label}</span>
+      <div className="grid grid-cols-3 gap-1.5">
+        {bps.map((b) => {
+          const hidden = !!hideOn[b.id];
+          return (
+            <button
+              key={b.id}
+              onClick={() => actions.setProp((p: any) => { p.hideOn = { ...(p.hideOn || {}), [b.id]: !hidden }; })}
+              className={`py-1.5 rounded border text-[10px] font-medium ${hidden ? "bg-red-50 border-red-200 text-red-600" : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"}`}
+              title={hidden ? `Hidden on ${b.label}` : `Visible on ${b.label}`}
+            >
+              {b.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-gray-400 mt-1">Red = hidden on that breakpoint.</p>
+    </div>
+  );
 }
 
 function ArrayField({

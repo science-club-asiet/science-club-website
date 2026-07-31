@@ -7,8 +7,6 @@ import { AnimationControls } from "../../inspector/AnimationControls";
 import { useDuplicate } from "../../lib/useDuplicate";
 import { mergeStyle, useBreakpoint, BREAKPOINTS } from "../../lib/responsive";
 import type { AnimationConfig } from "../../lib/animation";
-import { getEntry } from "../../registry";
-import { isBindable } from "../../lib/binding";
 
 export const InspectorRight = () => {
   const { active, actions } = useEditor((state, query) => {
@@ -19,7 +17,6 @@ export const InspectorRight = () => {
       const node = state.nodes[currentlySelectedNodeId];
       selected = {
         id: currentlySelectedNodeId,
-        type: node.data.name as string, // resolver key → registry entry
         name: node.data.custom?.displayName || node.data.displayName,
         props: node.data.props,
         settings: node.related && node.related.settings,
@@ -66,12 +63,6 @@ export const InspectorRight = () => {
       if (props.responsive) props.responsive[bp] = {};
     });
   };
-
-  const anim = active?.props?.animation as AnimationConfig | undefined;
-  const setAnim = (patch: Partial<AnimationConfig>) =>
-    actions.setProp(active.id, (props: any) => {
-      props.animation = { type: "none", ...(props.animation || {}), ...patch };
-    });
 
   return (
     <div className="flex flex-col h-full w-full bg-white overflow-hidden text-xs text-gray-700">
@@ -125,32 +116,12 @@ export const InspectorRight = () => {
             </button>
           </div>
         )}
-        {activeTab === "style" && (
-          <>
-            <StyleControls getStyle={getStyle} setStyle={setStyle} groups={getEntry(active.type)?.styleGroups} />
-            <AnimationControls anim={anim} setAnim={setAnim} />
-          </>
-        )}
+        {activeTab === "style" && <StyleControls getStyle={getStyle} setStyle={setStyle} />}
 
-        {activeTab === "settings" && isBindable(active.type) && (
-          <div className="p-4 border-b border-gray-100">
-            <label className="block text-[10px] text-gray-400 uppercase font-semibold mb-1 tracking-wider">
-              CMS binding
-            </label>
-            <input
-              type="text"
-              value={(active.props?.bindField as string) ?? ""}
-              onChange={(e) => actions.setProp(active.id, (p: any) => (p.bindField = e.target.value))}
-              placeholder="field key (inside a Collection List)"
-              className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-blue-500"
-            />
-            <p className="text-[10px] text-gray-400 mt-1">Pulls this element's content from the collection field. Leave blank for static content.</p>
-          </div>
-        )}
         {activeTab === "settings" && active.settings && (
           <div className="p-4">{React.createElement(active.settings)}</div>
         )}
-        {activeTab === "settings" && !active.settings && !isBindable(active.type) && (
+        {activeTab === "settings" && !active.settings && (
           <div className="p-8 text-center text-gray-400">
             <p>No custom settings for this element.</p>
             <p className="mt-1 text-[11px]">Use the Style tab to design it.</p>

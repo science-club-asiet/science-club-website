@@ -53,8 +53,10 @@ const baseFieldSettings: FieldSchema[] = [
   { kind: "text", name: "label", label: "Label" },
   { kind: "text", name: "name", label: "Field name (data key)" },
   { kind: "text", name: "placeholder", label: "Placeholder" },
+  { kind: "text", name: "helpText", label: "Help text" },
   { kind: "toggle", name: "required", label: "Required" },
 ];
+const helpEl = (t?: string) => (t ? <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>{t}</p> : null);
 
 function inputField(
   type: string,
@@ -70,13 +72,14 @@ function inputField(
     icon,
     category: "forms",
     editorInert: true,
-    render: ({ label: lbl, name, placeholder, required, style }: any) => (
+    render: ({ label: lbl, name, placeholder, required, helpText, style }: any) => (
       <div style={style}>
         <label className={labelCls}>{lbl}{required ? " *" : ""}</label>
         <input type={inputType} name={name} placeholder={placeholder} required={required} className={inputCls} />
+        {helpEl(helpText)}
       </div>
     ),
-    defaultProps: { label: defaultLabel, name: defaultName, placeholder: "", required: false, style: { ...fieldWrapStyle } },
+    defaultProps: { label: defaultLabel, name: defaultName, placeholder: "", helpText: "", required: false, style: { ...fieldWrapStyle } },
     settings: baseFieldSettings,
   };
 }

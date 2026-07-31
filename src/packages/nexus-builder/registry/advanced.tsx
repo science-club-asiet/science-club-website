@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AppWindow, Rows3, GalleryHorizontal, Menu, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { AppWindow, Rows3, GalleryHorizontal, Menu, ChevronLeft, ChevronRight, ChevronDown, Code2 } from "lucide-react";
 import type { FieldSchema, RegistryEntry } from "./types";
 
 /*
@@ -206,6 +206,21 @@ export const advancedEntries: RegistryEntry[] = [
           { kind: "link", name: "url", label: "URL" },
         ],
       },
+    ],
+  },
+  {
+    type: "Embed",
+    label: "Embed",
+    icon: Code2,
+    category: "advanced",
+    editorInert: true,
+    render: ({ html, style }: any) => (
+      <div style={style} dangerouslySetInnerHTML={{ __html: html || '<div style="padding:16px;color:#94a3b8;border:1px dashed #cbd5e1;text-align:center;font-size:12px">Empty embed — paste HTML in settings</div>' }} />
+    ),
+    defaultProps: { html: "", style: { width: "100%" } },
+    settings: [
+      { kind: "textarea", name: "html", label: "HTML / embed code" },
+      { kind: "visibility", name: "hideOn", label: "Visibility" },
     ],
   },
 ];

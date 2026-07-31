@@ -1,6 +1,6 @@
 import {
   Home, Calendar, Newspaper, ClipboardList, Users, Landmark,
-  Inbox, Image as ImageIcon, Globe, Settings, Files, type LucideIcon,
+  Inbox, Image as ImageIcon, Globe, Settings, Files, Database, type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -14,6 +14,7 @@ export const NAV_SECTIONS: NavItem[][] = [
     { label: "Forms", href: "/admin/forms", icon: ClipboardList },
     { label: "Members", href: "/admin/members", icon: Users },
     { label: "Pages", href: "/admin/pages", icon: Files },
+    { label: "CMS", href: "/admin/cms", icon: Database },
   ],
   [
     { label: "Executive Committee", href: "/admin/execom_members", icon: Landmark },
@@ -32,4 +33,5 @@ export const CREATE_ITEMS: { label: string; href: string }[] = [
   { label: "Execom member", href: "/admin/execom_members/new" },
   { label: "Achievement", href: "/admin/achievements/new" },
   { label: "Page", href: "/admin/pages" },
+  { label: "Collection", href: "/admin/cms/new" },
 ];

@@ -5,12 +5,15 @@ import { Editor, Frame, Element } from "@craftjs/core";
 import { SidebarLeft } from "./components/shell/SidebarLeft";
 import { Navigator } from "./components/shell/Navigator";
 import { AssetsPanel } from "./components/shell/AssetsPanel";
+import { TemplatesPanel } from "./components/shell/TemplatesPanel";
 import { InspectorRight } from "./components/shell/InspectorRight";
 import { TopBar } from "./components/shell/TopBar";
 import { RenderNode } from "./components/canvas/RenderNode";
 import { Shortcuts } from "./components/canvas/Shortcuts";
 import { SaveBinder, type SaveState } from "./lib/SaveBinder";
-import { Plus, Layers, ImageIcon } from "lucide-react";
+import { EnabledProvider } from "./lib/editorState";
+import { BreakpointContext, bpFromWidth } from "./lib/responsive";
+import { Plus, Layers, ImageIcon, LayoutTemplate } from "lucide-react";
 import { resolver } from "./registry";
 
 export type NexusEditorProps = {
@@ -22,11 +25,12 @@ export type NexusEditorProps = {
   previewHref?: string;
 };
 
-type LeftPanel = "add" | "layers" | "assets";
+type LeftPanel = "add" | "layouts" | "layers" | "assets";
 
 export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: NexusEditorProps) => {
   const [viewportWidth, setViewportWidth] = useState("100%");
   const [leftPanel, setLeftPanel] = useState<LeftPanel>("add");
+  const breakpoint = bpFromWidth(viewportWidth);
 
   // Save / dirty state — the single source of truth, shared with TopBar,
   // Shortcuts and SaveBinder.
@@ -71,6 +75,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
   }, [data]);
 
   return (
+    <BreakpointContext.Provider value={breakpoint}>
     <div className="h-screen w-full flex flex-col bg-white text-gray-900 font-inter overflow-hidden">
       <Editor
         resolver={resolver}
@@ -83,6 +88,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
           style: { borderRadius: "2px" },
         }}
       >
+        <EnabledProvider>
         <SaveBinder
           kind={kind}
           id={id}
@@ -120,6 +126,15 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
               <Plus size={20} />
             </button>
             <button
+              onClick={() => setLeftPanel("layouts")}
+              title="Layouts"
+              className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                leftPanel === "layouts" ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <LayoutTemplate size={20} />
+            </button>
+            <button
               onClick={() => setLeftPanel("layers")}
               title="Navigator"
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
@@ -142,6 +157,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
           {/* Left Sidebar (Blocks / Navigator / Assets) */}
           <div className="w-[280px] h-full flex-shrink-0 border-r border-gray-200 bg-white shadow-sm z-10 flex flex-col">
             {leftPanel === "add" && <SidebarLeft />}
+            {leftPanel === "layouts" && <TemplatesPanel />}
             {leftPanel === "layers" && <Navigator />}
             {leftPanel === "assets" && <AssetsPanel />}
           </div>
@@ -172,8 +188,10 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
             <InspectorRight />
           </div>
         </div>
+        </EnabledProvider>
 
       </Editor>
     </div>
+    </BreakpointContext.Provider>
   );
 };

@@ -1,6 +1,9 @@
 import React from "react";
-import { useNode, useEditor } from "@craftjs/core";
+import { useNode } from "@craftjs/core";
 import { SettingsFields } from "../inspector/SettingsFields";
+import { mergeStyle, useBreakpoint, isHiddenOn } from "../lib/responsive";
+import { useEnabled } from "../lib/editorState";
+import { useItem, resolveBindings } from "../lib/binding";
 import type { FieldSchema, RegistryEntry } from "./types";
 
 /** A settings component (bound to node context via Craft's `related`). */
@@ -41,11 +44,22 @@ export function makeCraftComponent(entry: RegistryEntry) {
     const {
       connectors: { connect, drag },
     } = useNode();
-    const { enabled } = useEditor((state) => ({ enabled: state.options.enabled }));
+    const enabled = useEnabled();
+    const bp = useBreakpoint();
+    const item = useItem();
     const setRef = (dom: HTMLElement | null) => {
       if (dom) connect(drag(dom));
     };
-    const element = entry.render(props) as React.ReactElement<any>;
+    // Resolve any CMS binding (preview real data inside a Collection List),
+    // preview the active breakpoint's merged style, and dim (don't remove)
+    // elements hidden on this breakpoint so they stay selectable.
+    const bound = resolveBindings(entry.type, props, item);
+    const dimmed = enabled && isHiddenOn(props.hideOn, bp);
+    const renderProps = {
+      ...bound,
+      style: dimmed ? { ...mergeStyle(props.style, props.responsive, bp), opacity: 0.4 } : mergeStyle(props.style, props.responsive, bp),
+    };
+    const element = entry.render(renderProps) as React.ReactElement<any>;
 
     // Preview mode: render exactly as the public page would — fully interactive,
     // no inert wrapper, no empty hint, no selection chrome.

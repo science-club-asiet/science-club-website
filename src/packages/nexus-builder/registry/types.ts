@@ -11,7 +11,19 @@ export type FieldSchema =
   | { kind: "toggle"; name: string; label: string }
   | { kind: "select"; name: string; label: string; options: { label: string; value: string | number }[] }
   | { kind: "image"; name: string; label: string }
+  | { kind: "icon"; name: string; label: string }
+  | { kind: "linkTarget"; name: string; label: string } // manages url + target + rel props
+  | { kind: "visibility"; name: string; label: string } // manages props.hideOn (per-breakpoint)
   | { kind: "array"; name: string; label: string; item: FieldSchema[]; itemLabel?: string };
+
+/** Which universal Style sections a component exposes (Gutenberg `supports` idea). */
+export type StyleGroup =
+  | "layout" | "spacing" | "size" | "position"
+  | "typography" | "background" | "border" | "effects";
+
+export const ALL_STYLE_GROUPS: StyleGroup[] = [
+  "layout", "spacing", "size", "position", "typography", "background", "border", "effects",
+];
 
 export type Category =
   | "layout"
@@ -42,6 +54,8 @@ export type RegistryEntry = {
   render: (props: any) => React.ReactElement;
   defaultProps: Record<string, any>; // must include a `style` object
   settings: FieldSchema[];
+  /** Which Style-tab sections apply to this component. Omit = all. */
+  styleGroups?: StyleGroup[];
   rules?: Partial<NodeRules>;
   /**
    * When true, the component's inner content is made non-interactive in the

@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNode } from "@craftjs/core";
 import ContentEditable from "react-contenteditable";
 import {
   LayoutTemplate, Square, Columns as ColumnsIcon, LayoutGrid, MoveVertical, Minus,
   Heading as HeadingIcon, Type, AlignLeft, Link2, MousePointer2, Image as ImageIcon, Video as VideoIcon,
+  SquareStack, Sparkles, BadgeCheck as BadgeIcon, Quote as QuoteIcon,
 } from "lucide-react";
 import { settingsComponentFor } from "./makeCraftComponent";
+import { mergeStyle, useBreakpoint } from "../lib/responsive";
+import { useItem, resolveBindings } from "../lib/binding";
+import { ICONS } from "./icons";
 import type { FieldSchema, RegistryEntry } from "./types";
 
 // ── Shared default styles ────────────────────────────────────────────────────
@@ -24,6 +28,22 @@ const layoutStyle = {
   backgroundColor: "transparent",
   position: "relative",
 };
+
+// Neutral placeholder for media with no source yet — avoids passing src="" to
+// <img>/<video> (which triggers a full-page re-request warning) and gives a
+// clear "set me" affordance instead of a broken-image icon.
+const mediaPlaceholder = (style: any = {}) => ({
+  ...style,
+  minHeight: style?.height && style.height !== "auto" ? undefined : 160,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f1f5f9",
+  color: "#94a3b8",
+  fontSize: "12px",
+  border: "1px dashed #cbd5e1",
+  borderRadius: style?.borderRadius ?? "6px",
+});
 
 const textStyle = {
   fontFamily: "var(--font-inter), sans-serif",
@@ -54,6 +74,29 @@ function inlineText(opts: {
       actions: { setProp },
     } = useNode();
     const [editable, setEditable] = useState(false);
+    const elRef = useRef<HTMLElement | null>(null);
+    const bp = useBreakpoint();
+    const item = useItem();
+    // When bound to a CMS field inside a Collection List, show the item value
+    // and disable inline editing (content comes from the CMS).
+    const bound = resolveBindings(opts.displayName, props, item);
+    const isBound = !!props.bindField && !!item;
+
+    // On entering edit mode, focus the element and drop the caret at the end so
+    // the very first double-click lets you type immediately (no second click).
+    useEffect(() => {
+      if (!editable || !elRef.current) return;
+      const el = elRef.current;
+      el.focus();
+      const sel = window.getSelection();
+      if (sel) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }, [editable]);
 
     const tag = opts.fixedTag ?? props.tagName ?? "p";
     const linkAttrs = opts.isLink
@@ -63,15 +106,20 @@ function inlineText(opts: {
     return (
       <ContentEditable
         innerRef={(ref: any) => {
-          if (ref) connect(drag(ref));
+          elRef.current = ref;
+          if (!ref) return;
+          connect(ref);
+          // Only make it draggable when NOT editing, otherwise selecting text
+          // with the mouse fights Craft's drag handler.
+          if (!editable) drag(ref);
         }}
-        html={props[opts.propName] ?? ""}
-        disabled={!editable}
+        html={bound[opts.propName] ?? ""}
+        disabled={!editable || isBound}
         onChange={(e) => setProp((p: any) => (p[opts.propName] = e.target.value))}
         tagName={tag}
-        style={props.style}
+        style={mergeStyle(props.style, props.responsive, bp)}
         className={editable ? "outline-none cursor-text" : opts.isLink ? "cursor-pointer" : "cursor-default"}
-        onDoubleClick={() => setEditable(true)}
+        onDoubleClick={() => { if (!isBound) setEditable(true); }}
         onBlur={() => setEditable(false)}
         {...linkAttrs}
       />
@@ -117,9 +165,16 @@ export const coreEntries: RegistryEntry[] = [
     icon: LayoutTemplate,
     category: "layout",
     isCanvas: true,
-    render: ({ style, children }) => <section style={style}>{children}</section>,
-    defaultProps: { style: { ...layoutStyle, paddingTop: "80px", paddingBottom: "80px" } },
-    settings: [],
+    render: ({ tag = "section", style, children }) => React.createElement(tag, { style }, children),
+    defaultProps: { tag: "section", style: { ...layoutStyle, paddingTop: "80px", paddingBottom: "80px" } },
+    settings: [
+      { kind: "select", name: "tag", label: "HTML tag", options: [
+        { label: "section", value: "section" }, { label: "header", value: "header" },
+        { label: "footer", value: "footer" }, { label: "nav", value: "nav" },
+        { label: "main", value: "main" }, { label: "article", value: "article" }, { label: "aside", value: "aside" },
+      ] },
+      { kind: "visibility", name: "hideOn", label: "Visibility" },
+    ],
   },
   {
     type: "Container",
@@ -127,9 +182,15 @@ export const coreEntries: RegistryEntry[] = [
     icon: Square,
     category: "layout",
     isCanvas: true,
-    render: ({ style, children }) => <div style={style}>{children}</div>,
-    defaultProps: { style: { ...layoutStyle, maxWidth: "1100px", marginLeft: "auto", marginRight: "auto" } },
-    settings: [],
+    render: ({ tag = "div", style, children }) => React.createElement(tag, { style }, children),
+    defaultProps: { tag: "div", style: { ...layoutStyle, maxWidth: "1100px", marginLeft: "auto", marginRight: "auto" } },
+    settings: [
+      { kind: "select", name: "tag", label: "HTML tag", options: [
+        { label: "div", value: "div" }, { label: "header", value: "header" }, { label: "footer", value: "footer" },
+        { label: "nav", value: "nav" }, { label: "main", value: "main" }, { label: "article", value: "article" },
+      ] },
+      { kind: "visibility", name: "hideOn", label: "Visibility" },
+    ],
   },
   {
     type: "Columns",
@@ -175,6 +236,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Spacer",
     icon: MoveVertical,
     category: "layout",
+    styleGroups: ["spacing", "size"],
     render: ({ style }) => <div style={style} />,
     defaultProps: { style: { width: "100%", height: "50px" } },
     settings: [],
@@ -184,6 +246,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Divider",
     icon: Minus,
     category: "layout",
+    styleGroups: ["spacing", "size", "border"],
     render: ({ style }) => <hr style={style} />,
     defaultProps: {
       style: { width: "100%", border: "none", borderTop: "1px solid #E5E7EB", marginTop: "20px", marginBottom: "20px" },
@@ -204,7 +267,7 @@ export const coreEntries: RegistryEntry[] = [
       tagName: "h1",
       style: { ...textStyle, fontFamily: "var(--font-oswald), sans-serif", fontSize: "36px", fontWeight: "700", marginBottom: "16px" },
     },
-    settings: [headingTag],
+    settings: [headingTag, { kind: "visibility", name: "hideOn", label: "Visibility" }],
     editorComponent: inlineText({
       displayName: "Heading",
       label: "Heading",
@@ -214,7 +277,7 @@ export const coreEntries: RegistryEntry[] = [
         tagName: "h1",
         style: { ...textStyle, fontFamily: "var(--font-oswald), sans-serif", fontSize: "36px", fontWeight: "700", marginBottom: "16px" },
       },
-      settings: [headingTag],
+      settings: [headingTag, { kind: "visibility", name: "hideOn", label: "Visibility" }],
     }),
   },
   {
@@ -279,7 +342,7 @@ export const coreEntries: RegistryEntry[] = [
       target: "_self",
       style: { ...textStyle, color: "#2563EB", textDecoration: "none", display: "inline-block" },
     },
-    settings: [{ kind: "link", name: "url", label: "URL" }, targetField],
+    settings: [{ kind: "linkTarget", name: "url", label: "Link" }, { kind: "visibility", name: "hideOn", label: "Visibility" }],
     editorComponent: inlineText({
       displayName: "Link",
       label: "Link",
@@ -292,7 +355,7 @@ export const coreEntries: RegistryEntry[] = [
         target: "_self",
         style: { ...textStyle, color: "#2563EB", textDecoration: "none", display: "inline-block" },
       },
-      settings: [{ kind: "link", name: "url", label: "URL" }, targetField],
+      settings: [{ kind: "linkTarget", name: "url", label: "Link" }, { kind: "visibility", name: "hideOn", label: "Visibility" }],
     }),
   },
   {
@@ -313,7 +376,7 @@ export const coreEntries: RegistryEntry[] = [
         borderRadius: "6px", textDecoration: "none", fontWeight: "500", fontSize: "14px", textAlign: "center", cursor: "pointer",
       },
     },
-    settings: [{ kind: "link", name: "url", label: "URL" }, targetField],
+    settings: [{ kind: "linkTarget", name: "url", label: "Link" }, { kind: "visibility", name: "hideOn", label: "Visibility" }],
     editorComponent: inlineText({
       displayName: "Button",
       label: "Button",
@@ -330,7 +393,7 @@ export const coreEntries: RegistryEntry[] = [
           borderRadius: "6px", textDecoration: "none", fontWeight: "500", fontSize: "14px", textAlign: "center", cursor: "pointer",
         },
       },
-      settings: [{ kind: "link", name: "url", label: "URL" }, targetField],
+      settings: [{ kind: "linkTarget", name: "url", label: "Link" }, { kind: "visibility", name: "hideOn", label: "Visibility" }],
     }),
   },
 
@@ -340,8 +403,12 @@ export const coreEntries: RegistryEntry[] = [
     label: "Image",
     icon: ImageIcon,
     category: "media",
-    // eslint-disable-next-line @next/next/no-img-element
-    render: ({ src, alt, style }) => <img src={src} alt={alt ?? ""} style={style} />,
+    styleGroups: ["spacing", "size", "position", "border", "effects"],
+    render: ({ src, alt, style, lazy, decorative }) =>
+      src
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={src} alt={decorative ? "" : (alt ?? "")} loading={lazy ? "lazy" : undefined} style={style} />
+        : <div style={mediaPlaceholder(style)}>No image selected</div>,
     defaultProps: {
       src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop",
       alt: "Placeholder image",
@@ -350,6 +417,9 @@ export const coreEntries: RegistryEntry[] = [
     settings: [
       { kind: "image", name: "src", label: "Image" },
       { kind: "text", name: "alt", label: "Alt text" },
+      { kind: "toggle", name: "decorative", label: "Decorative (no alt)" },
+      { kind: "toggle", name: "lazy", label: "Lazy load" },
+      { kind: "visibility", name: "hideOn", label: "Visibility" },
     ],
   },
   {
@@ -357,9 +427,11 @@ export const coreEntries: RegistryEntry[] = [
     label: "Video",
     icon: VideoIcon,
     category: "media",
-    render: ({ src, autoPlay, loop, controls, style }) => (
-      <video src={src} autoPlay={autoPlay} loop={loop} controls={controls} muted={autoPlay} style={style} />
-    ),
+    styleGroups: ["spacing", "size", "position", "border", "effects"],
+    render: ({ src, autoPlay, loop, controls, style }) =>
+      src
+        ? <video src={src} autoPlay={autoPlay} loop={loop} controls={controls} muted={autoPlay} style={style} />
+        : <div style={mediaPlaceholder(style)}>No video selected</div>,
     defaultProps: {
       src: "https://www.w3schools.com/html/mov_bbb.mp4",
       autoPlay: false,
@@ -373,5 +445,106 @@ export const coreEntries: RegistryEntry[] = [
       { kind: "toggle", name: "loop", label: "Loop" },
       { kind: "toggle", name: "controls", label: "Show controls" },
     ],
+  },
+
+  // ── Components (nicer, less-bland defaults) ─────────────────────────────────
+  {
+    type: "Card",
+    label: "Card",
+    icon: SquareStack,
+    category: "layout",
+    isCanvas: true,
+    render: ({ style, children }) => <div style={style}>{children}</div>,
+    defaultProps: {
+      style: {
+        display: "flex", flexDirection: "column", gap: "12px", width: "100%",
+        paddingTop: "24px", paddingBottom: "24px", paddingLeft: "24px", paddingRight: "24px",
+        backgroundColor: "#ffffff", borderRadius: "14px",
+        borderWidth: "1px", borderStyle: "solid", borderColor: "#e5e7eb",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.06)", position: "relative",
+      },
+    },
+    settings: [],
+  },
+  {
+    type: "Icon",
+    label: "Icon",
+    icon: Sparkles,
+    category: "media",
+    styleGroups: ["spacing", "size", "position", "typography", "effects"],
+    render: ({ icon, size, style }) => (
+      <span style={style}>{React.createElement(ICONS[icon] ?? ICONS.Star, { size: Number(size) || 32 })}</span>
+    ),
+    defaultProps: {
+      icon: "Sparkles",
+      size: 32,
+      style: { display: "inline-flex", color: "#2563EB", alignItems: "center", justifyContent: "center" },
+    },
+    settings: [
+      { kind: "icon", name: "icon", label: "Icon" },
+      { kind: "number", name: "size", label: "Size", min: 12, max: 160 },
+    ],
+  },
+  {
+    type: "Badge",
+    label: "Badge",
+    icon: BadgeIcon,
+    category: "typography",
+    render: ({ text, style }) => <span style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
+    defaultProps: {
+      text: "New",
+      style: {
+        display: "inline-block", backgroundColor: "#eff6ff", color: "#2563eb",
+        paddingTop: "4px", paddingBottom: "4px", paddingLeft: "12px", paddingRight: "12px",
+        borderRadius: "9999px", fontSize: "11px", fontWeight: "700", letterSpacing: "0.05em", textTransform: "uppercase",
+      },
+    },
+    settings: [],
+    editorComponent: inlineText({
+      displayName: "Badge",
+      label: "Badge",
+      propName: "text",
+      fixedTag: "span",
+      defaultProps: {
+        text: "New",
+        style: {
+          display: "inline-block", backgroundColor: "#eff6ff", color: "#2563eb",
+          paddingTop: "4px", paddingBottom: "4px", paddingLeft: "12px", paddingRight: "12px",
+          borderRadius: "9999px", fontSize: "11px", fontWeight: "700", letterSpacing: "0.05em", textTransform: "uppercase",
+        },
+      },
+      settings: [],
+    }),
+  },
+  {
+    type: "Quote",
+    label: "Quote",
+    icon: QuoteIcon,
+    category: "typography",
+    render: ({ text, style }) => <blockquote style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
+    defaultProps: {
+      text: "“Design is not just what it looks like and feels like. Design is how it works.”",
+      style: {
+        ...textStyle, fontFamily: "var(--font-playfair), serif", fontSize: "22px", fontStyle: "italic",
+        color: "#1f2937", borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: "#2563eb",
+        paddingLeft: "20px", marginTop: "8px", marginBottom: "8px", lineHeight: "1.5",
+      },
+    },
+    settings: [],
+    editorComponent: inlineText({
+      displayName: "Quote",
+      label: "Quote",
+      propName: "text",
+      fixedTag: "blockquote",
+      defaultProps: {
+        text: "“Design is not just what it looks like and feels like. Design is how it works.”",
+        style: {
+          ...textStyle, fontFamily: "var(--font-playfair), serif", fontSize: "22px", fontStyle: "italic",
+          color: "#1f2937", borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: "#2563eb",
+          paddingLeft: "20px", marginTop: "8px", marginBottom: "8px", lineHeight: "1.5",
+        },
+      },
+      settings: [],
+    }),
   },
 ];

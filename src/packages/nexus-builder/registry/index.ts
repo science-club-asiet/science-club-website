@@ -2,6 +2,7 @@ import { coreEntries } from "./core";
 import { blockEntries } from "./blocks";
 import { formEntries } from "./forms";
 import { advancedEntries } from "./advanced";
+import { cmsEntries } from "./cms";
 import { makeCraftComponent } from "./makeCraftComponent";
 import { CATEGORY_ORDER, CATEGORY_LABEL, type RegistryEntry, type Category } from "./types";
 
@@ -15,6 +16,7 @@ export const registry: RegistryEntry[] = [
   ...blockEntries,
   ...formEntries,
   ...advancedEntries,
+  ...cmsEntries,
 ];
 
 export const entriesByType: Record<string, RegistryEntry> = Object.fromEntries(
