@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import type { Data } from "@measured/puck";
 import { requireAdmin } from "@/lib/admin/auth";
-import { PuckEditor } from "@/components/builder/PuckEditor";
+import { NexusEditor } from "@/packages/nexus-builder/NexusEditor";
 
 const TABLE: Record<string, string> = { event: "events", post: "posts", form: "forms", page: "pages" };
 
@@ -16,7 +15,7 @@ export default async function PageBuilderRoute({ params }: { params: Promise<{ k
   const { data: row } = await supabase.from(table).select("*").eq("id", id).single();
   if (!row) notFound();
 
-  const data = (row.layout ?? { content: [], root: {} }) as Partial<Data>;
+  const data = row.nexus_data ?? {};
   const backHref = table === "forms" ? `/admin/forms/${id}` : `/admin/${table}`;
   const previewHref =
     kind === "form" && row.slug ? `/forms/${row.slug}` :
@@ -24,7 +23,7 @@ export default async function PageBuilderRoute({ params }: { params: Promise<{ k
     kind === "post" && row.slug ? `/news/${row.slug}` : undefined;
 
   return (
-    <PuckEditor
+    <NexusEditor
       kind={kind}
       id={id}
       data={data}

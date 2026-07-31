@@ -73,9 +73,9 @@ export async function getEvents(): Promise<ScienceEvent[]> {
 }
 
 /** A single published event + its block tree, for the public /events/[slug] page. */
-export async function getEventPage(slug: string): Promise<{ event: ScienceEvent; blocks: Block[]; layout?: unknown } | null> {
+export async function getEventPage(slug: string): Promise<{ event: ScienceEvent; blocks: Block[]; layout?: unknown; nexus_data?: unknown } | null> {
   const sb = createPublicClient();
   const { data, error } = await sb.from("events").select("*").eq("slug", slug).eq("is_published", true).maybeSingle();
   if (error || !data) return null;
-  return { event: mapRow(data), blocks: Array.isArray(data.blocks) ? (data.blocks as Block[]) : [], layout: data.layout ?? null };
+  return { event: mapRow(data), blocks: Array.isArray(data.blocks) ? (data.blocks as Block[]) : [], layout: data.layout ?? null, nexus_data: data.nexus_data ?? null };
 }

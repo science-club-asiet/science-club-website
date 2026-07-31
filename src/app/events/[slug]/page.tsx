@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
-import type { Data } from "@measured/puck";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
-import { PuckRender } from "@/components/builder/PuckRender";
+import { NexusRenderer } from "@/packages/nexus-builder/NexusRenderer";
 import { RegisterButton } from "@/components/RegisterButton";
 import { getEventPage } from "@/lib/data/events";
 
@@ -20,15 +19,14 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const data = await getEventPage(slug);
   if (!data) notFound();
   const { event, blocks } = data;
-  const layout = data.layout as (Data & { content?: unknown[] }) | null;
 
   return (
     <div className="bg-white text-navy selection:bg-red selection:text-white min-h-screen flex flex-col relative w-full font-inter">
       <Header />
       <main className="relative z-10 bg-white shadow-[0_15px_40px_rgba(0,0,0,0.12)] border-b border-gray-200/50 rounded-b-3xl pt-32 pb-24">
         <div className="container mx-auto px-4 lg:px-8 max-w-3xl space-y-6">
-          {layout?.content?.length ? (
-            <PuckRender data={layout} />
+          {data.nexus_data ? (
+            <NexusRenderer data={data.nexus_data} />
           ) : blocks.length > 0 ? (
             <BlockRenderer blocks={blocks} />
           ) : (

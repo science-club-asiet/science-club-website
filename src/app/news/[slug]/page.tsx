@@ -3,10 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import type { Data } from "@measured/puck";
 import { getPostBySlug } from "@/lib/data/posts";
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
-import { PuckRender } from "@/components/builder/PuckRender";
+import { NexusRenderer } from "@/packages/nexus-builder/NexusRenderer";
 import type { Block } from "@/lib/blocks/types";
 
 export const revalidate = 300;
@@ -42,8 +41,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               <Image src={post.cover} alt={post.title} fill priority sizes="(max-width:1024px) 100vw, 768px" className="object-cover" />
             </div>
           )}
-          {(post.layout as { content?: unknown[] } | null)?.content?.length ? (
-            <div className="w-full mt-8"><PuckRender data={post.layout as Data} /></div>
+          {post.nexus_data ? (
+            <div className="w-full mt-8"><NexusRenderer data={post.nexus_data} /></div>
           ) : post.blocks && post.blocks.length > 0 ? (
             <div className="w-full mt-8">
               <BlockRenderer blocks={post.blocks as Block[]} />

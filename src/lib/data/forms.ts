@@ -17,7 +17,8 @@ export type PublicForm = {
   slug: string;
   description: string;
   fields: PublicFormField[];
-  layout?: unknown; // Puck layout tree (visual builder), when present
+  layout?: unknown; // Puck layout tree (legacy visual builder), when present
+  nexus_data?: unknown; // Nexus (Craft.js) tree, when present — preferred
 };
 
 /** An active form + its fields, for public rendering at /forms/[slug]. */
@@ -43,6 +44,7 @@ export async function getFormBySlug(slug: string): Promise<PublicForm | null> {
     slug: form.slug,
     description: form.description ?? "",
     layout: form.layout ?? null,
+    nexus_data: form.nexus_data ?? null,
     fields: (fields ?? []).map((f) => ({
       id: f.id,
       label: f.label,
