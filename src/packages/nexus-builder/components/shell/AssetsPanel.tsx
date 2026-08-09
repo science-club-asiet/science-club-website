@@ -46,12 +46,12 @@ export const AssetsPanel = () => {
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
-      <div className="p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+      <div className="p-4 border-b border-[#ECEEF2] sticky top-0 bg-white z-10">
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Assets</h2>
         <button
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
-          className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-center hover:border-blue-500 text-xs text-gray-500 hover:text-blue-600 transition-colors disabled:opacity-60"
+          className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-center hover:border-[#93B4FF] text-xs text-[#6B7280] hover:text-[#2563EB] transition-colors disabled:opacity-60"
         >
           {isUploading ? (
             <span className="flex items-center justify-center gap-1"><Loader2 size={14} className="animate-spin" /> Uploading…</span>
@@ -70,11 +70,11 @@ export const AssetsPanel = () => {
 
       <div className="flex-1 overflow-y-auto p-3 pb-20">
         {assets === null ? (
-          <div className="flex items-center justify-center py-10 text-gray-400">
+          <div className="flex items-center justify-center py-10 text-[#9CA3AF]">
             <Loader2 size={18} className="animate-spin" />
           </div>
         ) : assets.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center pt-6">No images yet. Upload one above.</p>
+          <p className="text-xs text-[#9CA3AF] text-center pt-6">No images yet. Upload one above.</p>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {assets.map((a) => (
@@ -85,7 +85,7 @@ export const AssetsPanel = () => {
                 }}
                 onClick={() => insertImage(a.url)}
                 title={`${a.name} — drag onto canvas or click to insert`}
-                className="group relative aspect-square rounded-md overflow-hidden border border-gray-200 hover:border-blue-500 cursor-grab active:cursor-grabbing bg-gray-50"
+                className="group relative aspect-square rounded-md overflow-hidden border border-[#ECEEF2] hover:border-[#93B4FF] cursor-grab active:cursor-grabbing bg-[#F6F7F9]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={a.url} alt={a.alt ?? a.name} className="w-full h-full object-cover" />

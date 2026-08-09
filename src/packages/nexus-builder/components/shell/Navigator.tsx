@@ -29,8 +29,8 @@ const LayerRow = ({ id, depth }: { id: string; depth: number }) => {
           isSelected
             ? "bg-blue-50 text-blue-700"
             : isHovered
-            ? "bg-gray-50 text-gray-800"
-            : "text-gray-600 hover:bg-gray-50"
+            ? "bg-[#F6F7F9] text-gray-800"
+            : "text-gray-600 hover:bg-[#F6F7F9]"
         }`}
         style={{ paddingLeft: depth * 12 + 6 }}
       >
@@ -40,7 +40,7 @@ const LayerRow = ({ id, depth }: { id: string; depth: number }) => {
               e.stopPropagation();
               setOpen((o) => !o);
             }}
-            className="text-gray-400 hover:text-gray-700 shrink-0"
+            className="text-[#9CA3AF] hover:text-gray-700 shrink-0"
           >
             {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
@@ -58,7 +58,7 @@ const LayerRow = ({ id, depth }: { id: string; depth: number }) => {
             e.stopPropagation();
             actions.setHidden(id, !hidden);
           }}
-          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 shrink-0"
+          className="opacity-0 group-hover:opacity-100 text-[#9CA3AF] hover:text-gray-700 shrink-0"
           title={hidden ? "Show" : "Hide"}
         >
           {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -69,7 +69,7 @@ const LayerRow = ({ id, depth }: { id: string; depth: number }) => {
               e.stopPropagation();
               actions.delete(id);
             }}
-            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 shrink-0"
+            className="opacity-0 group-hover:opacity-100 text-[#9CA3AF] hover:text-red-500 shrink-0"
             title="Delete"
           >
             <Trash2 size={12} />
@@ -91,9 +91,9 @@ const LayerRow = ({ id, depth }: { id: string; depth: number }) => {
 export const Navigator = () => {
   return (
     <div className="flex flex-col h-full w-full bg-white">
-      <div className="p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+      <div className="p-4 border-b border-[#ECEEF2] sticky top-0 bg-white z-10">
         <h2 className="text-sm font-semibold text-gray-900">Navigator</h2>
-        <p className="text-[11px] text-gray-400 mt-0.5">Layer tree of the page</p>
+        <p className="text-[11px] text-[#9CA3AF] mt-0.5">Layer tree of the page</p>
       </div>
       <div className="flex-1 overflow-y-auto p-2 pb-20">
         <LayerRow id={ROOT_NODE} depth={0} />

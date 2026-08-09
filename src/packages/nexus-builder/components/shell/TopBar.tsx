@@ -66,14 +66,14 @@ export const TopBar = ({
   const saving = saveState === "saving";
 
   return (
-    <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-20 shrink-0">
+    <div className="h-14 bg-white border-b border-[#ECEEF2] flex items-center justify-between px-4 z-20 shrink-0">
 
       {/* LEFT: Breadcrumbs & Status */}
       <div className="flex items-center space-x-4">
-        <Link href={backHref} className="p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
+        <Link href={backHref} className="p-2 hover:bg-[#F1F3F6] rounded-md text-[#6B7280] transition-colors">
           <ArrowLeft size={18} />
         </Link>
-        <div className="flex items-center text-xs text-gray-500 font-medium">
+        <div className="flex items-center text-xs text-[#6B7280] font-medium">
           <span className="text-gray-900 font-semibold">{title}</span>
         </div>
         <StatusPill dirty={dirty} saveState={saveState} lastSaved={lastSaved} />
@@ -83,37 +83,37 @@ export const TopBar = ({
       <div className="flex items-center space-x-6">
 
         {/* Device Switcher */}
-        <div className="flex items-center bg-gray-50 rounded-md border border-gray-200 p-1">
+        <div className="flex items-center bg-[#F6F7F9] rounded-md border border-[#ECEEF2] p-1">
           <button
             onClick={() => setViewportWidth("100%")}
             title="Desktop"
-            className={`p-1.5 rounded-sm transition-colors ${viewportWidth === "100%" ? "bg-white shadow-sm text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
+            className={`p-1.5 rounded-sm transition-colors ${viewportWidth === "100%" ? "bg-white shadow-sm text-blue-600" : "text-[#9CA3AF] hover:text-gray-600"}`}
           >
             <Monitor size={16} />
           </button>
           <button
             onClick={() => setViewportWidth("768px")}
             title="Tablet"
-            className={`p-1.5 rounded-sm transition-colors ${viewportWidth === "768px" ? "bg-white shadow-sm text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
+            className={`p-1.5 rounded-sm transition-colors ${viewportWidth === "768px" ? "bg-white shadow-sm text-blue-600" : "text-[#9CA3AF] hover:text-gray-600"}`}
           >
             <Tablet size={16} />
           </button>
           <button
             onClick={() => setViewportWidth("375px")}
             title="Mobile"
-            className={`p-1.5 rounded-sm transition-colors ${viewportWidth === "375px" ? "bg-white shadow-sm text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
+            className={`p-1.5 rounded-sm transition-colors ${viewportWidth === "375px" ? "bg-white shadow-sm text-blue-600" : "text-[#9CA3AF] hover:text-gray-600"}`}
           >
             <Smartphone size={16} />
           </button>
         </div>
 
         {/* Undo / Redo */}
-        <div className="flex items-center space-x-1 border-l border-gray-200 pl-6">
+        <div className="flex items-center space-x-1 border-l border-[#ECEEF2] pl-6">
           <button
             disabled={!canUndo}
             onClick={() => history.undo()}
             title="Undo (⌘Z)"
-            className={`p-1.5 rounded-md transition-colors ${canUndo ? "text-gray-600 hover:bg-gray-100" : "text-gray-300 cursor-not-allowed"}`}
+            className={`p-1.5 rounded-md transition-colors ${canUndo ? "text-gray-600 hover:bg-[#F1F3F6]" : "text-gray-300 cursor-not-allowed"}`}
           >
             <Undo2 size={16} />
           </button>
@@ -121,7 +121,7 @@ export const TopBar = ({
             disabled={!canRedo}
             onClick={() => history.redo()}
             title="Redo (⌘⇧Z)"
-            className={`p-1.5 rounded-md transition-colors ${canRedo ? "text-gray-600 hover:bg-gray-100" : "text-gray-300 cursor-not-allowed"}`}
+            className={`p-1.5 rounded-md transition-colors ${canRedo ? "text-gray-600 hover:bg-[#F1F3F6]" : "text-gray-300 cursor-not-allowed"}`}
           >
             <Redo2 size={16} />
           </button>
@@ -136,11 +136,11 @@ export const TopBar = ({
           title={enabled ? "Preview (interact with the page)" : "Back to editing"}
           className={`flex items-center px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors shadow-sm ${
             enabled
-              ? "text-gray-700 bg-white border-gray-200 hover:bg-gray-50"
+              ? "text-gray-700 bg-white border-[#ECEEF2] hover:bg-[#F6F7F9]"
               : "text-white bg-gray-900 border-gray-900 hover:bg-gray-800"
           }`}
         >
-          {enabled ? <Eye size={14} className="mr-2 text-gray-500" /> : <Pencil size={14} className="mr-2" />}
+          {enabled ? <Eye size={14} className="mr-2 text-[#6B7280]" /> : <Pencil size={14} className="mr-2" />}
           {enabled ? "Preview" : "Editing"}
         </button>
         {previewHref && (
@@ -148,9 +148,9 @@ export const TopBar = ({
             href={previewHref}
             target="_blank"
             title="Open the live page in a new tab"
-            className="flex items-center px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex items-center px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-[#ECEEF2] rounded-md hover:bg-[#F6F7F9] transition-colors shadow-sm"
           >
-            <ExternalLink size={14} className="mr-2 text-gray-500" />
+            <ExternalLink size={14} className="mr-2 text-[#6B7280]" />
             Open
           </Link>
         )}

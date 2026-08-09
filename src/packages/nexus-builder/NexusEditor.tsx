@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Editor, Frame, Element } from "@craftjs/core";
 import { SidebarLeft } from "./components/shell/SidebarLeft";
 import { Navigator } from "./components/shell/Navigator";
@@ -115,12 +116,12 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
         <div className="flex-1 flex overflow-hidden">
 
           {/* Far-Left Navigation Rail */}
-          <div className="w-[60px] h-full flex-shrink-0 border-r border-gray-200 bg-white flex flex-col items-center py-4 space-y-2 z-20">
+          <div className="w-[60px] h-full flex-shrink-0 border-r border-[#ECEEF2] bg-white flex flex-col items-center py-4 space-y-2 z-20">
             <button
               onClick={() => setLeftPanel("add")}
               title="Add elements"
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                leftPanel === "add" ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+                leftPanel === "add" ? "bg-[#EFF4FF] text-[#2563EB]" : "text-[#9CA3AF] hover:bg-[#F1F3F6] hover:text-[#374151]"
               }`}
             >
               <Plus size={20} />
@@ -129,7 +130,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
               onClick={() => setLeftPanel("layouts")}
               title="Layouts"
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                leftPanel === "layouts" ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+                leftPanel === "layouts" ? "bg-[#EFF4FF] text-[#2563EB]" : "text-[#9CA3AF] hover:bg-[#F1F3F6] hover:text-[#374151]"
               }`}
             >
               <LayoutTemplate size={20} />
@@ -138,7 +139,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
               onClick={() => setLeftPanel("layers")}
               title="Navigator"
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                leftPanel === "layers" ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+                leftPanel === "layers" ? "bg-[#EFF4FF] text-[#2563EB]" : "text-[#9CA3AF] hover:bg-[#F1F3F6] hover:text-[#374151]"
               }`}
             >
               <Layers size={20} />
@@ -147,7 +148,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
               onClick={() => setLeftPanel("assets")}
               title="Assets"
               className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                leftPanel === "assets" ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+                leftPanel === "assets" ? "bg-[#EFF4FF] text-[#2563EB]" : "text-[#9CA3AF] hover:bg-[#F1F3F6] hover:text-[#374151]"
               }`}
             >
               <ImageIcon size={20} />
@@ -155,18 +156,26 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
           </div>
 
           {/* Left Sidebar (Blocks / Navigator / Assets) */}
-          <div className="w-[280px] h-full flex-shrink-0 border-r border-gray-200 bg-white shadow-sm z-10 flex flex-col">
-            {leftPanel === "add" && <SidebarLeft />}
-            {leftPanel === "layouts" && <TemplatesPanel />}
-            {leftPanel === "layers" && <Navigator />}
-            {leftPanel === "assets" && <AssetsPanel />}
+          <div className="w-[280px] h-full flex-shrink-0 border-r border-[#ECEEF2] bg-white shadow-sm z-10 flex flex-col overflow-hidden">
+            <motion.div
+              key={leftPanel}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              className="flex-1 min-h-0 flex flex-col"
+            >
+              {leftPanel === "add" && <SidebarLeft />}
+              {leftPanel === "layouts" && <TemplatesPanel />}
+              {leftPanel === "layers" && <Navigator />}
+              {leftPanel === "assets" && <AssetsPanel />}
+            </motion.div>
           </div>
 
           {/* Canvas Wrapper (scroll container — RenderNode listens on .craftjs-renderer) */}
-          <div className="craftjs-renderer flex-1 h-full overflow-auto bg-gray-100 flex justify-center py-8">
+          <div className="craftjs-renderer flex-1 h-full overflow-auto bg-[#F4F5F7] flex justify-center py-8">
             <div
               style={{ width: viewportWidth, transition: "width 0.3s ease" }}
-              className="bg-white shadow-lg min-h-full border border-gray-200"
+              className="bg-white shadow-lg min-h-full border border-[#ECEEF2]"
             >
               {isDataValid ? (
                 <Frame data={typeof data === "string" ? data : JSON.stringify(data)} />
@@ -184,7 +193,7 @@ export const NexusEditor = ({ kind, id, data, title, backHref, previewHref }: Ne
           </div>
 
           {/* Right Inspector (Settings Panel) */}
-          <div className="w-[320px] h-full flex-shrink-0 border-l border-gray-200 bg-white shadow-sm z-10 overflow-y-auto">
+          <div className="w-[320px] h-full flex-shrink-0 border-l border-[#ECEEF2] bg-white shadow-sm z-10 overflow-y-auto">
             <InspectorRight />
           </div>
         </div>
