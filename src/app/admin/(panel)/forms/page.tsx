@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { deleteForm } from "@/lib/admin/formActions";
 
 export const dynamic = "force-dynamic";
 
 export default async function FormsListPage() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
   const { data: forms } = await supabase.from("forms").select("*").order("created_at", { ascending: false });
 
   return (

@@ -1,32 +1,22 @@
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import MemberList, { MemberRow } from "@/components/admin/members/MemberList";
 
 export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
   
-  // Fetch profiles with a count of attended event registrations
-  // Using an inner join to only count attended ones for each profile
-  const { data: members } = await supabase
-    .from("profiles")
-    .select(`
-      *,
-      event_registrations (count)
-    `)
-    // Normally we'd do a filtered join `.eq('event_registrations.attended', true)`
-    // but PostgREST syntax for filtered joins isn't straightforward in standard select().
-    // So we'll fetch all registrations and filter in JS if needed, or if we just
-    // want all registrations we can use the count. Let's fetch the data directly.
-    .order("created_at", { ascending: true });
-
-  // A safer approach that strictly gets "attended" events is a secondary query or
-  // just fetching all registrations and grouping by user. Since it's a CRM, 
-  // let's fetch all attended registrations to be exact.
-  const { data: attendedRegs } = await supabase
-    .from("event_registrations")
-    .select("user_id")
-    .eq("attended", true);
+  // Fetch members profiles and attended registrations in parallel
+  const [{ data: members }, { data: attendedRegs }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, department, year_of_study, role, is_member, tags, created_at")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("event_registrations")
+      .select("user_id")
+      .eq("attended", true),
+  ]);
 
   const attendedCounts = (attendedRegs ?? []).reduce((acc: Record<string, number>, reg) => {
     acc[reg.user_id] = (acc[reg.user_id] || 0) + 1;

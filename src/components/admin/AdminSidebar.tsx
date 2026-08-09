@@ -53,6 +53,7 @@ export function AdminSidebar({ onCreate, email, role }: { onCreate: () => void; 
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={true}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] mb-0.5",
                     active ? "bg-navy text-white font-medium shadow-sm" : "text-navy/70 hover:bg-gray-100 hover:text-navy"

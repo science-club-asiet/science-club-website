@@ -1,21 +1,26 @@
 import { cookies } from "next/headers";
 import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/admin/AdminShell";
 
 export const dynamic = "force-dynamic";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  const { profile, supabase } = await requireAdmin();
-  const { data: ct } = await supabase
-    .from("site_content")
-    .select("value")
-    .eq("key", "current_term")
-    .maybeSingle();
-  const c = await cookies();
+  // Execute requireAdmin auth check, site_content term lookup, cookies read, and terms query in parallel
+  const [{ profile, supabase }, { data: ct }, c, { data: termsTable }] = await Promise.all([
+    requireAdmin(),
+    createClient().then((client) =>
+      client.from("site_content").select("value").eq("key", "current_term").maybeSingle()
+    ),
+    cookies(),
+    createClient().then((client) =>
+      client.from("terms").select("name").order("sort_order", { ascending: true })
+    ),
+  ]);
+
   const activeTerm = (ct?.value as { term?: string } | null)?.term ?? "2025-26";
   const sessionTerm = c.get("admin_term")?.value ?? activeTerm;
 
-  const { data: termsTable } = await supabase.from("terms").select("name").order("sort_order", { ascending: true });
   let fetchedTerms = (termsTable ?? []).map((t) => t.name);
 
   if (fetchedTerms.length === 0) {

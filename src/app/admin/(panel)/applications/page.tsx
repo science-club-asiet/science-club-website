@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { KanbanBoard } from "@/components/admin/applications/KanbanBoard";
 
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationsPage() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
   const { data: apps } = await supabase
     .from("membership_applications")
     .select("*")

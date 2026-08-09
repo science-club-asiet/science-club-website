@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RESOURCES, reorderSortField } from "@/lib/admin/resources";
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { SortableList, type Row } from "@/components/admin/SortableList";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function ResourceListPage({
   const res = RESOURCES[resource];
   if (!res) notFound();
 
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
   let query = supabase.from(res.table).select("*");
   if (res.orderBy) query = query.order(res.orderBy.column, { ascending: res.orderBy.ascending ?? true });
   const { data } = await query;

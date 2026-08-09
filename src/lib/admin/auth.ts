@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type Profile = {
@@ -10,7 +11,7 @@ export type Profile = {
   is_member: boolean;
 };
 
-export async function getSessionProfile() {
+export const getSessionProfile = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,7 +23,7 @@ export async function getSessionProfile() {
     .eq("id", user.id)
     .single();
   return { user, profile: (profile as Profile) ?? null, supabase };
-}
+});
 
 /** Guard for the admin panel — members/guests are bounced out. */
 export async function requireAdmin() {

@@ -1,28 +1,26 @@
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { PostsWorkspaceClient } from "@/components/admin/posts/PostsWorkspaceClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPostsPage() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
 
-  // 1. Fetch posts
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("id, title, slug, term, type, status, excerpt, cover_image_url, is_featured, breaking, published_at, created_at")
-    .order("created_at", { ascending: false });
-
-  // 2. Fetch custom post categories
-  const { data: categories } = await supabase
-    .from("post_categories")
-    .select("id, name, slug, tagline, sort_order")
-    .order("sort_order", { ascending: true });
-
-  // 3. Fetch academic terms (same terms as Execom)
-  const { data: termsData } = await supabase
-    .from("terms")
-    .select("name")
-    .order("sort_order", { ascending: true });
+  // Parallelize data fetching for posts, categories, and terms
+  const [{ data: posts }, { data: categories }, { data: termsData }] = await Promise.all([
+    supabase
+      .from("posts")
+      .select("id, title, slug, term, type, status, excerpt, cover_image_url, is_featured, breaking, published_at, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("post_categories")
+      .select("id, name, slug, tagline, sort_order")
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("terms")
+      .select("name")
+      .order("sort_order", { ascending: true }),
+  ]);
 
   const termsList = termsData && termsData.length > 0 ? termsData.map((t) => t.name) : ["2025-26", "2024-25", "2023-24", "2022-23"];
 

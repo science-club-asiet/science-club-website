@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { TEAM_FIELDS } from "@/lib/admin/singletons";
 import { saveTeamAction } from "@/lib/admin/actions";
 import { EditorForm } from "@/components/admin/EditorForm";
@@ -6,7 +6,7 @@ import { EditorForm } from "@/components/admin/EditorForm";
 export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
   const { data: teams } = await supabase.from("teams").select("*").order("sort_order");
 
   return (

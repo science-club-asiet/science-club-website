@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { createPage, deletePage, setPagePublished } from "@/lib/admin/pageActions";
 import { PageHeader, Card, EmptyState, inputCls, btnPrimaryCls, rowLinkCls, badgeCls } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
 
 export default async function PagesAdmin() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
   const { data: pages, error } = await supabase.from("pages").select("*").order("created_at", { ascending: false });
 
   return (

@@ -1,28 +1,26 @@
-import { requireAdmin } from "@/lib/admin/auth";
+import { createClient } from "@/lib/supabase/server";
 import { EventsWorkspaceClient } from "@/components/admin/events/EventsWorkspaceClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventsPage() {
-  const { supabase } = await requireAdmin();
+  const supabase = await createClient();
 
-  // 1. Fetch events
-  const { data: events } = await supabase
-    .from("events")
-    .select("id, title, slug, term, category, event_date, location, speaker, cover_image_url, is_published, member_price, non_member_price, created_at")
-    .order("created_at", { ascending: false });
-
-  // 2. Fetch custom event categories
-  const { data: categories } = await supabase
-    .from("event_categories")
-    .select("id, name, slug, tagline, sort_order")
-    .order("sort_order", { ascending: true });
-
-  // 3. Fetch academic terms (same terms as Execom)
-  const { data: termsData } = await supabase
-    .from("terms")
-    .select("name")
-    .order("sort_order", { ascending: true });
+  // Parallelize data fetching for events, categories, and terms
+  const [{ data: events }, { data: categories }, { data: termsData }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, title, slug, term, category, event_date, location, speaker, cover_image_url, is_published, member_price, non_member_price, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("event_categories")
+      .select("id, name, slug, tagline, sort_order")
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("terms")
+      .select("name")
+      .order("sort_order", { ascending: true }),
+  ]);
 
   const termsList = termsData && termsData.length > 0 ? termsData.map((t) => t.name) : ["2025-26", "2024-25", "2023-24", "2022-23"];
 
