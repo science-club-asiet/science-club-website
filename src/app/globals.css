@@ -177,3 +177,116 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-33.3333%); }
 }
+
+/* ─── Science Club Theme Form Controls & Alert Utilities ─── */
+
+/* Custom Input Field (Light Theme) */
+.sc-input {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--brand-navy);
+  font-family: var(--font-inter);
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.sc-input::placeholder {
+  color: #9CA3AF;
+}
+
+.sc-input:focus {
+  outline: none;
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 3px rgba(218, 41, 28, 0.15);
+}
+
+/* Custom Input Field (Dark Theme / Glassmorphism) */
+.sc-input-dark {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+  font-family: var(--font-inter);
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sc-input-dark::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sc-input-dark:focus {
+  outline: none;
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 3px rgba(218, 41, 28, 0.3);
+}
+
+/* Custom Select Dropdown */
+.sc-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23001C58'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25rem;
+  padding-right: 2.5rem;
+}
+
+/* Custom Checkbox & Radio Controls */
+.sc-checkbox {
+  accent-color: var(--brand-red);
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+/* Custom Alert & Toast Styles */
+.sc-alert-error {
+  background-color: rgba(218, 41, 28, 0.08);
+  border: 1px solid rgba(218, 41, 28, 0.25);
+  color: var(--brand-red);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.sc-alert-success {
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #047857;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Science Club Custom Action Button */
+.sc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--brand-red);
+  color: #ffffff;
+  font-family: var(--font-oswald);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.75rem 1.75rem;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sc-btn-primary:hover {
+  background-color: var(--brand-navy);
+  transform: translateY(-1px);
+}
+

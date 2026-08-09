@@ -37,8 +37,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${oswald.variable} ${inter.variable} ${playfair.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
+      <body className="min-h-full flex flex-col font-sans overflow-x-hidden" suppressHydrationWarning>
         <SiteChrome>{children}</SiteChrome>
       </body>
     </html>

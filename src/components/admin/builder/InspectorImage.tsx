@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { MediaPickerModal } from "../media/MediaPickerModal";
+import { toast } from "@/components/ui/Toast";
 
 /** Compact controlled image field (drag-drop upload + URL) for the inspector. */
 export function InspectorImage({ value, onChange }: { value: string; onChange: (url: string) => void }) {
@@ -16,9 +17,13 @@ export function InspectorImage({ value, onChange }: { value: string; onChange: (
       const f = res?.[0];
       if (f) onChange(f.serverData?.url ?? f.ufsUrl);
       setProgress(0);
+      toast("Image uploaded successfully", "success");
     },
     onUploadProgress: setProgress,
-    onUploadError: (e) => { setProgress(0); alert(`Upload failed: ${e.message}`); },
+    onUploadError: (e) => {
+      setProgress(0);
+      toast(`Upload failed: ${e.message}`, "error");
+    },
   });
 
   const onFiles = useCallback((files: FileList | null) => {

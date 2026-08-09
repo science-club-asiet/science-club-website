@@ -7,17 +7,45 @@ export async function saveSiteContent(payload: Record<string, unknown>) {
   const { supabase } = await requireAdmin();
 
   for (const [key, value] of Object.entries(payload)) {
-    // Upsert or update, since key is unique. 
-    // In Supabase, if the row exists we update, else insert.
-    // Assuming `site_content` table has unique `key`.
     const { error } = await supabase
       .from("site_content")
-      .upsert({ key, value: { value } }, { onConflict: "key" });
-      
+      .upsert({ key, value }, { onConflict: "key" });
+
     if (error) {
       throw new Error(`Failed to save ${key}: ` + error.message);
     }
   }
 
   revalidatePath("/", "layout");
+  revalidatePath("/admin/settings");
+}
+
+export async function updateUserRole(userId: string, newRole: "owner" | "admin" | "execom" | "member") {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: newRole })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error("Failed to update user role: " + error.message);
+  }
+
+  revalidatePath("/admin/settings");
+}
+
+export async function toggleUserMembership(userId: string, isMember: boolean) {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ is_member: isMember })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error("Failed to update membership status: " + error.message);
+  }
+
+  revalidatePath("/admin/settings");
 }

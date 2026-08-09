@@ -16,8 +16,7 @@ export async function setSiteCurrentTerm(term: string) {
   
   const { error } = await supabase
     .from("site_content")
-    .update({ value: { term } })
-    .eq("key", "current_term");
+    .upsert({ key: "current_term", value: { term } }, { onConflict: "key" });
     
   if (error) {
     throw new Error("Failed to set current term: " + error.message);

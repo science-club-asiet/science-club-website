@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Bell, ChevronDown, Check, Loader2, Globe } from "lucide-react";
 import { setAdminTermCookie, setSiteCurrentTerm } from "@/lib/admin/session-actions";
 import { toast } from "@/components/ui/Toast";
@@ -10,6 +11,7 @@ export function AdminTopbar({
 }: { 
   term: string; availableTerms: string[]; activeTerm: string; onSearch: () => void 
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -18,6 +20,7 @@ export function AdminTopbar({
     setLoading(true);
     try {
       await setAdminTermCookie(t);
+      router.refresh();
     } catch (e: unknown) {
       toast("Failed to switch session", "error");
     }
@@ -30,6 +33,7 @@ export function AdminTopbar({
     try {
       await setSiteCurrentTerm(term);
       toast("Set as active term", "success");
+      router.refresh();
     } catch (e: unknown) {
       toast("Failed to update site active term", "error");
     }

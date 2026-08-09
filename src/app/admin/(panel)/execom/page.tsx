@@ -20,9 +20,12 @@ export default async function ExecomPage() {
   const c = await cookies();
   const viewedTerm = c.get("admin_term")?.value ?? activeTerm;
 
-  // 3. Fetch all unique terms (not strictly needed for dropdown anymore, but Client needs to know active vs viewed)
-  // We can just pass activeTerm and viewedTerm directly.
-  
+  // 3. Fetch categories (teams) and terms
+  const [{ data: teams }, { data: terms }] = await Promise.all([
+    supabase.from("teams").select("*").order("sort_order", { ascending: true }),
+    supabase.from("terms").select("*").order("sort_order", { ascending: true }),
+  ]);
+
   // 4. Fetch members for viewed term
   const { data: members } = await supabase
     .from("execom_members")
@@ -32,9 +35,12 @@ export default async function ExecomPage() {
 
   return (
     <ExecomWorkspaceClient
+      key={viewedTerm}
       activeTerm={activeTerm}
       viewedTerm={viewedTerm}
       initialMembers={members ?? []}
+      categories={teams ?? []}
+      terms={terms ?? []}
     />
   );
 }

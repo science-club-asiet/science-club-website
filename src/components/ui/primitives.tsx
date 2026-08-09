@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils";
 
 // ── Shared class tokens (Linear/Notion-style: crisp, subtle, token-based) ────
 export const inputCls =
-  "w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-navy placeholder:text-gray-400 focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition-all";
+  "w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-navy placeholder:text-gray-400 focus:outline-none focus:border-red focus:ring-2 focus:ring-red/10 transition-all duration-200 hover:border-gray-300 shadow-sm";
 export const labelCls = "text-[11px] font-semibold uppercase tracking-widest text-gray-500";
 export const cardCls = "rounded-xl border border-gray-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]";
 export const btnPrimaryCls =
-  "inline-flex items-center justify-center gap-2 bg-navy text-white rounded-lg px-4 py-2 text-xs font-oswald uppercase tracking-widest font-bold hover:bg-red transition-colors disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 bg-red text-white rounded-full px-5 py-2.5 text-xs font-oswald uppercase tracking-widest font-bold hover:bg-navy transition-colors disabled:opacity-60 shadow-sm";
 export const btnGhostCls =
-  "inline-flex items-center justify-center gap-2 border border-gray-200 bg-white text-navy rounded-lg px-4 py-2 text-xs font-oswald uppercase tracking-widest font-bold hover:border-red hover:text-red transition-colors";
+  "inline-flex items-center justify-center gap-2 border border-gray-200 bg-white text-navy rounded-full px-5 py-2.5 text-xs font-oswald uppercase tracking-widest font-bold hover:border-red hover:text-red transition-colors";
 export const rowLinkCls = "text-xs font-semibold uppercase tracking-widest text-navy/55 hover:text-red transition-colors";
 
 export function badgeCls(on?: boolean) {

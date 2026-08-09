@@ -17,7 +17,7 @@ export const NAV_SECTIONS: NavItem[][] = [
     { label: "CMS", href: "/admin/cms", icon: Database },
   ],
   [
-    { label: "Executive Committee", href: "/admin/execom_members", icon: Landmark },
+    { label: "Executive Committee", href: "/admin/execom", icon: Landmark },
     { label: "Applications", href: "/admin/applications", icon: Inbox },
     { label: "Media", href: "/admin/media", icon: ImageIcon },
   ],
@@ -30,7 +30,7 @@ export const CREATE_ITEMS: { label: string; href: string }[] = [
   { label: "Event", href: "/admin/events/new" },
   { label: "News / Post", href: "/admin/posts/new" },
   { label: "Form", href: "/admin/forms/new" },
-  { label: "Execom member", href: "/admin/execom_members/new" },
+  { label: "Execom member", href: "/admin/execom" },
   { label: "Achievement", href: "/admin/achievements/new" },
   { label: "Page", href: "/admin/pages" },
   { label: "Collection", href: "/admin/cms/new" },

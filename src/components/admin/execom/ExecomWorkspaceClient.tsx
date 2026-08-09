@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor,
@@ -11,8 +11,14 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2, Edit2, CheckCircle2 } from "lucide-react";
-import { duplicateTerm, publishTerm, reorderExecomMembers, saveExecomMember, deleteExecomMember } from "@/lib/admin/execom-actions";
+import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User } from "lucide-react";
+import {
+  duplicateTerm, publishTerm, reorderExecomMembers, saveExecomMember, deleteExecomMember,
+  saveCategory, deleteCategory, saveTerm, deleteTerm,
+} from "@/lib/admin/execom-actions";
+import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
+import { MediaPickerModal } from "@/components/admin/media/MediaPickerModal";
+import { toast } from "@/components/ui/Toast";
 
 type Member = {
   id: string;
@@ -29,12 +35,21 @@ type Member = {
   is_published: boolean;
 };
 
-const TEAMS = [
-  { id: "core", label: "Core Leadership" },
-  { id: "tech", label: "Technical Labs" },
-  { id: "media", label: "Media & Creative" },
-  { id: "events", label: "Operations & Events" },
-];
+type Category = {
+  slug: string;
+  name: string;
+  label: string;
+  tagline?: string | null;
+  description?: string | null;
+  sort_order: number;
+};
+
+type TermItem = {
+  id: string;
+  name: string;
+  is_published: boolean;
+  sort_order: number;
+};
 
 function SortableMemberRow({ member, onEdit }: { member: Member; onEdit: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: member.id });
@@ -112,21 +127,41 @@ export function ExecomWorkspaceClient({
   activeTerm,
   viewedTerm,
   initialMembers,
+  categories,
+  terms,
 }: {
   activeTerm: string;
   viewedTerm: string;
   initialMembers: Member[];
+  categories: Category[];
+  terms: TermItem[];
 }) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"members" | "categories" | "terms">("members");
   const [members, setMembers] = useState(initialMembers);
   const [isPending, startTransition] = useTransition();
 
-  // Modal State
+  useEffect(() => {
+    setMembers(initialMembers);
+  }, [initialMembers]);
+
+  // Member Modal State
   const [editingMember, setEditingMember] = useState<Member | Partial<Member> | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Category Modal State
+  const [editingCategory, setEditingCategory] = useState<Category | Partial<Category> | null>(null);
+
+  // Custom Dialog Modals State
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
+  const [promptConfig, setPromptConfig] = useState<PromptConfig | null>(null);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+
+  // Term Modal State
+  const [newTermName, setNewTermName] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -141,18 +176,14 @@ export function ExecomWorkspaceClient({
       const oldIndex = items.findIndex((i) => i.id === active.id);
       const newIndex = items.findIndex((i) => i.id === over.id);
       
-      // We only allow dragging within the same group for now because the items are
-      // rendered strictly inside their respective SortableContexts, but let's make sure
       const activeItem = items[oldIndex];
       const overItem = items[newIndex];
       
       if (activeItem.team_slug !== overItem.team_slug || activeItem.role_type !== overItem.role_type) {
-        return items; // Cross-group drag not supported via this simple UI yet
+        return items;
       }
 
       const newItems = arrayMove(items, oldIndex, newIndex);
-      
-      // Calculate order updates for this specific group
       const groupItems = newItems.filter(
         i => i.team_slug === activeItem.team_slug && i.role_type === activeItem.role_type
       );
@@ -168,31 +199,48 @@ export function ExecomWorkspaceClient({
   const facultyAdvisors = members.filter(m => m.role_type === "faculty_advisor");
   const studentMembers = members.filter(m => m.role_type === "student");
 
-  async function handleDuplicate() {
-    const newTerm = window.prompt(`Enter new term (e.g. 2026-27):`, viewedTerm);
-    if (!newTerm || newTerm === viewedTerm) return;
-    
-    setIsDuplicating(true);
-    try {
-      await duplicateTerm(viewedTerm, newTerm);
-      router.push(`/admin/execom?term=${newTerm}`);
-    } catch (e: unknown) {
-      alert("Failed to duplicate: " + (e as Error).message);
-    }
-    setIsDuplicating(false);
+  function handleDuplicate() {
+    setPromptConfig({
+      title: "Duplicate Execom Term",
+      label: "Enter new term (e.g. 2026-27):",
+      initialValue: viewedTerm,
+      placeholder: "e.g. 2026-27",
+      submitText: "Duplicate Term",
+      onCancel: () => setPromptConfig(null),
+      onSubmit: async (newTerm) => {
+        setPromptConfig(null);
+        if (!newTerm || newTerm === viewedTerm) return;
+        setIsDuplicating(true);
+        try {
+          await duplicateTerm(viewedTerm, newTerm);
+          router.push(`/admin/execom?term=${newTerm}`);
+        } catch (e: unknown) {
+          toast("Failed to duplicate: " + (e as Error).message, "error");
+        }
+        setIsDuplicating(false);
+      },
+    });
   }
 
-  async function handlePublish() {
-    if (!confirm(`Are you sure you want to publish the ${viewedTerm} committee?\nThis will make it live on the website.`)) return;
-    setIsPublishing(true);
-    try {
-      await publishTerm(viewedTerm);
-      // reload to get updated activeTerm
-      router.refresh();
-    } catch (e: unknown) {
-      alert("Failed to publish: " + (e as Error).message);
-    }
-    setIsPublishing(false);
+  function handlePublish() {
+    setConfirmConfig({
+      title: "Publish Committee",
+      message: `Are you sure you want to publish the ${viewedTerm} committee? This will make it live on the website.`,
+      confirmText: "Publish Committee",
+      isDanger: false,
+      onCancel: () => setConfirmConfig(null),
+      onConfirm: async () => {
+        setConfirmConfig(null);
+        setIsPublishing(true);
+        try {
+          await publishTerm(viewedTerm);
+          router.refresh();
+        } catch (e: unknown) {
+          toast("Failed to publish: " + (e as Error).message, "error");
+        }
+        setIsPublishing(false);
+      },
+    });
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -211,39 +259,121 @@ export function ExecomWorkspaceClient({
         setSaveError(res.error);
       } else {
         setEditingMember(null);
-        // refresh data
         router.refresh();
       }
     });
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!editingMember || !editingMember.id) return;
-    if (!confirm("Are you sure you want to remove this member?")) return;
-    setIsDeleting(true);
-    try {
-      await deleteExecomMember((editingMember as Member).id);
-      setEditingMember(null);
-      router.refresh();
-    } catch (e: unknown) {
-      alert((e as Error).message);
-    }
-    setIsDeleting(false);
+    setConfirmConfig({
+      title: "Remove Member",
+      message: "Are you sure you want to remove this member?",
+      confirmText: "Remove Member",
+      isDanger: true,
+      onCancel: () => setConfirmConfig(null),
+      onConfirm: async () => {
+        setConfirmConfig(null);
+        setIsDeleting(true);
+        try {
+          await deleteExecomMember((editingMember as Member).id);
+          setEditingMember(null);
+          router.refresh();
+        } catch (e: unknown) {
+          setSaveError((e as Error).message);
+        }
+        setIsDeleting(false);
+      },
+    });
+  }
+
+  // Category Actions
+  async function handleSaveCategory(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editingCategory) return;
+    startTransition(async () => {
+      const fd = new FormData(e.currentTarget);
+      try {
+        await saveCategory(editingCategory.slug ? editingCategory.slug : null, fd);
+        setEditingCategory(null);
+        router.refresh();
+      } catch (err: unknown) {
+        toast((err as Error).message, "error");
+      }
+    });
+  }
+
+  function handleDeleteCategory(slug: string) {
+    setConfirmConfig({
+      title: "Delete Category",
+      message: `Delete category '${slug}'? Members in this category will need a new category.`,
+      confirmText: "Delete Category",
+      isDanger: true,
+      onCancel: () => setConfirmConfig(null),
+      onConfirm: () => {
+        setConfirmConfig(null);
+        startTransition(async () => {
+          try {
+            await deleteCategory(slug);
+            router.refresh();
+          } catch (err: unknown) {
+            toast((err as Error).message, "error");
+          }
+        });
+      },
+    });
+  }
+
+  // Term Actions
+  async function handleSaveTerm(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTermName.trim()) return;
+    startTransition(async () => {
+      try {
+        await saveTerm(null, newTermName);
+        setNewTermName("");
+        router.refresh();
+      } catch (err: unknown) {
+        toast((err as Error).message, "error");
+      }
+    });
+  }
+
+  function handleDeleteTerm(id: string, name: string) {
+    setConfirmConfig({
+      title: "Delete Term",
+      message: `Delete term '${name}'?`,
+      confirmText: "Delete Term",
+      isDanger: true,
+      onCancel: () => setConfirmConfig(null),
+      onConfirm: () => {
+        setConfirmConfig(null);
+        startTransition(async () => {
+          try {
+            await deleteTerm(id);
+            router.refresh();
+          } catch (err: unknown) {
+            toast((err as Error).message, "error");
+          }
+        });
+      },
+    });
   }
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      {/* Workspace Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="font-oswald text-3xl font-bold uppercase flex items-center gap-3">
-            Committee Workspace
+            Execom Management
             {activeTerm === viewedTerm && (
               <span className="text-[10px] font-bold tracking-widest px-2 py-0.5 rounded-md border bg-green-50 text-green-700 border-green-200">
-                LIVE
+                LIVE ({viewedTerm})
               </span>
             )}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Manage members and terms.</p>
+          <p className="text-sm text-gray-500 mt-1">Manage members, categories, and academic sessions.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -253,7 +383,7 @@ export function ExecomWorkspaceClient({
               disabled={isPublishing}
               className="bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors flex items-center gap-2 disabled:opacity-50"
             >
-              <CheckCircle2 className="w-4 h-4" /> Publish Committee
+              <CheckCircle2 className="w-4 h-4" /> Publish Committee ({viewedTerm})
             </button>
           ) : (
             <button
@@ -261,43 +391,211 @@ export function ExecomWorkspaceClient({
               disabled={isDuplicating}
               className="bg-white border border-gray-200 text-navy px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              Start New Committee
+              Start New Session
             </button>
           )}
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
-          <div className="space-y-2">
-            <MemberGroup 
-              title="Faculty Advisors" 
-              members={facultyAdvisors}
-              onAdd={() => setEditingMember({ role_type: "faculty_advisor", team_slug: "core", is_published: true })}
-              onEdit={setEditingMember}
-            />
-            <MemberGroup 
-              title="Core Leadership" 
-              members={studentMembers.filter(m => m.team_slug === "core")}
-              onAdd={() => setEditingMember({ role_type: "student", team_slug: "core", is_published: true })}
-              onEdit={setEditingMember}
-            />
-          </div>
-          <div className="space-y-2">
-            {TEAMS.filter(t => t.id !== "core").map(team => (
+      {/* Tabs Bar */}
+      <div className="flex items-center gap-2 border-b border-gray-200 mb-8">
+        <button
+          onClick={() => setActiveTab("members")}
+          className={`flex items-center gap-2 px-5 py-3 font-oswald uppercase tracking-wider text-sm font-bold border-b-2 transition-colors ${
+            activeTab === "members"
+              ? "border-navy text-navy"
+              : "border-transparent text-gray-400 hover:text-navy"
+          }`}
+        >
+          <Users className="w-4 h-4" /> Members ({viewedTerm})
+        </button>
+        <button
+          onClick={() => setActiveTab("categories")}
+          className={`flex items-center gap-2 px-5 py-3 font-oswald uppercase tracking-wider text-sm font-bold border-b-2 transition-colors ${
+            activeTab === "categories"
+              ? "border-navy text-navy"
+              : "border-transparent text-gray-400 hover:text-navy"
+          }`}
+        >
+          <Layers className="w-4 h-4" /> Categories / Teams ({categories.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("terms")}
+          className={`flex items-center gap-2 px-5 py-3 font-oswald uppercase tracking-wider text-sm font-bold border-b-2 transition-colors ${
+            activeTab === "terms"
+              ? "border-navy text-navy"
+              : "border-transparent text-gray-400 hover:text-navy"
+          }`}
+        >
+          <Calendar className="w-4 h-4" /> Academic Terms ({terms.length})
+        </button>
+      </div>
+
+      {/* TAB 1: MEMBERS */}
+      {activeTab === "members" && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+            <div className="space-y-2">
               <MemberGroup 
-                key={team.id}
-                title={team.label}
-                members={studentMembers.filter(m => m.team_slug === team.id)}
-                onAdd={() => setEditingMember({ role_type: "student", team_slug: team.id, is_published: true })}
+                title="Faculty Advisors" 
+                members={facultyAdvisors}
+                onAdd={() => setEditingMember({ role_type: "faculty_advisor", team_slug: categories[0]?.slug ?? "core", is_published: true })}
                 onEdit={setEditingMember}
               />
-            ))}
+              {categories.slice(0, 1).map((cat) => (
+                <MemberGroup 
+                  key={cat.slug}
+                  title={cat.name || cat.label} 
+                  members={studentMembers.filter(m => m.team_slug === cat.slug)}
+                  onAdd={() => setEditingMember({ role_type: "student", team_slug: cat.slug, is_published: true })}
+                  onEdit={setEditingMember}
+                />
+              ))}
+            </div>
+            <div className="space-y-2">
+              {categories.slice(1).map((cat) => (
+                <MemberGroup 
+                  key={cat.slug}
+                  title={cat.name || cat.label}
+                  members={studentMembers.filter(m => m.team_slug === cat.slug)}
+                  onAdd={() => setEditingMember({ role_type: "student", team_slug: cat.slug, is_published: true })}
+                  onEdit={setEditingMember}
+                />
+              ))}
+            </div>
+          </div>
+        </DndContext>
+      )}
+
+      {/* TAB 2: CATEGORIES */}
+      {activeTab === "categories" && (
+        <div className="max-w-4xl space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-oswald text-2xl font-bold uppercase text-navy">Categories & Teams</h2>
+              <p className="text-sm text-gray-500">Define the teams that organize members on the website.</p>
+            </div>
+            <button
+              onClick={() => setEditingCategory({ name: "", label: "", sort_order: categories.length })}
+              className="bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors flex items-center gap-2"
+            >
+              <FolderPlus className="w-4 h-4" /> Add Category
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            {categories.length === 0 ? (
+              <p className="p-6 text-center text-gray-400 text-sm">No categories defined yet.</p>
+            ) : (
+              categories.map((cat) => (
+                <div key={cat.slug} className="flex items-center justify-between px-6 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/80 transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-navy">{cat.name || cat.label}</span>
+                      {cat.label && cat.label !== cat.name && <span className="text-xs font-semibold text-navy/60">({cat.label})</span>}
+                      <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">slug: {cat.slug}</span>
+                    </div>
+                    {cat.tagline && <p className="text-xs text-gray-500 mt-1">{cat.tagline}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setEditingCategory(cat)} className="p-2 text-gray-400 hover:text-navy transition-colors">
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDeleteCategory(cat.slug)} className="p-2 text-gray-400 hover:text-red transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
-      </DndContext>
+      )}
 
-      {/* Edit Modal */}
+      {/* TAB 3: TERMS */}
+      {activeTab === "terms" && (
+        <div className="max-w-3xl space-y-6">
+          <div>
+            <h2 className="font-oswald text-2xl font-bold uppercase text-navy">Academic Terms</h2>
+            <p className="text-sm text-gray-500">Create, publish, and manage academic session terms.</p>
+          </div>
+
+          <form onSubmit={handleSaveTerm} className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="New term name (e.g. 2026-27)"
+              value={newTermName}
+              onChange={(e) => setNewTermName(e.target.value)}
+              className="flex-1 border-gray-200 rounded-xl text-sm px-4 py-2.5"
+            />
+            <button
+              type="submit"
+              disabled={isPending || !newTermName.trim()}
+              className="bg-navy text-white px-5 py-2.5 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              <CalendarPlus className="w-4 h-4" /> Add Term
+            </button>
+          </form>
+
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            {terms.length === 0 ? (
+              <p className="p-6 text-center text-gray-400 text-sm">No terms defined yet.</p>
+            ) : (
+              terms.map((t) => (
+                <div key={t.id} className="flex items-center justify-between px-6 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/80 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-navy font-mono text-base">{t.name}</span>
+                    {t.name === activeTerm && (
+                      <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200">
+                        Live Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setPromptConfig({
+                          title: "Edit Term Name",
+                          label: "Enter updated term name:",
+                          initialValue: t.name,
+                          submitText: "Save Name",
+                          onCancel: () => setPromptConfig(null),
+                          onSubmit: (updated) => {
+                            setPromptConfig(null);
+                            if (updated && updated.trim() && updated !== t.name) {
+                              startTransition(async () => {
+                                try {
+                                  await saveTerm(t.id, updated.trim());
+                                  router.refresh();
+                                } catch (err: unknown) {
+                                  toast((err as Error).message, "error");
+                                }
+                              });
+                            }
+                          },
+                        });
+                      }}
+                      className="p-2 text-gray-400 hover:text-navy transition-colors cursor-pointer"
+                      title="Edit term name"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTerm(t.id, t.name)}
+                      className="p-2 text-gray-400 hover:text-red transition-colors"
+                      title="Delete term"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Member Modal */}
       {editingMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-navy/20 backdrop-blur-sm" onClick={() => setEditingMember(null)} />
@@ -340,18 +638,45 @@ export function ExecomWorkspaceClient({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Team</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Category / Team</label>
                   <select name="team_slug" defaultValue={editingMember.team_slug} className="w-full border-gray-200 rounded-lg text-sm">
-                    {TEAMS.map(t => (
-                      <option key={t.id} value={t.id}>{t.label}</option>
+                    {categories.map(c => (
+                      <option key={c.slug} value={c.slug}>{c.name ? `${c.name} (${c.label})` : c.label || c.slug}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Photo URL</label>
-                <input name="photo_url" defaultValue={editingMember.photo_url || ""} className="w-full border-gray-200 rounded-lg text-sm font-mono text-xs" />
+                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Member Photo</label>
+                <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-200 border border-gray-300 shrink-0 flex items-center justify-center relative">
+                    {editingMember.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={editingMember.photo_url} alt={editingMember.name || "Member preview"} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <input
+                      name="photo_url"
+                      value={editingMember.photo_url || ""}
+                      onChange={(e) => setEditingMember(prev => prev ? ({ ...prev, photo_url: e.target.value }) : null)}
+                      placeholder="https://... or choose from media"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-navy font-mono placeholder:text-gray-400 focus:outline-none focus:border-red"
+                    />
+                    
+                    <button
+                      type="button"
+                      onClick={() => setIsMediaPickerOpen(true)}
+                      className="bg-navy text-white text-[11px] font-oswald uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg hover:bg-red transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" /> Select from Media Library
+                    </button>
+                  </div>
+                </div>
               </div>
               
               <div>
@@ -387,6 +712,55 @@ export function ExecomWorkspaceClient({
           </div>
         </div>
       )}
+
+      {/* Category Modal */}
+      {editingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-navy/20 backdrop-blur-sm" onClick={() => setEditingCategory(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-y-auto border border-gray-100 p-6">
+            <h2 className="font-oswald text-xl uppercase font-bold text-navy mb-4">
+              {editingCategory.slug ? "Edit Category" : "Add Category"}
+            </h2>
+            <form onSubmit={handleSaveCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Category Name</label>
+                <input name="name" defaultValue={editingCategory.name} required placeholder="e.g. Robotics & Hardware" className="w-full border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Display Label</label>
+                <input name="label" defaultValue={editingCategory.label} required placeholder="e.g. HARDWARE LAB" className="w-full border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Slug</label>
+                <input name="slug" defaultValue={editingCategory.slug} placeholder="e.g. hardware (auto-generated if empty)" className="w-full border-gray-200 rounded-lg text-sm font-mono text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Tagline</label>
+                <input name="tagline" defaultValue={editingCategory.tagline || ""} placeholder="e.g. Embedded systems & IoT" className="w-full border-gray-200 rounded-lg text-sm" />
+              </div>
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <button type="button" onClick={() => setEditingCategory(null)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isPending} className="bg-navy text-white px-5 py-2.5 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors disabled:opacity-50">
+                  {isPending ? "Saving..." : "Save Category"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Theme Modals for Prompts & Confirmations */}
+      <ConfirmModal isOpen={Boolean(confirmConfig)} config={confirmConfig} />
+      <PromptModal isOpen={Boolean(promptConfig)} config={promptConfig} />
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={(url) => setEditingMember((prev) => (prev ? { ...prev, photo_url: url } : null))}
+      />
     </div>
   );
 }

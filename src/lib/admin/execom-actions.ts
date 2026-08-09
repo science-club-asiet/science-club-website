@@ -162,3 +162,73 @@ export async function publishTerm(term: string) {
   revalidatePath("/");
   revalidatePath("/info/execom");
 }
+
+// ─── Category (Teams) CRUD ───────────────────────────────────────────────────
+
+export async function saveCategory(slug: string | null, formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  const label = (formData.get("label") as string)?.trim();
+  const tagline = (formData.get("tagline") as string)?.trim() || null;
+  const description = (formData.get("description") as string)?.trim() || null;
+  const sort_order = Number(formData.get("sort_order") || 0);
+  const newSlug = (formData.get("slug") as string)?.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  if (!name || !label) {
+    throw new Error("Name and Label are required.");
+  }
+
+  const payload = { name, label, tagline, description, sort_order, slug: newSlug };
+
+  if (slug) {
+    const { error } = await supabase.from("teams").update(payload).eq("slug", slug);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("teams").insert(payload);
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/execom");
+  revalidatePath("/admin/teams");
+  revalidatePath("/");
+  revalidatePath("/info/execom");
+}
+
+export async function deleteCategory(slug: string) {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase.from("teams").delete().eq("slug", slug);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/execom");
+  revalidatePath("/admin/teams");
+  revalidatePath("/");
+  revalidatePath("/info/execom");
+}
+
+// ─── Terms CRUD ─────────────────────────────────────────────────────────────
+
+export async function saveTerm(id: string | null, name: string) {
+  const { supabase } = await requireAdmin();
+  const cleanName = name.trim();
+  if (!cleanName) throw new Error("Term name is required.");
+
+  if (id) {
+    const { error } = await supabase.from("terms").update({ name: cleanName }).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("terms").insert({ name: cleanName });
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/execom");
+}
+
+export async function deleteTerm(id: string) {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase.from("terms").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/execom");
+}

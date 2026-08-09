@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { UploadCloud, X } from "lucide-react";
+import { UploadCloud, X, Image as ImageIcon } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { cn } from "@/lib/utils";
 import { MediaPickerModal } from "./media/MediaPickerModal";
+import { toast } from "@/components/ui/Toast";
 
 /**
  * Drag-and-drop image field. Renders a hidden input (so the value flows into the
@@ -23,11 +24,12 @@ export function ImageUploader({ name, initial }: { name: string; initial?: strin
       const first = res?.[0];
       if (first) setUrl(first.serverData?.url ?? first.ufsUrl);
       setProgress(0);
+      toast("Image uploaded successfully", "success");
     },
     onUploadProgress: (p) => setProgress(p),
     onUploadError: (e) => {
       setProgress(0);
-      alert(`Upload failed: ${e.message}`);
+      toast(`Upload failed: ${e.message}`, "error");
     },
   });
 
