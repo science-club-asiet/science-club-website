@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { SINGLETONS } from "@/lib/admin/singletons";
 import { saveSingletonAction } from "@/lib/admin/actions";
 import { EditorForm } from "@/components/admin/EditorForm";
@@ -6,7 +6,7 @@ import { EditorForm } from "@/components/admin/EditorForm";
 export const dynamic = "force-dynamic";
 
 export default async function SiteContentPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data } = await supabase.from("site_content").select("key, value");
   const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value])) as Record<string, Record<string, unknown>>;
 

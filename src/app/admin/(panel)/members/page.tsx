@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import MemberList, { MemberRow } from "@/components/admin/members/MemberList";
 
 export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   // Fetch members profiles and attended registrations in parallel
   const [{ data: members }, { data: attendedRegs }] = await Promise.all([

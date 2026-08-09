@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { SettingsShell } from "@/components/admin/settings/SettingsShell";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   // Fetch site_content, profiles, and media_assets in parallel
   const [{ data: siteData }, { data: profiles }, { data: mediaAssets }] = await Promise.all([

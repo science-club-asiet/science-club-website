@@ -31,4 +31,8 @@ export interface ScienceEvent {
   seatsRemaining?: number;
   agenda?: AgendaItem[];
   prerequisites?: string[];
+  opStatus?: "open" | "closed" | "finished" | "draft";
+  galleryImages?: string[];
+  registrationFormId?: string | null;
+  formSlug?: string | null;
 }

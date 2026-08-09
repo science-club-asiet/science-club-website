@@ -23,6 +23,9 @@ export type AdminEvent = {
   speaker: string | null;
   cover_image_url: string | null;
   is_published: boolean;
+  status?: string;
+  gallery_images?: string[];
+  registration_form_id?: string | null;
   member_price: number;
   non_member_price: number;
   created_at: string;
@@ -32,16 +35,19 @@ export function EventsWorkspaceClient({
   events,
   categories,
   terms = ["2025-26", "2026-27", "2024-25"],
+  forms = [],
 }: {
   events: AdminEvent[];
   categories: EventCategoryItem[];
   terms?: string[];
+  forms?: { id: string; title: string; slug?: string | null; is_active?: boolean }[];
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"events" | "categories">("events");
   const [viewMode, setViewMode] = useState<"list" | "card">("list");
   const [selectedTerm, setSelectedTerm] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
 
   const [isPending, startTransition] = useTransition();
@@ -68,6 +74,8 @@ export function EventsWorkspaceClient({
   const filteredEvents = events.filter((e) => {
     if (selectedTerm !== "all" && (e.term || "2025-26") !== selectedTerm) return false;
     if (selectedCategory !== "all" && e.category !== selectedCategory) return false;
+    const st = e.status || (e.is_published ? "open" : "draft");
+    if (selectedStatus !== "all" && st !== selectedStatus) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       return e.title.toLowerCase().includes(q) || (e.speaker && e.speaker.toLowerCase().includes(q));
@@ -150,27 +158,27 @@ export function EventsWorkspaceClient({
   return (
     <div className="space-y-6 font-inter max-w-7xl mx-auto">
       {/* Top Header & Tab Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div>
-          <h1 className="font-oswald text-3xl font-bold uppercase text-navy">Events Workspace</h1>
+          <h1 className="font-oswald text-2xl sm:text-3xl font-bold uppercase text-navy">Events Workspace</h1>
           <p className="text-xs text-gray-500 mt-1">Manage term-wise science club events, registration rules, and custom event categories.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
             <button
               onClick={() => setActiveTab("events")}
               className={cn(
-                "px-4 py-2 rounded-lg text-xs font-oswald uppercase tracking-wider font-bold transition-all cursor-pointer",
+                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-oswald uppercase tracking-wider font-bold transition-all cursor-pointer",
                 activeTab === "events" ? "bg-navy text-white shadow-sm" : "text-navy/70 hover:bg-gray-200"
               )}
             >
-              <Calendar className="w-3.5 h-3.5 inline-block mr-1.5" /> Events List ({events.length})
+              <Calendar className="w-3.5 h-3.5 inline-block mr-1.5" /> Events ({events.length})
             </button>
             <button
               onClick={() => setActiveTab("categories")}
               className={cn(
-                "px-4 py-2 rounded-lg text-xs font-oswald uppercase tracking-wider font-bold transition-all cursor-pointer",
+                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-oswald uppercase tracking-wider font-bold transition-all cursor-pointer",
                 activeTab === "categories" ? "bg-navy text-white shadow-sm" : "text-navy/70 hover:bg-gray-200"
               )}
             >
@@ -181,7 +189,7 @@ export function EventsWorkspaceClient({
           {activeTab === "events" ? (
             <Link
               href="/admin/events/new"
-              className="bg-navy hover:bg-red text-white px-5 py-2.5 rounded-full font-oswald text-xs uppercase tracking-widest font-bold transition-all shadow-sm flex items-center gap-1.5"
+              className="bg-navy hover:bg-red text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full font-oswald text-xs uppercase tracking-widest font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4 text-red" /> + New Event
             </Link>
@@ -195,7 +203,7 @@ export function EventsWorkspaceClient({
                 setCatAutoSlug(true);
                 setCatPromptOpen(true);
               }}
-              className="bg-navy hover:bg-red text-white px-5 py-2.5 rounded-full font-oswald text-xs uppercase tracking-widest font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="bg-navy hover:bg-red text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full font-oswald text-xs uppercase tracking-widest font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <FolderPlus className="w-4 h-4 text-red" /> + New Category
             </button>
@@ -237,7 +245,7 @@ export function EventsWorkspaceClient({
             </div>
 
             {/* Category Filter Pills & Search */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-gray-100">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-navy/40 mr-1">Category:</span>
                 <button
@@ -263,7 +271,7 @@ export function EventsWorkspaceClient({
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shrink-0">
                   <button
                     type="button"
@@ -289,7 +297,7 @@ export function EventsWorkspaceClient({
                   </button>
                 </div>
 
-                <div className="relative w-60 sm:w-64">
+                <div className="relative flex-1 sm:w-64">
                   <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"

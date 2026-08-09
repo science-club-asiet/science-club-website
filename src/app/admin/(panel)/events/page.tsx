@@ -1,16 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { EventsWorkspaceClient } from "@/components/admin/events/EventsWorkspaceClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventsPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
-  // Parallelize data fetching for events, categories, and terms
-  const [{ data: events }, { data: categories }, { data: termsData }] = await Promise.all([
+  // Parallelize data fetching for events, categories, terms, and forms
+  const [eventsRes, { data: categories }, { data: termsData }, { data: forms }] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, slug, term, category, event_date, location, speaker, cover_image_url, is_published, member_price, non_member_price, created_at")
+      .select("*")
       .order("created_at", { ascending: false }),
     supabase
       .from("event_categories")
@@ -20,7 +20,17 @@ export default async function AdminEventsPage() {
       .from("terms")
       .select("name")
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("forms")
+      .select("id, title, slug, is_active")
+      .order("title", { ascending: true }),
   ]);
+
+  if (eventsRes.error) {
+    console.error("[AdminEventsPage] Error fetching events:", eventsRes.error.message);
+  }
+
+  const events = eventsRes.data ?? [];
 
   const termsList = termsData && termsData.length > 0 ? termsData.map((t) => t.name) : ["2025-26", "2024-25", "2023-24", "2022-23"];
 
@@ -36,6 +46,7 @@ export default async function AdminEventsPage() {
       events={events ?? []}
       categories={categories && categories.length > 0 ? categories : fallbackCategories}
       terms={termsList}
+      forms={forms ?? []}
     />
   );
 }

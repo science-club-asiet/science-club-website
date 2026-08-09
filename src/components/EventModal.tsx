@@ -23,7 +23,7 @@ interface EventModalProps {
   onClose: () => void;
 }
 
-type ModalTab = "OVERVIEW" | "AGENDA" | "SPEAKERS" | "VENUE";
+type ModalTab = "OVERVIEW" | "AGENDA" | "SPEAKERS" | "VENUE" | "GALLERY";
 
 // Framer Motion Staggered Variants
 const containerVariants: Variants = {
@@ -180,7 +180,11 @@ export function EventModal({ event, onClose }: EventModalProps) {
             className="w-full overflow-x-auto touch-pan-x pb-2 mb-4 border-b border-gray-100 font-oswald uppercase text-xs font-bold tracking-wider shrink-0 no-scrollbar"
           >
             <div className="inline-flex bg-gray-100 p-1 rounded-full relative min-w-max">
-              {(["OVERVIEW", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[]).map((tab) => (
+              {(
+                event.galleryImages && event.galleryImages.length > 0
+                  ? (["OVERVIEW", "GALLERY", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[])
+                  : (["OVERVIEW", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[])
+              ).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -358,13 +362,33 @@ export function EventModal({ event, onClose }: EventModalProps) {
                     </motion.div>
                   </div>
                 )}
+
+                {/* GALLERY TAB */}
+                {activeTab === "GALLERY" && (
+                  <div className="space-y-4">
+                    {event.galleryImages && event.galleryImages.length > 0 ? (
+                      <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {event.galleryImages.map((img, idx) => (
+                          <div key={idx} className="aspect-video relative rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm group">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img} alt={`Gallery photo ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          </div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <div className="text-center py-12 text-gray-400 font-oswald uppercase text-xs tracking-widest">
+                        No gallery photos for this event yet.
+                      </div>
+                    )}
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Sticky Bottom Action Bar */}
           <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between gap-4 shrink-0">
-            {event.status === "UPCOMING" && (event.memberPrice || event.nonMemberPrice) ? (
+            {(event.opStatus === "open" || event.status === "UPCOMING") && (event.memberPrice || event.nonMemberPrice) ? (
               <span className="text-sm text-navy font-medium">
                 Members <strong className="text-red">₹{event.memberPrice ?? 0}</strong>
                 <span className="text-gray-300 mx-2">·</span>
@@ -376,17 +400,14 @@ export function EventModal({ event, onClose }: EventModalProps) {
               </span>
             )}
             
-            {/* Register CTA — real registration via /api/events/[id]/register */}
-            {event.status === "UPCOMING" ? (
-              <RegisterButton
-                eventId={event.id}
-                className="w-full sm:w-auto ml-auto bg-gradient-to-r from-red via-red to-red text-white text-sm font-oswald uppercase tracking-[0.2em] font-bold px-8 py-3.5 rounded-full inline-flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(229,57,53,0.35)] hover:shadow-[0_15px_35px_rgba(229,57,53,0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-70 disabled:hover:scale-100"
-              />
-            ) : (
-              <span className="w-full sm:w-auto ml-auto text-center bg-gray-100 text-gray-500 text-sm font-oswald uppercase tracking-[0.2em] font-bold px-8 py-3.5 rounded-full">
-                Event Ended
-              </span>
-            )}
+            {/* Register CTA — real registration via /api/events/[id]/register or linked form */}
+            <RegisterButton
+              eventId={event.id}
+              opStatus={event.opStatus || (event.status === "COMPLETED" ? "finished" : "open")}
+              formSlug={event.formSlug}
+              formId={event.registrationFormId}
+              className="w-full sm:w-auto ml-auto bg-gradient-to-r from-red via-red to-red text-white text-sm font-oswald uppercase tracking-[0.2em] font-bold px-8 py-3.5 rounded-full inline-flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(229,57,53,0.35)] hover:shadow-[0_15px_35px_rgba(229,57,53,0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-70 disabled:hover:scale-100"
+            />
           </div>
 
         </div>

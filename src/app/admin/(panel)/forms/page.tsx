@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { deleteForm } from "@/lib/admin/formActions";
+import { DuplicateFormButton } from "@/components/admin/forms/DuplicateFormButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function FormsListPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: forms } = await supabase.from("forms").select("*").order("created_at", { ascending: false });
 
   return (
@@ -31,6 +32,7 @@ export default async function FormsListPage() {
             <a href={`/forms/${f.slug}`} target="_blank" rel="noreferrer" className="text-xs font-semibold uppercase tracking-widest text-navy/60 hover:text-red">View</a>
             <Link href={`/admin/forms/${f.id}/submissions`} className="text-xs font-semibold uppercase tracking-widest text-navy/60 hover:text-red">Submissions</Link>
             <Link href={`/admin/forms/${f.id}`} className="text-xs font-semibold uppercase tracking-widest text-navy/60 hover:text-red">Edit</Link>
+            <DuplicateFormButton formId={f.id} />
             <form action={deleteForm.bind(null, f.id)}>
               <button className="text-xs font-semibold uppercase tracking-widest text-gray-400 hover:text-red">Delete</button>
             </form>

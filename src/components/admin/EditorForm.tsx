@@ -57,7 +57,12 @@ export function EditorForm({
                   {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               ) : (
-                <input name={f.name} type={f.type === "number" ? "number" : "text"} defaultValue={val} className={base} />
+                <input
+                  name={f.name}
+                  type={f.type === "number" ? "number" : f.type === "date" ? "date" : f.type === "datetime" ? "datetime-local" : "text"}
+                  defaultValue={val}
+                  className={base}
+                />
               )}
               {f.help && <span className="text-xs text-gray-400">{f.help}</span>}
             </label>

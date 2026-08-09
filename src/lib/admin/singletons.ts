@@ -1,7 +1,7 @@
 // Editors for non-row content: site_content singletons (jsonb) and the `teams`
 // table (slug PK) — neither fits the id-based generic CRUD engine.
 
-export type EditorFieldType = "text" | "textarea" | "json" | "number" | "select" | "boolean";
+export type EditorFieldType = "text" | "textarea" | "json" | "number" | "select" | "boolean" | "date" | "datetime";
 export type EditorField = { name: string; label: string; type: EditorFieldType; help?: string; options?: string[] };
 
 export type SingletonDef = { key: string; label: string; revalidate: string[]; fields: EditorField[] };

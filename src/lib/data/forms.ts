@@ -10,15 +10,31 @@ export type PublicFormField = {
   placeholder: string;
   helpText: string;
   options: string[];
+  imageUrl?: string | null;
+  allowOther?: boolean;
+  scaleMin?: number;
+  scaleMax?: number;
+  scaleMinLabel?: string | null;
+  scaleMaxLabel?: string | null;
+  maxFiles?: number;
+  maxFileSize?: string;
+  uploadFolder?: string | null;
 };
+
 export type PublicForm = {
   id: string;
   title: string;
   slug: string;
   description: string;
+  confirmationMessage?: string;
+  closedMessage?: string;
+  isActive: boolean;
+  closeAt?: string | null;
+  maxResponses?: number | null;
+  showSubmitAnother?: boolean;
   fields: PublicFormField[];
-  layout?: unknown; // Puck layout tree (legacy visual builder), when present
-  nexus_data?: unknown; // Nexus (Craft.js) tree, when present — preferred
+  layout?: unknown;
+  nexus_data?: unknown;
 };
 
 /** An active form + its fields, for public rendering at /forms/[slug]. */
@@ -28,8 +44,8 @@ export async function getFormBySlug(slug: string): Promise<PublicForm | null> {
     .from("forms")
     .select("*")
     .eq("slug", slug)
-    .eq("is_active", true)
     .maybeSingle();
+
   if (!form) return null;
 
   const { data: fields } = await sb
@@ -43,6 +59,12 @@ export async function getFormBySlug(slug: string): Promise<PublicForm | null> {
     title: form.title,
     slug: form.slug,
     description: form.description ?? "",
+    confirmationMessage: form.confirmation_message ?? "Thank you! Your response has been recorded.",
+    closedMessage: form.closed_message ?? "This form is no longer accepting responses.",
+    isActive: form.is_active !== false,
+    closeAt: form.close_at ?? null,
+    maxResponses: form.max_responses ?? null,
+    showSubmitAnother: form.show_submit_another !== false,
     layout: form.layout ?? null,
     nexus_data: form.nexus_data ?? null,
     fields: (fields ?? []).map((f) => ({
@@ -54,6 +76,15 @@ export async function getFormBySlug(slug: string): Promise<PublicForm | null> {
       placeholder: f.placeholder ?? "",
       helpText: f.help_text ?? "",
       options: (f.options as string[]) ?? [],
+      imageUrl: f.image_url ?? null,
+      allowOther: Boolean(f.allow_other),
+      scaleMin: f.scale_min ?? 1,
+      scaleMax: f.scale_max ?? 5,
+      scaleMinLabel: f.scale_min_label ?? null,
+      scaleMaxLabel: f.scale_max_label ?? null,
+      maxFiles: f.max_files ?? 1,
+      maxFileSize: f.max_file_size ?? "10MB",
+      uploadFolder: f.upload_folder ?? "forms",
     })),
   };
 }

@@ -12,18 +12,14 @@ export default async function EditEventPage({
   const { id } = await params;
   const { supabase } = await requireAdmin();
 
-  const { data: event } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (!event) notFound();
-
-  const [{ data: categories }, { data: termsData }] = await Promise.all([
+  const [{ data: event }, { data: categories }, { data: termsData }, { data: forms }] = await Promise.all([
+    supabase.from("events").select("*").eq("id", id).single(),
     supabase.from("event_categories").select("id, name, slug, tagline, sort_order").order("sort_order", { ascending: true }),
     supabase.from("terms").select("name").order("sort_order", { ascending: true }),
+    supabase.from("forms").select("id, title, slug, is_active").order("title", { ascending: true }),
   ]);
+
+  if (!event) notFound();
 
   const termsList = termsData && termsData.length > 0 ? termsData.map((t) => t.name) : ["2025-26", "2024-25", "2023-24", "2022-23"];
 
@@ -39,6 +35,7 @@ export default async function EditEventPage({
       initialData={event}
       categories={categories && categories.length > 0 ? categories : fallbackCategories}
       terms={termsList}
+      forms={forms ?? []}
     />
   );
 }

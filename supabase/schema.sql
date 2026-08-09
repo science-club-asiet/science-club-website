@@ -208,6 +208,37 @@ create table if not exists public.execom_members (
   display_order int not null default 0,
   is_published boolean not null default true,
   created_at   timestamptz not null default now(),
+-- ============================================================================
+-- teams  (team-level copy for the home Execom carousel headers)
+-- ============================================================================
+create table if not exists public.teams (
+  slug        text primary key,        -- 'core' | 'tech' | 'media' | 'events'
+  label       text not null,
+  name        text not null,
+  tagline     text,
+  description text,
+  sort_order  int not null default 0
+);
+
+-- ============================================================================
+-- execom_members  (current + historical office-bearers, by term)
+-- ============================================================================
+create table if not exists public.execom_members (
+  id           uuid primary key default gen_random_uuid(),
+  profile_id   uuid references public.profiles(id) on delete set null,  -- linked login, if any
+  name         text not null,
+  position     text not null,               -- 'Chairperson', 'Tech Lead', …
+  role_type    execom_role_type not null default 'student',
+  team_slug    text references public.teams(slug) on delete set null,
+  term         text not null,               -- '2025-26'
+  bio          text,
+  photo_url    text,
+  email        text,
+  linkedin     text,
+  socials      jsonb not null default '{}'::jsonb,
+  display_order int not null default 0,
+  is_published boolean not null default true,
+  created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
@@ -237,6 +268,9 @@ create table if not exists public.events (
   seats_remaining      int,
   agenda               jsonb not null default '[]'::jsonb,   -- [{time,title,description}]
   prerequisites        text[] not null default '{}',
+  status               text not null default 'published',
+  gallery_images       text[] not null default '{}',
+  attachments          jsonb not null default '[]'::jsonb,
   -- Registration wiring (form builder + shareable code, per WhatsApp):
   registration_form_id uuid,                          -- FK added after forms table
   registration_code    text,                          -- optional access/join code
@@ -342,28 +376,51 @@ create index if not exists posts_type_status_idx on public.posts(type, status, p
 -- Generic form-builder engine  (Join page + per-event registration forms)
 -- ============================================================================
 create table if not exists public.forms (
-  id          uuid primary key default gen_random_uuid(),
-  title       text not null,
-  slug        text unique,
-  description text,
-  purpose     form_purpose not null default 'generic',
-  is_active   boolean not null default true,
-  created_by  uuid references public.profiles(id) on delete set null,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id                     uuid primary key default gen_random_uuid(),
+  title                  text not null,
+  slug                   text unique,
+  description            text,
+  purpose                form_purpose not null default 'generic',
+  is_active              boolean not null default true,
+  confirmation_message   text default 'Thank you! Your response has been recorded.',
+  closed_message         text default 'This form is no longer accepting responses.',
+  close_at               timestamptz,
+  max_responses          integer,
+  limit_one_per_user     boolean not null default false,
+  show_submit_another    boolean not null default true,
+  collect_email_type     text not null default 'DO_NOT_COLLECT',
+  header_image_url       text,
+  google_sheets_webhook_url text,
+  created_by             uuid references public.profiles(id) on delete set null,
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
 );
 
 create table if not exists public.form_fields (
-  id            uuid primary key default gen_random_uuid(),
-  form_id       uuid not null references public.forms(id) on delete cascade,
-  label         text not null,
-  field_key     text not null,             -- machine key used in submission jsonb
-  field_type    form_field_type not null default 'text',
-  required      boolean not null default false,
-  placeholder   text,
-  help_text     text,
-  options       jsonb not null default '[]'::jsonb,   -- for select/radio/multiselect
-  display_order int not null default 0,
+  id              uuid primary key default gen_random_uuid(),
+  form_id         uuid not null references public.forms(id) on delete cascade,
+  label           text not null,
+  field_key       text not null,             -- machine key used in submission jsonb
+  field_type      text not null default 'text',
+  required        boolean not null default false,
+  placeholder     text,
+  help_text       text,
+  options         jsonb not null default '[]'::jsonb,   -- for select/radio/multiselect
+  image_url       text,
+  validation_rule jsonb not null default '{}'::jsonb,
+  allow_other     boolean not null default false,
+  shuffle_options boolean not null default false,
+  scale_min       integer default 1,
+  scale_max       integer default 5,
+  scale_min_label text,
+  scale_max_label text,
+  grid_rows       jsonb not null default '[]'::jsonb,
+  grid_columns    jsonb not null default '[]'::jsonb,
+  file_types      text[] not null default '{}',
+  max_file_size   text default '10MB',
+  max_files       integer default 1,
+  upload_folder   text default 'forms',
+  display_order   int not null default 0,
   unique (form_id, field_key)
 );
 

@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { MediaLibraryClient } from "@/components/admin/media/MediaLibraryClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function MediaLibraryPage() {
-  const supabase = await createClient();
+export default async function MediaPage() {
+  const { supabase } = await requireAdmin();
 
   const { data: assets } = await supabase
     .from("media_assets")

@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { FormRenderer } from "@/components/FormRenderer";
 import { NexusFormRender } from "@/packages/nexus-builder/NexusFormRender";
 import { getFormBySlug } from "@/lib/data/forms";
+import { Lock } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -25,6 +26,9 @@ export default async function PublicFormPage({
   const form = await getFormBySlug(slug);
   if (!form) notFound();
 
+  const isExpired = form.closeAt ? new Date() > new Date(form.closeAt) : false;
+  const isClosed = !form.isActive || isExpired;
+
   return (
     <div className="bg-white text-navy selection:bg-red selection:text-white min-h-screen flex flex-col relative w-full font-inter">
       <Header />
@@ -34,12 +38,23 @@ export default async function PublicFormPage({
             {form.title}
           </h1>
           {form.description && <p className="text-gray-500 mb-10 max-w-xl">{form.description}</p>}
-          {form.nexus_data ? (
-            <NexusFormRender data={form.nexus_data} formId={form.id} eventId={event} />
-          ) : form.fields.length === 0 ? (
-            <p className="text-gray-400">This form has no fields yet.</p>
-          ) : (
+
+          {isClosed ? (
+            <div className="rounded-2xl border border-red/20 bg-red/5 p-8 text-center space-y-3">
+              <Lock className="w-10 h-10 text-red mx-auto" />
+              <h3 className="font-oswald text-2xl font-bold uppercase text-navy">
+                Form Closed
+              </h3>
+              <p className="text-sm text-gray-600 max-w-md mx-auto">
+                {form.closedMessage || "This form is no longer accepting responses."}
+              </p>
+            </div>
+          ) : form.fields.length > 0 ? (
             <FormRenderer form={form} eventId={event} />
+          ) : form.nexus_data ? (
+            <NexusFormRender data={form.nexus_data} formId={form.id} eventId={event} />
+          ) : (
+            <p className="text-gray-400">This form has no fields yet.</p>
           )}
         </div>
       </main>

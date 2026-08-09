@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { PostsWorkspaceClient } from "@/components/admin/posts/PostsWorkspaceClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPostsPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   // Parallelize data fetching for posts, categories, and terms
   const [{ data: posts }, { data: categories }, { data: termsData }] = await Promise.all([

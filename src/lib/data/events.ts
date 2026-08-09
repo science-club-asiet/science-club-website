@@ -24,6 +24,10 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
   const agenda = r.agenda as AgendaItem[] | null;
   const prereqs = r.prerequisites as string[] | null;
 
+  const opStatus = (r.status as "open" | "closed" | "finished" | "draft") || (r.is_published ? "open" : "draft");
+  const galleryImages = Array.isArray(r.gallery_images) ? (r.gallery_images as string[]) : [];
+  const registrationFormId = (r.registration_form_id as string) || null;
+
   return {
     id: r.id as string,
     title: r.title as string,
@@ -43,6 +47,9 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
     seatsRemaining: (r.seats_remaining as number) ?? undefined,
     agenda: Array.isArray(agenda) && agenda.length ? agenda : undefined,
     prerequisites: Array.isArray(prereqs) && prereqs.length ? prereqs : undefined,
+    opStatus,
+    galleryImages,
+    registrationFormId,
   };
 }
 

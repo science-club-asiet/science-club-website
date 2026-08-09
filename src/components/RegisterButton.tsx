@@ -1,13 +1,54 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type State = "idle" | "loading" | "ok" | "already" | "error";
 
-export function RegisterButton({ eventId, className = "" }: { eventId: string; className?: string }) {
+export function RegisterButton({
+  eventId,
+  opStatus = "open",
+  formSlug,
+  formId,
+  className = "",
+}: {
+  eventId: string;
+  opStatus?: "open" | "closed" | "finished" | "draft";
+  formSlug?: string | null;
+  formId?: string | null;
+  className?: string;
+}) {
   const router = useRouter();
   const [state, setState] = useState<State>("idle");
+
+  const btnCls =
+    className ||
+    "bg-red text-white px-8 py-3 rounded-full font-oswald uppercase tracking-widest text-sm font-bold hover:bg-navy transition-colors disabled:opacity-60 inline-flex items-center justify-center";
+
+  if (opStatus === "closed") {
+    return (
+      <button disabled className={`${btnCls} bg-gray-400 cursor-not-allowed`}>
+        Registration Closed
+      </button>
+    );
+  }
+
+  if (opStatus === "finished") {
+    return (
+      <button disabled className={`${btnCls} bg-gray-500 cursor-not-allowed`}>
+        Event Finished
+      </button>
+    );
+  }
+
+  if (formSlug || formId) {
+    return (
+      <Link href={`/forms/${formSlug || formId}`} className={btnCls}>
+        Complete Registration Form →
+      </Link>
+    );
+  }
 
   const register = async () => {
     setState("loading");
@@ -33,10 +74,7 @@ export function RegisterButton({ eventId, className = "" }: { eventId: string; c
     <button
       onClick={register}
       disabled={state === "loading" || state === "ok" || state === "already"}
-      className={
-        className ||
-        "bg-red text-white px-8 py-3 rounded-full font-oswald uppercase tracking-widest text-sm font-bold hover:bg-navy transition-colors disabled:opacity-70"
-      }
+      className={btnCls}
     >
       {label}
     </button>

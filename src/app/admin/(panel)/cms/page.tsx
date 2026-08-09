@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { deleteCollection } from "@/lib/admin/cmsActions";
 import { PageHeader, Card, EmptyState, btnPrimaryCls, rowLinkCls } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
 
 export default async function CmsHome() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: collections, error } = await supabase.from("collections").select("*").order("created_at");
 
   return (

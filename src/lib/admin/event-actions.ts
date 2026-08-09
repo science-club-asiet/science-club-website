@@ -29,6 +29,19 @@ export async function saveEvent(formData: FormData) {
   const seats_remaining = formData.get("seats_remaining") ? parseInt(formData.get("seats_remaining") as string, 10) : null;
   const cover_image_url = (formData.get("cover_image_url") as string || "").trim();
   const is_published = formData.get("is_published") === "on" || formData.get("is_published") === "true";
+  const rawStatus = (formData.get("status") as string || "").trim();
+  const status = rawStatus || (is_published ? "open" : "draft");
+  const registration_form_id = (formData.get("registration_form_id") as string || "").trim() || null;
+
+  let gallery_images: string[] = [];
+  const rawGallery = formData.get("gallery_images_json") as string || null;
+  if (rawGallery) {
+    try {
+      gallery_images = JSON.parse(rawGallery);
+    } catch {
+      gallery_images = [];
+    }
+  }
 
   const payload = {
     title,
@@ -44,7 +57,10 @@ export async function saveEvent(formData: FormData) {
     non_member_price,
     seats_remaining,
     cover_image_url,
-    is_published,
+    is_published: status !== "draft",
+    status,
+    registration_form_id,
+    gallery_images,
     created_by: user.id,
     updated_at: new Date().toISOString(),
   };

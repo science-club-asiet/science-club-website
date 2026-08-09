@@ -1,11 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/auth";
 import { ExecomWorkspaceClient } from "@/components/admin/execom/ExecomWorkspaceClient";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExecomPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   // Determine viewed term from cookie if present
   const c = await cookies();
