@@ -8,6 +8,7 @@ import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "@/components/ui/Toast";
 import { syncUploadThingAssets } from "@/lib/admin/media-actions";
 import { getDynamicFolders, formatFolderLabel, isAssetInFolder } from "@/lib/admin/media-folder-utils";
+import { compressImageFile } from "@/lib/admin/image-compression";
 
 export type MediaAssetItem = {
   id: string;
@@ -77,7 +78,7 @@ export function MediaPickerModal({
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
       setUploadProgress(0);
-      toast("Image uploaded successfully", "success");
+      toast("Image uploaded & compressed", "success");
       void fetchAssets();
       if (res && res[0]?.url) {
         onSelect(res[0].url);
@@ -91,9 +92,12 @@ export function MediaPickerModal({
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    void startUpload(Array.from(e.target.files));
+    const fileArr = Array.from(e.target.files);
+    toast("Compressing image...");
+    const compressedList = await Promise.all(fileArr.map((f) => compressImageFile(f)));
+    void startUpload(compressedList);
   };
 
   const filteredAssets = useMemo(() => {

@@ -17,6 +17,7 @@ import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
 import { FolderAutocompleteInput } from "@/components/admin/media/FolderAutocompleteInput";
 import { FolderCreateModal } from "@/components/admin/media/FolderCreateModal";
+import { compressImageFile, formatAltTextFromName } from "@/lib/admin/image-compression";
 
 export type MediaAsset = {
   id: string;
@@ -143,6 +144,7 @@ export function MediaLibraryClient({
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: () => {
       setUploadProgress(0);
+      toast("Assets uploaded & auto-compressed", "success");
       router.refresh();
     },
     onUploadProgress: setUploadProgress,
@@ -153,9 +155,12 @@ export function MediaLibraryClient({
   });
 
   const onFiles = useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files || files.length === 0) return;
-      void startUpload(Array.from(files));
+      const fileArr = Array.from(files);
+      toast("Compressing & optimizing image(s)...");
+      const compressedList = await Promise.all(fileArr.map((f) => compressImageFile(f)));
+      void startUpload(compressedList);
     },
     [startUpload]
   );

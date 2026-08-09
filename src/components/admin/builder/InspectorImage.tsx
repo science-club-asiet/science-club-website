@@ -5,6 +5,7 @@ import { UploadCloud, X } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { MediaPickerModal } from "../media/MediaPickerModal";
 import { toast } from "@/components/ui/Toast";
+import { compressImageFile } from "@/lib/admin/image-compression";
 
 /** Compact controlled image field (drag-drop upload + URL) for the inspector. */
 export function InspectorImage({ value, onChange }: { value: string; onChange: (url: string) => void }) {
@@ -17,7 +18,7 @@ export function InspectorImage({ value, onChange }: { value: string; onChange: (
       const f = res?.[0];
       if (f) onChange(f.serverData?.url ?? f.ufsUrl);
       setProgress(0);
-      toast("Image uploaded successfully", "success");
+      toast("Image uploaded & compressed", "success");
     },
     onUploadProgress: setProgress,
     onUploadError: (e) => {
@@ -26,9 +27,15 @@ export function InspectorImage({ value, onChange }: { value: string; onChange: (
     },
   });
 
-  const onFiles = useCallback((files: FileList | null) => {
+  const onFiles = useCallback(async (files: FileList | null) => {
     const f = files?.[0];
-    if (f) void startUpload([f]);
+    if (!f) return;
+    try {
+      const compressed = await compressImageFile(f);
+      void startUpload([compressed]);
+    } catch {
+      void startUpload([f]);
+    }
   }, [startUpload]);
 
   return (
