@@ -31,10 +31,13 @@ truncate
 
 -- ─── teams ──────────────────────────────────────────────────────────────────
 insert into public.teams (slug, label, name, tagline, description, sort_order) values
-  ('core',   '01', $$Core Team$$, $$The heart of it all.$$,     $$The core team steers the vision, handles the structure, and makes sure every other team has what they need to succeed.$$, 0),
-  ('tech',   '02', $$Technical$$, $$Where ideas become code.$$, $$Builders, engineers and tinkerers. They own every line of code, every circuit, and every prototype the club ships.$$, 1),
-  ('media',  '03', $$Media$$,     $$Every frame, a story.$$,     $$The team putting the club's work into the world — through photography, video, design and social storytelling.$$, 2),
-  ('events', '04', $$Events$$,    $$We make it happen.$$,        $$Logistics, outreach, sponsorship and on-ground execution. They turn every big idea into a live experience.$$, 3);
+  ('core',                '01', $$Core Team$$,           $$The heart of it all.$$,                    $$The core team steers the vision, handles the structure, and makes sure every other team has what they need to succeed.$$, 0),
+  ('tech',                '02', $$Technical$$,           $$Where ideas become code.$$,                $$Builders, engineers and tinkerers. They own every line of code, every circuit, and every prototype the club ships.$$, 1),
+  ('media',               '03', $$Media$$,               $$Every frame, a story.$$,                    $$The team putting the club's work into the world — through photography, video, design and social storytelling.$$, 2),
+  ('events',              '04', $$Events$$,              $$We make it happen.$$,                       $$Logistics, outreach, sponsorship and on-ground execution. They turn every big idea into a live experience.$$, 3),
+  ('mentors',             '05', $$Mentors & Advisors$$,  $$Guiding wisdom, inspiring tomorrows.$$,    $$Experienced senior advisors and alumni offering strategic guidance, technical mentorship, and industry perspective to empower student innovators.$$, 4),
+  ('design',              '06', $$Design Labs$$,         $$Crafting elegance out of complexity.$$,   $$UI/UX, visual brand identities, and creative design systems. They shape the aesthetic language and user experience across all club initiatives.$$, 5),
+  ('innovation-and-stem', '07', $$Innovation & STEM$$,   $$Pioneering new frontiers in science.$$,  $$Spearheading interdisciplinary physical science research, STEM outreach, and experimental technology projects to inspire future scientists.$$, 6);
 
 -- ─── execom_members (current term 2025-26) ──────────────────────────────────
 insert into public.execom_members (name, position, role_type, team_slug, term, bio, photo_url, display_order) values

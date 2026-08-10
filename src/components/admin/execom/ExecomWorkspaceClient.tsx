@@ -11,10 +11,10 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User, Crop, Save } from "lucide-react";
+import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User, Crop, Save, ChevronUp, ChevronDown } from "lucide-react";
 import {
   duplicateTerm, publishTerm, reorderExecomMembers, saveExecomMember, deleteExecomMember,
-  saveCategory, deleteCategory, saveTerm, deleteTerm,
+  saveCategory, deleteCategory, saveTerm, deleteTerm, reorderCategories,
 } from "@/lib/admin/execom-actions";
 import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
 import { MediaPickerModal } from "@/components/admin/media/MediaPickerModal";
@@ -94,23 +94,56 @@ function MemberGroup({
   title, 
   members, 
   onAdd, 
-  onEdit 
+  onEdit,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown
 }: { 
   title: string; 
   members: Member[]; 
   onAdd: () => void; 
-  onEdit: (m: Member) => void 
+  onEdit: (m: Member) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }) {
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-oswald text-xl uppercase font-bold text-navy">{title}</h2>
-        <button onClick={onAdd} className="text-xs font-bold uppercase tracking-widest text-navy/60 hover:text-red flex items-center gap-1">
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          {onMoveUp && onMoveDown && (
+            <div className="flex items-center gap-0.5 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+              <button
+                type="button"
+                onClick={onMoveUp}
+                disabled={!canMoveUp}
+                className="p-1 rounded text-navy hover:bg-navy hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer"
+                title="Move Category Up"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={onMoveDown}
+                disabled={!canMoveDown}
+                className="p-1 rounded text-navy hover:bg-navy hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer"
+                title="Move Category Down"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+          <h2 className="font-oswald text-xl uppercase font-bold text-navy flex items-center gap-2">{title}</h2>
+        </div>
+
+        <button onClick={onAdd} className="text-xs font-bold uppercase tracking-widest text-navy/70 hover:text-red flex items-center gap-1 bg-gray-100 hover:bg-red/10 px-3 py-1.5 rounded-full transition-colors cursor-pointer border border-gray-200">
           <Plus className="w-3 h-3" /> Add
         </button>
       </div>
       
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-xs">
         {members.length === 0 ? (
           <p className="p-4 text-center text-gray-400 text-sm">No members here yet.</p>
         ) : (
@@ -141,11 +174,45 @@ export function ExecomWorkspaceClient({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"members" | "categories" | "terms">("members");
   const [members, setMembers] = useState(initialMembers);
+  const [categoryList, setCategoryList] = useState(categories);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setMembers(initialMembers);
   }, [initialMembers]);
+
+  useEffect(() => {
+    setCategoryList(categories);
+  }, [categories]);
+
+  const handleMoveCategory = (slug: string, direction: "up" | "down") => {
+    const idx = categoryList.findIndex((c) => c.slug === slug);
+    if (idx === -1) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= categoryList.length) return;
+
+    const newCategories = [...categoryList];
+    const [moved] = newCategories.splice(idx, 1);
+    newCategories.splice(targetIdx, 0, moved);
+
+    const updated = newCategories.map((cat, i) => ({
+      ...cat,
+      sort_order: i,
+      label: String(i + 1).padStart(2, "0"),
+    }));
+
+    setCategoryList(updated);
+
+    startTransition(async () => {
+      try {
+        await reorderCategories(updated.map((c) => ({ slug: c.slug, sort_order: c.sort_order })));
+        router.refresh();
+        toast("Category reordered successfully", "success");
+      } catch (err: unknown) {
+        toast((err as Error).message, "error");
+      }
+    });
+  };
 
   // Member Modal State
   const [editingMember, setEditingMember] = useState<Member | Partial<Member> | null>(null);
@@ -213,6 +280,36 @@ export function ExecomWorkspaceClient({
 
   const facultyAdvisors = members.filter(m => m.role_type === "faculty_advisor");
   const studentMembers = members.filter(m => m.role_type === "student");
+
+  // Construct all sections with number prefix (01 Faculty Advisors, 02 Core Team, 03 Technical...)
+  const facultySection = {
+    isFaculty: true,
+    key: "faculty_advisors",
+    title: "01 FACULTY ADVISORS",
+    members: facultyAdvisors,
+    onAdd: () => setEditingMember({ role_type: "faculty_advisor", team_slug: categoryList[0]?.slug ?? "core", is_published: true }),
+    onMoveUp: undefined as (() => void) | undefined,
+    onMoveDown: undefined as (() => void) | undefined,
+    canMoveUp: false,
+    canMoveDown: false,
+  };
+
+  const categorySections = categoryList.map((cat, idx) => ({
+    isFaculty: false,
+    key: cat.slug,
+    slug: cat.slug,
+    title: `${String(idx + 2).padStart(2, "0")} ${cat.name || cat.label}`.toUpperCase(),
+    members: studentMembers.filter((m) => m.team_slug === cat.slug),
+    onAdd: () => setEditingMember({ role_type: "student", team_slug: cat.slug, is_published: true }),
+    onMoveUp: () => handleMoveCategory(cat.slug, "up"),
+    onMoveDown: () => handleMoveCategory(cat.slug, "down"),
+    canMoveUp: idx > 0,
+    canMoveDown: idx < categoryList.length - 1,
+  }));
+
+  const allSections = [facultySection, ...categorySections];
+  const leftColumnSections = allSections.filter((_, i) => i % 2 === 0);
+  const rightColumnSections = allSections.filter((_, i) => i % 2 === 1);
 
   const handleQuickSaveExecom = () => {
     startTransition(async () => {
@@ -491,30 +588,32 @@ export function ExecomWorkspaceClient({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
             <div className="space-y-2">
-              <MemberGroup 
-                title="Faculty Advisors" 
-                members={facultyAdvisors}
-                onAdd={() => setEditingMember({ role_type: "faculty_advisor", team_slug: categories[0]?.slug ?? "core", is_published: true })}
-                onEdit={setEditingMember}
-              />
-              {categories.slice(0, 1).map((cat) => (
+              {leftColumnSections.map((sec) => (
                 <MemberGroup 
-                  key={cat.slug}
-                  title={cat.name || cat.label} 
-                  members={studentMembers.filter(m => m.team_slug === cat.slug)}
-                  onAdd={() => setEditingMember({ role_type: "student", team_slug: cat.slug, is_published: true })}
+                  key={sec.key}
+                  title={sec.title} 
+                  members={sec.members}
+                  onAdd={sec.onAdd}
                   onEdit={setEditingMember}
+                  onMoveUp={sec.onMoveUp}
+                  onMoveDown={sec.onMoveDown}
+                  canMoveUp={sec.canMoveUp}
+                  canMoveDown={sec.canMoveDown}
                 />
               ))}
             </div>
             <div className="space-y-2">
-              {categories.slice(1).map((cat) => (
+              {rightColumnSections.map((sec) => (
                 <MemberGroup 
-                  key={cat.slug}
-                  title={cat.name || cat.label}
-                  members={studentMembers.filter(m => m.team_slug === cat.slug)}
-                  onAdd={() => setEditingMember({ role_type: "student", team_slug: cat.slug, is_published: true })}
+                  key={sec.key}
+                  title={sec.title}
+                  members={sec.members}
+                  onAdd={sec.onAdd}
                   onEdit={setEditingMember}
+                  onMoveUp={sec.onMoveUp}
+                  onMoveDown={sec.onMoveDown}
+                  canMoveUp={sec.canMoveUp}
+                  canMoveDown={sec.canMoveDown}
                 />
               ))}
             </div>
@@ -528,36 +627,62 @@ export function ExecomWorkspaceClient({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-oswald text-2xl font-bold uppercase text-navy">Categories & Teams</h2>
-              <p className="text-sm text-gray-500">Define the teams that organize members on the website.</p>
+              <p className="text-sm text-gray-500">Define and reorder the teams that organize members on the website.</p>
             </div>
             <button
-              onClick={() => setEditingCategory({ name: "", label: "", sort_order: categories.length })}
-              className="bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors flex items-center gap-2"
+              onClick={() => setEditingCategory({ name: "", label: "", sort_order: categoryList.length })}
+              className="bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors flex items-center gap-2 cursor-pointer"
             >
               <FolderPlus className="w-4 h-4" /> Add Category
             </button>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-            {categories.length === 0 ? (
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-xs">
+            {categoryList.length === 0 ? (
               <p className="p-6 text-center text-gray-400 text-sm">No categories defined yet.</p>
             ) : (
-              categories.map((cat) => (
-                <div key={cat.slug} className="flex items-center justify-between px-6 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/80 transition-colors">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-navy">{cat.name || cat.label}</span>
-                      {cat.label && cat.label !== cat.name && <span className="text-xs font-semibold text-navy/60">({cat.label})</span>}
-                      <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">slug: {cat.slug}</span>
+              categoryList.map((cat, idx) => (
+                <div key={cat.slug} className="flex items-center justify-between px-6 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/80 transition-colors gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-0.5 bg-gray-100 p-1 rounded-lg border border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCategory(cat.slug, "up")}
+                        disabled={idx === 0}
+                        className="p-1 text-navy hover:bg-navy hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded cursor-pointer"
+                        title="Move Category Up"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCategory(cat.slug, "down")}
+                        disabled={idx === categoryList.length - 1}
+                        className="p-1 text-navy hover:bg-navy hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded cursor-pointer"
+                        title="Move Category Down"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    {cat.tagline && <p className="text-xs font-semibold text-navy/70 mt-1">Tagline: {cat.tagline}</p>}
-                    {cat.description && <p className="text-xs text-gray-500 mt-0.5">{cat.description}</p>}
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-oswald text-xs font-bold text-red bg-red/10 px-2 py-0.5 rounded-md border border-red/20">
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <span className="font-bold text-navy text-base">{cat.name || cat.label}</span>
+                        <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">slug: {cat.slug}</span>
+                      </div>
+                      {cat.tagline && <p className="text-xs font-semibold text-navy/70 mt-1">Tagline: {cat.tagline}</p>}
+                      {cat.description && <p className="text-xs text-gray-500 mt-0.5 max-w-xl">{cat.description}</p>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setEditingCategory(cat)} className="p-2 text-gray-400 hover:text-navy transition-colors">
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => setEditingCategory(cat)} className="p-2 text-gray-400 hover:text-navy transition-colors cursor-pointer" title="Edit Category">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteCategory(cat.slug)} className="p-2 text-gray-400 hover:text-red transition-colors">
+                    <button onClick={() => handleDeleteCategory(cat.slug)} className="p-2 text-gray-400 hover:text-red transition-colors cursor-pointer" title="Delete Category">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

@@ -194,6 +194,26 @@ export async function saveCategory(slug: string | null, formData: FormData) {
   revalidatePath("/info/execom");
 }
 
+export async function reorderCategories(updates: { slug: string; sort_order: number }[]) {
+  if (updates.length === 0) return;
+  const { supabase } = await requireAdmin();
+
+  for (const { slug, sort_order } of updates) {
+    const formattedLabel = String(sort_order + 1).padStart(2, "0");
+    const { error } = await supabase
+      .from("teams")
+      .update({ sort_order, label: formattedLabel })
+      .eq("slug", slug);
+    if (error) {
+      console.error("[reorderCategories]", error.message);
+    }
+  }
+
+  revalidatePath("/admin/execom");
+  revalidatePath("/");
+  revalidatePath("/info/execom");
+}
+
 export async function deleteCategory(slug: string) {
   const { supabase } = await requireAdmin();
   const { error } = await supabase.from("teams").delete().eq("slug", slug);

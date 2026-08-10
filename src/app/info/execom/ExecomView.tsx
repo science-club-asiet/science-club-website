@@ -17,7 +17,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ExecomMemberFull, PastExecomMember, CandidPhoto } from "@/lib/data/execom";
+import type { ExecomMemberFull, PastExecomMember, CandidPhoto, ExecomCategory } from "@/lib/data/execom";
 import type { Achievement } from "@/lib/data/content";
 
 // Custom LinkedIn SVG component
@@ -70,12 +70,14 @@ interface CandidTrailCard {
 
 export function ExecomView({
   members,
+  categories,
   pastExecom,
   candidPhotos,
   achievements,
   currentTerm = "2025-26",
 }: {
   members: ExecomMemberFull[];
+  categories?: ExecomCategory[];
   pastExecom: PastExecomMember[];
   candidPhotos: CandidPhoto[];
   achievements: Achievement[];
@@ -184,18 +186,42 @@ export function ExecomView({
   const ctaBgTextX = useTransform(ctaScrollY, [0, 1], ["0%", "-20%"]);
 
   const categoryFilters = useMemo(() => {
+    if (categories && categories.length > 0) {
+      const activeSlugs = new Set(members.map((m) => m.team_slug || m.category.toLowerCase()));
+      const activeCats = categories.filter(
+        (c) => activeSlugs.has(c.slug) || members.some((m) => m.category.toUpperCase() === c.name.toUpperCase())
+      );
+      return [
+        { slug: "ALL", label: "ALL" },
+        ...activeCats.map((c) => ({
+          slug: c.slug,
+          label: c.name.toUpperCase().replace(" TEAM", "").replace(" LABS", ""),
+        })),
+      ];
+    }
+
     const set = new Set<string>();
     members.forEach((m) => {
       if (m.category) set.add(m.category);
     });
-    return ["ALL", ...Array.from(set)];
-  }, [members]);
+    return [
+      { slug: "ALL", label: "ALL" },
+      ...Array.from(set).map((c) => ({
+        slug: c,
+        label: c.toUpperCase().replace(" TEAM", "").replace(" LABS", ""),
+      })),
+    ];
+  }, [categories, members]);
 
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
-      const matchCat = activeCategory === "ALL" || m.category === activeCategory;
-      const matchQuery = searchQuery.trim() === "" || 
-        m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchCat =
+        activeCategory === "ALL" ||
+        m.team_slug === activeCategory ||
+        m.category.toUpperCase() === activeCategory.toUpperCase();
+      const matchQuery =
+        searchQuery.trim() === "" ||
+        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.bio.toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchQuery;
@@ -358,7 +384,7 @@ export function ExecomView({
               <div className="w-[1px] h-8 bg-white/10" />
               <div>
                 <span className="text-red font-bold block text-xl sm:text-2xl leading-none">
-                  {categoryFilters.filter((c) => c !== "ALL").length || 4}
+                  {categoryFilters.filter((c) => c.slug !== "ALL").length || 4}
                 </span>
                 <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">DIVISIONS</span>
               </div>
@@ -384,22 +410,16 @@ export function ExecomView({
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
               {categoryFilters.map((cat) => (
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  key={cat.slug}
+                  onClick={() => setActiveCategory(cat.slug)}
                   className={cn(
                     "relative px-5 py-2.5 text-[11px] font-oswald uppercase font-bold tracking-widest rounded-full transition-all cursor-pointer whitespace-nowrap shrink-0 border",
-                    activeCategory === cat ? "bg-red text-white border-red shadow-md" : "bg-gray-100 text-navy/70 border-gray-200 hover:border-navy/30 hover:text-navy"
+                    activeCategory === cat.slug
+                      ? "bg-red text-white border-red shadow-md"
+                      : "bg-gray-100 text-navy/70 border-gray-200 hover:border-navy/30 hover:text-navy"
                   )}
                 >
-                  {cat === "CORE LEADERSHIP"
-                    ? "CORE"
-                    : cat === "TECHNICAL LABS"
-                    ? "TECH"
-                    : cat === "MEDIA & CREATIVE"
-                    ? "MEDIA"
-                    : cat === "OPERATIONS & EVENTS"
-                    ? "EVENTS"
-                    : cat}
+                  {cat.label}
                 </button>
               ))}
             </div>

@@ -17,6 +17,7 @@ export type ExecomMemberFull = {
   name: string;
   role: string;
   category: string;
+  team_slug: string;
   bio: string;
   img: string;
   email?: string;
@@ -24,13 +25,21 @@ export type ExecomMemberFull = {
 };
 export type PastExecomMember = { name: string; role: string; year: string; category: string; img: string };
 export type CandidPhoto = { url: string; caption: string; tag: string };
+export type ExecomCategory = {
+  slug: string;
+  name: string;
+  label: string;
+  tagline: string;
+  description: string;
+  sort_order: number;
+};
 
 const TEAM_CATEGORY: Record<string, string> = {
   core: "CORE LEADERSHIP",
   tech: "TECHNICAL LABS",
   media: "MEDIA & CREATIVE",
   events: "OPERATIONS & EVENTS",
-  mentors: "MENTORS",
+  mentors: "MENTORS & ADVISORS",
   design: "DESIGN LABS",
   "innovation-and-stem": "INNOVATION & STEM",
 };
@@ -49,6 +58,24 @@ export async function getCurrentTerm(): Promise<string> {
   const sb = createPublicClient();
   const { data } = await sb.from("site_content").select("value").eq("key", "current_term").maybeSingle();
   return (data?.value as { term?: string } | null)?.term ?? "2025-26";
+}
+
+/** All team categories defined in the database, ordered by sort_order. */
+export async function getExecomCategories(): Promise<ExecomCategory[]> {
+  const sb = createPublicClient();
+  const { data, error } = await sb.from("teams").select("*").order("sort_order", { ascending: true });
+  if (error) {
+    console.error("[getExecomCategories]", error.message);
+    return [];
+  }
+  return (data ?? []).map((t) => ({
+    slug: t.slug,
+    name: t.name,
+    label: t.label,
+    tagline: t.tagline ?? "",
+    description: t.description ?? "",
+    sort_order: t.sort_order ?? 0,
+  }));
 }
 
 /**
@@ -92,13 +119,13 @@ export async function getTeamsWithMembers(): Promise<TeamWithMembers[]> {
     .filter((team) => team.members.length > 0);
 }
 
-/** Current-term execom, mapped to the /info/execom category grouping. */
+/** Current-term execom, ordered by team sort order, role_type, and display_order. */
 export async function getCurrentExecom(): Promise<ExecomMemberFull[]> {
   const sb = createPublicClient();
   const term = await getCurrentTerm();
   const [{ data, error }, { data: teams }] = await Promise.all([
-    sb.from("execom_members").select("*").eq("term", term).eq("is_published", true).order("display_order"),
-    sb.from("teams").select("slug, name, label").order("sort_order"),
+    sb.from("execom_members").select("*").eq("term", term).eq("is_published", true),
+    sb.from("teams").select("slug, name, label, sort_order").order("sort_order"),
   ]);
 
   if (error) {
@@ -106,16 +133,33 @@ export async function getCurrentExecom(): Promise<ExecomMemberFull[]> {
     return [];
   }
 
-  const teamMap = new Map<string, string>();
+  const teamOrderMap = new Map<string, { name: string; sort_order: number }>();
   (teams ?? []).forEach((t) => {
-    teamMap.set(t.slug, (t.name || t.label || t.slug).toUpperCase());
+    teamOrderMap.set(t.slug, {
+      name: (t.name || t.label || t.slug).toUpperCase(),
+      sort_order: t.sort_order ?? 0,
+    });
   });
 
-  return (data ?? []).map((m) => ({
+  const sorted = (data ?? []).slice().sort((a, b) => {
+    const orderA = teamOrderMap.get(a.team_slug ?? "")?.sort_order ?? 99;
+    const orderB = teamOrderMap.get(b.team_slug ?? "")?.sort_order ?? 99;
+    if (orderA !== orderB) return orderA - orderB;
+
+    // Faculty advisors at the top of their group
+    const roleA = a.role_type === "faculty_advisor" ? 0 : 1;
+    const roleB = b.role_type === "faculty_advisor" ? 0 : 1;
+    if (roleA !== roleB) return roleA - roleB;
+
+    return (a.display_order ?? 0) - (b.display_order ?? 0);
+  });
+
+  return sorted.map((m) => ({
     id: m.id,
     name: m.name,
     role: m.position,
-    category: teamMap.get(m.team_slug ?? "") || TEAM_CATEGORY[m.team_slug ?? ""] || (m.team_slug ? m.team_slug.toUpperCase() : "CORE LEADERSHIP"),
+    category: teamOrderMap.get(m.team_slug ?? "")?.name || TEAM_CATEGORY[m.team_slug ?? ""] || (m.team_slug ? m.team_slug.toUpperCase() : "CORE LEADERSHIP"),
+    team_slug: m.team_slug ?? "core",
     bio: m.bio ?? "",
     img: sanitizePhotoUrl(m.photo_url),
     email: m.email ?? undefined,
