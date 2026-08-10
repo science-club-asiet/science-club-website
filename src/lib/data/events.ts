@@ -27,6 +27,10 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
   const opStatus = (r.status as "open" | "closed" | "finished" | "draft") || (r.is_published ? "open" : "draft");
   const galleryImages = Array.isArray(r.gallery_images) ? (r.gallery_images as string[]) : [];
   const registrationFormId = (r.registration_form_id as string) || null;
+  const externalWebsiteUrl = (r.external_website_url as string) || undefined;
+  const winners = Array.isArray(r.winners) ? (r.winners as ScienceEvent["winners"]) : undefined;
+  const requiresRegistration = r.requires_registration !== false;
+  const customMetadata = typeof r.custom_metadata === "object" && r.custom_metadata ? (r.custom_metadata as Record<string, string>) : undefined;
 
   return {
     id: r.id as string,
@@ -50,6 +54,10 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
     opStatus,
     galleryImages,
     registrationFormId,
+    externalWebsiteUrl,
+    winners,
+    requiresRegistration,
+    customMetadata,
   };
 }
 

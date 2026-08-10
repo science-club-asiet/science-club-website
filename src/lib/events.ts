@@ -12,6 +12,12 @@ export interface AgendaItem {
   description?: string;
 }
 
+export interface EventWinner {
+  rank: string;
+  name: string;
+  prize?: string;
+}
+
 export interface ScienceEvent {
   id: string;
   title: string;
@@ -35,4 +41,8 @@ export interface ScienceEvent {
   galleryImages?: string[];
   registrationFormId?: string | null;
   formSlug?: string | null;
+  externalWebsiteUrl?: string;
+  winners?: EventWinner[];
+  requiresRegistration?: boolean;
+  customMetadata?: Record<string, string>;
 }

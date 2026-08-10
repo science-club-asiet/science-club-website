@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Calendar, Plus, Search, Edit2, Trash2, Tag, Layers, CheckCircle2,
-  XCircle, ArrowUpRight, FolderPlus, LayoutGrid, List, Sparkles
+  XCircle, ArrowUpRight, FolderPlus, LayoutGrid, List, Sparkles,
+  Eye, EyeOff, MoveUp, MoveDown, Sliders
 } from "lucide-react";
-import { deleteEvent, saveEventCategory, deleteEventCategory, type EventCategoryItem } from "@/lib/admin/event-actions";
+import { deleteEvent, saveEventCategory, deleteEventCategory, type EventCategoryItem, type CategoryFieldDef } from "@/lib/admin/event-actions";
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ export function EventsWorkspaceClient({
   const [catName, setCatName] = useState("");
   const [catSlug, setCatSlug] = useState("");
   const [catAutoSlug, setCatAutoSlug] = useState(true);
+  const [catFields, setCatFields] = useState<CategoryFieldDef[]>([]);
 
   function slugify(text: string): string {
     return text
@@ -133,6 +135,7 @@ export function EventsWorkspaceClient({
           name,
           slug,
           tagline,
+          field_schema: catFields,
         });
         toast(`Category '${name}' saved`, "success");
         setCatPromptOpen(false);
@@ -379,10 +382,10 @@ export function EventsWorkspaceClient({
 
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div>
-                        <Link href={`/admin/events/${evt.id}/edit`} className="font-oswald text-lg font-bold text-navy uppercase hover:text-red transition-colors line-clamp-1">
+                        <Link href={`/admin/events/${evt.id}/edit`} className="font-oswald text-lg font-bold text-navy uppercase hover:text-red transition-colors break-words whitespace-normal line-clamp-2 leading-tight">
                           {evt.title}
                         </Link>
-                        {evt.speaker && <p className="text-xs text-gray-500 mt-0.5 font-medium truncate">Speaker: {evt.speaker}</p>}
+                        {evt.speaker && <p className="text-xs text-gray-500 mt-0.5 font-medium break-words whitespace-normal">Speaker: {evt.speaker}</p>}
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -475,11 +478,11 @@ export function EventsWorkspaceClient({
                                   <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-xs">EV</div>
                                 )}
                               </div>
-                              <div className="min-w-0">
-                                <Link href={`/admin/events/${evt.id}/edit`} className="font-bold text-navy hover:text-red transition-colors truncate block">
+                              <div className="min-w-0 flex-1">
+                                <Link href={`/admin/events/${evt.id}/edit`} className="font-bold text-navy hover:text-red transition-colors break-words whitespace-normal block leading-snug">
                                   {evt.title}
                                 </Link>
-                                {evt.speaker && <div className="text-[11px] text-gray-400 truncate">Speaker: {evt.speaker}</div>}
+                                {evt.speaker && <div className="text-[11px] text-gray-400 break-words whitespace-normal mt-0.5">Speaker: {evt.speaker}</div>}
                               </div>
                             </div>
                           </td>
@@ -591,6 +594,15 @@ export function EventsWorkspaceClient({
                         setCatName(cat.name);
                         setCatSlug(cat.slug);
                         setCatAutoSlug(false);
+                        setCatFields(
+                          cat.field_schema && cat.field_schema.length > 0
+                            ? cat.field_schema
+                            : [
+                                { id: "speaker", label: "Speaker Name", type: "text", placeholder: "e.g. Dr. Jane Doe", hidden: false, order: 1 },
+                                { id: "speaker_role", label: "Speaker Designation", type: "text", placeholder: "e.g. Principal AI Researcher", hidden: false, order: 2 },
+                                { id: "location", label: "Location / Venue", type: "text", placeholder: "e.g. Main Auditorium", hidden: false, order: 3 },
+                              ]
+                        );
                         setCatPromptOpen(true);
                       }}
                       className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -612,58 +624,69 @@ export function EventsWorkspaceClient({
         </div>
       )}
 
-      {/* Category Creation / Editing Modal */}
+      {/* Category Creation / Editing Modal with Field Schema Builder */}
       {catPromptOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-inter">
-            <h3 className="font-oswald text-xl font-bold uppercase text-navy">
-              {editingCategory ? `Edit Category '${editingCategory.name}'` : "Create Event Category"}
-            </h3>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl max-w-2xl w-full p-6 space-y-5 font-inter max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="font-oswald text-xl font-bold uppercase text-navy">
+                {editingCategory ? `Edit Category '${editingCategory.name}'` : "Create Event Category"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setCatPromptOpen(false)}
+                className="text-gray-400 hover:text-navy p-1 rounded-lg"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleSaveCategorySubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Category Name</label>
-                <input
-                  name="name"
-                  value={catName}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCatName(val);
-                    if (catAutoSlug) setCatSlug(slugify(val));
-                  }}
-                  required
-                  className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 text-navy focus:outline-none focus:border-red"
-                  placeholder="e.g. Hackathon & Build"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-navy/70">Slug Identifier</label>
-                  <label className="flex items-center gap-1.5 text-[11px] text-navy/70 font-medium cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={catAutoSlug}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setCatAutoSlug(checked);
-                        if (checked) setCatSlug(slugify(catName));
-                      }}
-                      className="w-3 h-3 accent-red rounded cursor-pointer"
-                    />
-                    Auto-generate
-                  </label>
+            <form id="cat-form" onSubmit={handleSaveCategorySubmit} className="space-y-4 overflow-y-auto pr-1 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Category Name *</label>
+                  <input
+                    name="name"
+                    value={catName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCatName(val);
+                      if (catAutoSlug) setCatSlug(slugify(val));
+                    }}
+                    required
+                    className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2.5 text-navy font-bold focus:outline-none focus:border-red"
+                    placeholder="e.g. Hackathon & Build"
+                  />
                 </div>
-                <input
-                  name="slug"
-                  value={catSlug}
-                  onChange={(e) => {
-                    setCatSlug(e.target.value);
-                    if (catAutoSlug) setCatAutoSlug(false);
-                  }}
-                  className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 text-navy font-mono focus:outline-none focus:border-red"
-                  placeholder="e.g. hackathon"
-                />
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-navy/70">Slug Identifier *</label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-navy/70 font-medium cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={catAutoSlug}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setCatAutoSlug(checked);
+                          if (checked) setCatSlug(slugify(catName));
+                        }}
+                        className="w-3 h-3 accent-red rounded cursor-pointer"
+                      />
+                      Auto-generate
+                    </label>
+                  </div>
+                  <input
+                    name="slug"
+                    value={catSlug}
+                    onChange={(e) => {
+                      setCatSlug(e.target.value);
+                      if (catAutoSlug) setCatAutoSlug(false);
+                    }}
+                    className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2.5 text-navy font-mono focus:outline-none focus:border-red"
+                    placeholder="e.g. hackathon"
+                  />
+                </div>
               </div>
 
               <div>
@@ -677,23 +700,208 @@ export function EventsWorkspaceClient({
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCatPromptOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-navy/70 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="bg-navy hover:bg-red text-white px-5 py-2 rounded-xl font-oswald text-xs uppercase tracking-widest font-bold transition-all disabled:opacity-50"
-                >
-                  {isPending ? "Saving..." : "Save Category"}
-                </button>
+              {/* Category Field Definitions Builder */}
+              <div className="pt-3 border-t border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-oswald text-xs font-bold uppercase text-navy flex items-center gap-1.5">
+                      <Sliders className="w-4 h-4 text-red" /> Category Field Definitions & Layout
+                    </h4>
+                    <p className="text-[10px] text-gray-400">Customise inputs, placeholders, status visibility, and order for events in this category.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCatFields((prev) => [
+                        ...prev,
+                        {
+                          id: `custom_field_${Date.now()}`,
+                          label: "New Custom Field",
+                          type: "text",
+                          placeholder: "Enter value...",
+                          hidden: false,
+                          order: prev.length + 1,
+                        },
+                      ])
+                    }
+                    className="bg-navy/5 hover:bg-navy/10 text-navy font-oswald uppercase text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-red" /> Add Field Definition
+                  </button>
+                </div>
+
+                {catFields.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic bg-gray-50 p-3.5 rounded-xl text-center">
+                    No custom field definitions. Click &quot;Add Field Definition&quot; to configure input fields for this category.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                    {catFields.map((field, idx) => (
+                      <div
+                        key={field.id + idx}
+                        className={cn(
+                          "p-3 rounded-xl border transition-all space-y-2 text-xs",
+                          field.hidden ? "bg-gray-100/70 border-gray-200 opacity-60" : "bg-gray-50/90 border-gray-200"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (idx === 0) return;
+                                const copy = [...catFields];
+                                const [moved] = copy.splice(idx, 1);
+                                copy.splice(idx - 1, 0, moved);
+                                setCatFields(copy);
+                              }}
+                              disabled={idx === 0}
+                              className="p-1 text-gray-400 hover:text-navy disabled:opacity-30"
+                              title="Move Up"
+                            >
+                              <MoveUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (idx === catFields.length - 1) return;
+                                const copy = [...catFields];
+                                const [moved] = copy.splice(idx, 1);
+                                copy.splice(idx + 1, 0, moved);
+                                setCatFields(copy);
+                              }}
+                              disabled={idx === catFields.length - 1}
+                              className="p-1 text-gray-400 hover:text-navy disabled:opacity-30"
+                              title="Move Down"
+                            >
+                              <MoveDown className="w-3.5 h-3.5" />
+                            </button>
+
+                            <input
+                              type="text"
+                              value={field.label}
+                              onChange={(e) => {
+                                const copy = [...catFields];
+                                copy[idx].label = e.target.value;
+                                setCatFields(copy);
+                              }}
+                              placeholder="Field Label (e.g. Speaker Name)"
+                              className="font-oswald text-xs uppercase font-bold text-navy bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 focus:outline-none focus:border-red"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <select
+                              value={field.type}
+                              onChange={(e) => {
+                                const copy = [...catFields];
+                                copy[idx].type = e.target.value as CategoryFieldDef["type"];
+                                setCatFields(copy);
+                              }}
+                              className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-mono text-navy font-bold focus:outline-none focus:border-red"
+                            >
+                              <option value="text">Text</option>
+                              <option value="textarea">Textarea</option>
+                              <option value="number">Number</option>
+                              <option value="url">URL Link</option>
+                              <option value="date">Date & Time</option>
+                              <option value="winners">Winners Podium</option>
+                              <option value="prerequisites">Prerequisites</option>
+                            </select>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const copy = [...catFields];
+                                copy[idx].hidden = !copy[idx].hidden;
+                                setCatFields(copy);
+                              }}
+                              className={cn(
+                                "p-1.5 rounded-lg border transition-colors cursor-pointer",
+                                field.hidden ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-white text-navy/70 border-gray-200 hover:text-navy"
+                              )}
+                              title={field.hidden ? "Field Hidden by Default" : "Field Visible"}
+                            >
+                              {field.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCatFields((prev) => prev.filter((_, i) => i !== idx))}
+                              className="p-1.5 text-gray-400 hover:text-red rounded-lg transition-colors cursor-pointer"
+                              title="Delete Field Definition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                          <input
+                            type="text"
+                            value={field.placeholder || ""}
+                            onChange={(e) => {
+                              const copy = [...catFields];
+                              copy[idx].placeholder = e.target.value;
+                              setCatFields(copy);
+                            }}
+                            placeholder="Placeholder text..."
+                            className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-[11px] text-navy focus:outline-none focus:border-red"
+                          />
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase text-navy/60">Visible Statuses:</span>
+                            {(["open", "closed", "finished", "draft"] as const).map((st) => {
+                              const active = field.visible_statuses ? field.visible_statuses.includes(st) : true;
+                              return (
+                                <button
+                                  key={st}
+                                  type="button"
+                                  onClick={() => {
+                                    const copy = [...catFields];
+                                    const curr = copy[idx].visible_statuses || ["open", "closed", "finished", "draft"];
+                                    if (curr.includes(st)) {
+                                      copy[idx].visible_statuses = curr.filter((s) => s !== st);
+                                    } else {
+                                      copy[idx].visible_statuses = [...curr, st];
+                                    }
+                                    setCatFields(copy);
+                                  }}
+                                  className={cn(
+                                    "px-1.5 py-0.5 rounded text-[9px] font-oswald uppercase font-bold transition-all cursor-pointer",
+                                    active ? "bg-navy text-white" : "bg-gray-200 text-gray-500 line-through"
+                                  )}
+                                >
+                                  {st}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </form>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setCatPromptOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-navy/70 hover:bg-gray-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="cat-form"
+                disabled={isPending}
+                className="bg-navy hover:bg-red text-white px-6 py-2.5 rounded-xl font-oswald text-xs uppercase tracking-widest font-bold transition-all shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {isPending ? "Saving..." : "Save Category & Schema"}
+              </button>
+            </div>
           </div>
         </div>
       )}

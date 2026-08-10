@@ -3,12 +3,24 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/auth";
 
+export interface CategoryFieldDef {
+  id: string;
+  label: string;
+  type: "text" | "textarea" | "number" | "url" | "date" | "winners" | "prerequisites";
+  placeholder?: string;
+  required?: boolean;
+  hidden?: boolean;
+  visible_statuses?: ("open" | "closed" | "finished" | "draft")[];
+  order?: number;
+}
+
 export type EventCategoryItem = {
   id?: string;
   name: string;
   slug: string;
   tagline?: string | null;
   sort_order?: number;
+  field_schema?: CategoryFieldDef[];
 };
 
 export async function saveEvent(formData: FormData) {
@@ -32,6 +44,8 @@ export async function saveEvent(formData: FormData) {
   const rawStatus = (formData.get("status") as string || "").trim();
   const status = rawStatus || (is_published ? "open" : "draft");
   const registration_form_id = (formData.get("registration_form_id") as string || "").trim() || null;
+  const external_website_url = (formData.get("external_website_url") as string || "").trim() || null;
+  const requires_registration = formData.get("requires_registration") !== "false";
 
   let gallery_images: string[] = [];
   const rawGallery = formData.get("gallery_images_json") as string || null;
@@ -40,6 +54,26 @@ export async function saveEvent(formData: FormData) {
       gallery_images = JSON.parse(rawGallery);
     } catch {
       gallery_images = [];
+    }
+  }
+
+  let winners = [];
+  const rawWinners = formData.get("winners_json") as string || null;
+  if (rawWinners) {
+    try {
+      winners = JSON.parse(rawWinners);
+    } catch {
+      winners = [];
+    }
+  }
+
+  let custom_metadata: Record<string, string> = {};
+  const rawMetadata = formData.get("custom_metadata_json") as string || null;
+  if (rawMetadata) {
+    try {
+      custom_metadata = JSON.parse(rawMetadata);
+    } catch {
+      custom_metadata = {};
     }
   }
 
@@ -60,6 +94,10 @@ export async function saveEvent(formData: FormData) {
     is_published: status !== "draft",
     status,
     registration_form_id,
+    external_website_url,
+    requires_registration,
+    winners,
+    custom_metadata,
     gallery_images,
     created_by: user.id,
     updated_at: new Date().toISOString(),
@@ -96,6 +134,7 @@ export async function saveEventCategory(cat: EventCategoryItem) {
     slug,
     tagline: cat.tagline?.trim() || null,
     sort_order: cat.sort_order ?? 0,
+    field_schema: cat.field_schema || [],
     updated_at: new Date().toISOString(),
   };
 

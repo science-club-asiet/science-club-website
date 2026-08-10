@@ -8,154 +8,10 @@ import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import { SelectField } from "@/components/ui/SelectField";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const base =
   "w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-xs text-navy focus:outline-none focus:border-red focus:ring-2 focus:ring-red/10 transition-all shadow-xs";
-
-function CustomDatePicker({
-  name,
-  required,
-  placeholder,
-  value,
-  onChange,
-}: {
-  name: string;
-  required?: boolean;
-  placeholder?: string;
-  value?: string;
-  onChange?: (val: string) => void;
-}) {
-  const [typedValue, setTypedValue] = useState<string>(value || "");
-  const [isOpen, setIsOpen] = useState(false);
-  const [viewDate, setViewDate] = useState(new Date());
-
-  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-  const firstDayOfWeek = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
-
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  // Auto-mask formatter: YYYY-MM-DD
-  const formatInput = (raw: string) => {
-    const digits = raw.replace(/\D/g, "").slice(0, 8);
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatInput(e.target.value);
-    setTypedValue(formatted);
-    if (onChange) onChange(formatted);
-
-    if (formatted.length === 10) {
-      const parsed = new Date(formatted);
-      if (!isNaN(parsed.getTime())) {
-        setViewDate(parsed);
-      }
-    }
-  };
-
-  const handleSelectDay = (day: number) => {
-    const y = viewDate.getFullYear();
-    const m = String(viewDate.getMonth() + 1).padStart(2, "0");
-    const d = String(day).padStart(2, "0");
-    const dateStr = `${y}-${m}-${d}`;
-    setTypedValue(dateStr);
-    if (onChange) onChange(dateStr);
-    setIsOpen(false);
-  };
-
-  const changeMonth = (delta: number) => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + delta, 1));
-  };
-
-  return (
-    <div className="relative w-full">
-      <input type="hidden" name={name} value={typedValue} required={required} />
-      <div className="relative flex items-center">
-        <input
-          type="text"
-          value={typedValue}
-          onChange={handleInputChange}
-          placeholder={placeholder || "YYYY-MM-DD"}
-          maxLength={10}
-          required={required}
-          className={`${base} pr-10 font-mono text-xs`}
-        />
-        <Tooltip tip="Toggle Calendar" side="right">
-          <button
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-            className="absolute right-3 text-red hover:text-navy p-1 transition-colors cursor-pointer"
-          >
-            <Calendar className="w-4 h-4" />
-          </button>
-        </Tooltip>
-      </div>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 z-50 bg-white border border-gray-200 rounded-2xl p-4 shadow-xl w-72 space-y-3 animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => changeMonth(-1)}
-              className="p-1.5 hover:bg-gray-100 rounded-lg text-navy transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="font-oswald text-sm font-bold uppercase text-navy">
-              {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
-            </span>
-            <button
-              type="button"
-              onClick={() => changeMonth(1)}
-              className="p-1.5 hover:bg-gray-100 rounded-lg text-navy transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 text-center text-[10px] font-bold text-gray-400 uppercase">
-            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 text-center text-xs">
-            {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-              <div key={`empty_${i}`} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const y = viewDate.getFullYear();
-              const m = String(viewDate.getMonth() + 1).padStart(2, "0");
-              const d = String(day).padStart(2, "0");
-              const dateStr = `${y}-${m}-${d}`;
-              const isSelected = typedValue === dateStr;
-
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => handleSelectDay(day)}
-                  className={cn(
-                    "p-2 rounded-lg font-semibold transition-all cursor-pointer",
-                    isSelected
-                      ? "bg-red text-white font-bold shadow-xs"
-                      : "hover:bg-gray-100 text-navy"
-                  )}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function FileUploadField({
   f,
@@ -474,7 +330,7 @@ function Field({
 
     case "date":
       return (
-        <CustomDatePicker
+        <DatePicker
           name={f.fieldKey}
           required={f.required}
           placeholder={f.placeholder}

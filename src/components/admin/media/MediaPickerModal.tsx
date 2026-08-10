@@ -45,6 +45,12 @@ export function MediaPickerModal({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(allowMultiple);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
 
+  // Synchronize multi-select state when modal opens or allowMultiple prop changes
+  useEffect(() => {
+    setIsMultiSelectMode(allowMultiple);
+    if (!allowMultiple) setSelectedUrls(new Set());
+  }, [allowMultiple, isOpen]);
+
   // Cropper & Prompt state
   const [cropperSrc, setCropperSrc] = useState<string | File | null>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
@@ -237,18 +243,20 @@ export function MediaPickerModal({
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMultiSelectMode(!isMultiSelectMode);
-                  if (isMultiSelectMode) setSelectedUrls(new Set());
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border shadow-sm ${
-                  isMultiSelectMode ? "bg-navy text-white border-navy" : "bg-gray-50 text-navy border-gray-200 hover:bg-gray-100"
-                }`}
-              >
-                {isMultiSelectMode ? "Done Multi-Select" : "Multi-Select"}
-              </button>
+              {allowMultiple && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMultiSelectMode(!isMultiSelectMode);
+                    if (isMultiSelectMode) setSelectedUrls(new Set());
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border shadow-sm ${
+                    isMultiSelectMode ? "bg-navy text-white border-navy" : "bg-gray-50 text-navy border-gray-200 hover:bg-gray-100"
+                  }`}
+                >
+                  {isMultiSelectMode ? "Done Multi-Select" : "Multi-Select"}
+                </button>
+              )}
 
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
                 {folderList.map((f) => (

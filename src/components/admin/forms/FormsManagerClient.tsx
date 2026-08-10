@@ -889,8 +889,21 @@ export function FormsManagerClient({
                     <p className="text-xs text-gray-500 line-clamp-1">{item.description}</p>
                   )}
 
-                  <div className="flex items-center gap-4 text-xs text-gray-500 font-mono">
-                    <span>slug: /forms/{item.slug}</span>
+                  <div className="flex items-center gap-3 text-xs text-gray-500 font-mono">
+                    <span className="bg-navy/5 text-navy border border-navy/15 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5">
+                      <span>Form Code: <strong className="text-red">{item.slug || item.id}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.slug || item.id);
+                          toast(`Copied Form Code '${item.slug || item.id}'`, "success");
+                        }}
+                        className="p-1 text-gray-400 hover:text-navy transition-colors cursor-pointer"
+                        title="Copy Form Code"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
                   </div>
                 </div>
 

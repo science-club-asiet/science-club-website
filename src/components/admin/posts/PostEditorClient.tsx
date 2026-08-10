@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, Layers, Image as ImageIcon, Newspaper, Sparkles, AlertCircle } from "lucide-react";
+import { Save, ArrowLeft, Layers, Image as ImageIcon, Newspaper, Sparkles, AlertCircle, Calendar } from "lucide-react";
 import { savePost } from "@/lib/admin/post-actions";
 import { toast } from "@/components/ui/Toast";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { DatePicker } from "@/components/ui/DatePicker";
 import type { PostCategoryItem } from "@/lib/admin/post-actions";
 
 export type PostInitialData = {
@@ -22,6 +23,7 @@ export type PostInitialData = {
   tag?: string;
   is_featured?: boolean;
   breaking?: boolean;
+  published_at?: string;
 };
 
 export function PostEditorClient({
@@ -41,6 +43,9 @@ export function PostEditorClient({
   const [title, setTitle] = useState(initialData?.title || "");
   const [slug, setSlug] = useState(initialData?.slug || "");
   const [autoSlug, setAutoSlug] = useState(!isEditing || !initialData?.slug);
+  const [publishedAt, setPublishedAt] = useState<string>(
+    initialData?.published_at ? new Date(initialData.published_at).toISOString().slice(0, 16) : ""
+  );
 
   function slugify(text: string): string {
     return text
@@ -238,6 +243,19 @@ export function PostEditorClient({
             <h2 className="font-oswald text-sm font-bold uppercase text-navy border-b border-gray-100 pb-2">
               Status & Highlights
             </h2>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-red" /> Published Date & Time
+              </label>
+              <DatePicker
+                showTime
+                name="published_at"
+                value={publishedAt}
+                onChange={setPublishedAt}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Publication Status</label>

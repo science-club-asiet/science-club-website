@@ -69,6 +69,7 @@ import {
   type ValidationRule,
 } from "@/lib/admin/formTypes";
 import { MediaPickerModal } from "@/components/admin/media/MediaPickerModal";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
@@ -1805,9 +1806,14 @@ export function FormBuilder({
                         <span className="text-xs font-bold text-navy block">Click to upload file</span>
                         <span className="text-[10px] text-gray-400">Max {f.max_files} file(s), up to {f.max_file_size}</span>
                       </div>
+                    ) : f.field_type === "date" || f.field_type === "time" ? (
+                      <DatePicker
+                        placeholder={f.placeholder || (f.field_type === "date" ? "YYYY-MM-DD" : "HH:MM")}
+                        showTime={f.field_type === "time"}
+                      />
                     ) : (
                       <input
-                        type={f.field_type === "date" ? "date" : f.field_type === "time" ? "time" : "text"}
+                        type="text"
                         placeholder={f.placeholder}
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-navy focus:outline-none focus:border-red"
                       />

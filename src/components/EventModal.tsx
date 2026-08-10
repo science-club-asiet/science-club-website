@@ -12,7 +12,11 @@ import {
   Download,
   Sparkles,
   Calendar,
-  User
+  User,
+  Trophy,
+  Globe,
+  ExternalLink,
+  Sliders
 } from "lucide-react";
 import { ScienceEvent } from "@/lib/events";
 import { cn } from "@/lib/utils";
@@ -23,7 +27,7 @@ interface EventModalProps {
   onClose: () => void;
 }
 
-type ModalTab = "OVERVIEW" | "AGENDA" | "SPEAKERS" | "VENUE" | "GALLERY";
+type ModalTab = "OVERVIEW" | "WINNERS" | "DETAILS" | "GALLERY" | "AGENDA" | "SPEAKERS" | "VENUE";
 
 // Framer Motion Staggered Variants
 const containerVariants: Variants = {
@@ -139,9 +143,25 @@ export function EventModal({ event, onClose }: EventModalProps) {
               <span className="bg-white/15 backdrop-blur-md text-white text-[10px] font-oswald uppercase font-bold tracking-widest px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-white/15">
                 {event.type}
               </span>
+              {event.externalWebsiteUrl && (
+                <a
+                  href={event.externalWebsiteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-auto text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-xs font-oswald uppercase font-bold flex items-center gap-1 transition-all cursor-pointer border border-white/20"
+                >
+                  <Globe className="w-3.5 h-3.5 text-red" />
+                  <span>WEBSITE</span>
+                  <ExternalLink className="w-3 h-3 text-white/70" />
+                </a>
+              )}
               <button
                 onClick={handleShare}
-                className="ml-auto mr-10 sm:mr-14 text-white/70 hover:text-white text-xs font-oswald uppercase font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                className={cn(
+                  "text-white/70 hover:text-white text-xs font-oswald uppercase font-bold flex items-center gap-1 transition-colors cursor-pointer",
+                  !event.externalWebsiteUrl && "ml-auto",
+                  "mr-10 sm:mr-14"
+                )}
               >
                 <Share2 className="w-3.5 h-3.5 text-red" />
                 <span>{copied ? "COPIED!" : "SHARE"}</span>
@@ -181,9 +201,15 @@ export function EventModal({ event, onClose }: EventModalProps) {
           >
             <div className="inline-flex bg-gray-100 p-1 rounded-full relative min-w-max">
               {(
-                event.galleryImages && event.galleryImages.length > 0
-                  ? (["OVERVIEW", "GALLERY", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[])
-                  : (["OVERVIEW", "AGENDA", "SPEAKERS", "VENUE"] as ModalTab[])
+                [
+                  "OVERVIEW",
+                  ...(event.winners && event.winners.length > 0 && event.opStatus !== "open" ? ["WINNERS"] : []),
+                  ...(event.customMetadata && Object.keys(event.customMetadata).length > 0 ? ["DETAILS"] : []),
+                  ...(event.galleryImages && event.galleryImages.length > 0 ? ["GALLERY"] : []),
+                  "AGENDA",
+                  "SPEAKERS",
+                  "VENUE",
+                ] as ModalTab[]
               ).map((tab) => (
                 <button
                   key={tab}
@@ -242,6 +268,102 @@ export function EventModal({ event, onClose }: EventModalProps) {
                         </div>
                       </motion.div>
                     )}
+                  </div>
+                )}
+                {/* WINNERS PODIUM TAB */}
+                {activeTab === "WINNERS" && event.winners && (
+                  <div className="space-y-4">
+                    <motion.div variants={itemVariants} className="bg-gradient-to-br from-navy via-navy to-navy/95 text-white p-6 rounded-2xl border border-white/10 shadow-lg space-y-4">
+                      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                        <Trophy className="w-5 h-5 text-amber-400" />
+                        <span className="font-oswald text-base font-bold uppercase tracking-wider text-white">
+                          OFFICIAL WINNERS PODIUM & LEADERBOARD
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {event.winners.map((w, idx) => {
+                          const isGold = idx === 0 || w.rank.toLowerCase().includes("1st") || w.rank.toLowerCase().includes("gold");
+                          const isSilver = idx === 1 || w.rank.toLowerCase().includes("2nd") || w.rank.toLowerCase().includes("silver");
+                          const isBronze = idx === 2 || w.rank.toLowerCase().includes("3rd") || w.rank.toLowerCase().includes("bronze");
+
+                          return (
+                            <div
+                              key={idx}
+                              className={cn(
+                                "p-4 rounded-xl border flex items-center justify-between gap-3 transition-all",
+                                isGold
+                                  ? "bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border-amber-400/40 text-amber-300"
+                                  : isSilver
+                                  ? "bg-gradient-to-r from-slate-400/20 via-slate-400/10 to-transparent border-slate-300/40 text-slate-200"
+                                  : isBronze
+                                  ? "bg-gradient-to-r from-amber-700/20 via-amber-700/10 to-transparent border-amber-600/40 text-amber-400"
+                                  : "bg-white/5 border-white/10 text-white"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-9 h-9 rounded-full font-oswald font-bold text-xs flex items-center justify-center shrink-0 border shadow-sm",
+                                  isGold
+                                    ? "bg-amber-400 text-navy border-amber-300"
+                                    : isSilver
+                                    ? "bg-slate-200 text-navy border-slate-100"
+                                    : isBronze
+                                    ? "bg-amber-700 text-white border-amber-600"
+                                    : "bg-white/10 text-white border-white/20"
+                                )}>
+                                  #{idx + 1}
+                                </div>
+                                <div>
+                                  <span className="font-oswald text-xs uppercase tracking-wider block font-bold">
+                                    {w.rank}
+                                  </span>
+                                  <span className="font-inter text-sm font-semibold text-white block">
+                                    {w.name}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {w.prize && (
+                                <span className="font-mono text-xs font-bold bg-white/15 px-3 py-1.5 rounded-full border border-white/10 text-white">
+                                  {w.prize}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* EXTRA DETAILS & CUSTOM METADATA TAB */}
+                {activeTab === "DETAILS" && event.customMetadata && (
+                  <div className="space-y-4">
+                    <motion.div variants={itemVariants} className="bg-gray-50/90 p-5 rounded-2xl border border-gray-200/80 space-y-4">
+                      <span className="font-oswald text-xs uppercase font-bold text-navy tracking-wider flex items-center gap-2 border-b border-gray-200 pb-2">
+                        <Sliders className="w-4 h-4 text-red" /> ADDITIONAL EVENT SPECIFICATIONS
+                      </span>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {Object.entries(event.customMetadata).map(([key, val], idx) => (
+                          <div key={idx} className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs space-y-1">
+                            <span className="font-oswald text-[11px] uppercase font-bold text-navy/60 tracking-wider block">
+                              {key}
+                            </span>
+                            <span className="font-inter text-xs text-navy font-semibold block break-all">
+                              {val.startsWith("http") ? (
+                                <a href={val} target="_blank" rel="noreferrer" className="text-red hover:underline inline-flex items-center gap-1">
+                                  {val} <ExternalLink className="w-3 h-3" />
+                                </a>
+                              ) : (
+                                val
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
                   </div>
                 )}
 
@@ -388,26 +510,37 @@ export function EventModal({ event, onClose }: EventModalProps) {
 
           {/* Sticky Bottom Action Bar */}
           <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between gap-4 shrink-0">
-            {(event.opStatus === "open" || event.status === "UPCOMING") && (event.memberPrice || event.nonMemberPrice) ? (
-              <span className="text-sm text-navy font-medium">
-                Members <strong className="text-red">₹{event.memberPrice ?? 0}</strong>
-                <span className="text-gray-300 mx-2">·</span>
-                Others <strong>₹{event.nonMemberPrice ?? 0}</strong>
-              </span>
+            {event.requiresRegistration !== false ? (
+              <>
+                {(event.opStatus === "open" || event.status === "UPCOMING") && (event.memberPrice || event.nonMemberPrice) ? (
+                  <span className="text-sm text-navy font-medium">
+                    Members <strong className="text-red">₹{event.memberPrice ?? 0}</strong>
+                    <span className="text-gray-300 mx-2">·</span>
+                    Others <strong>₹{event.nonMemberPrice ?? 0}</strong>
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-gray-400 font-normal hidden sm:inline-block">
+                    Need assistance? Contact <strong className="text-navy font-semibold">events@scienceclub-asiet.org</strong>
+                  </span>
+                )}
+                
+                {/* Register CTA — real registration via /api/events/[id]/register or linked form */}
+                <RegisterButton
+                  eventId={event.id}
+                  opStatus={event.opStatus || (event.status === "COMPLETED" ? "finished" : "open")}
+                  formSlug={event.formSlug}
+                  formId={event.registrationFormId}
+                  className="w-full sm:w-auto ml-auto bg-gradient-to-r from-red via-red to-red text-white text-sm font-oswald uppercase tracking-[0.2em] font-bold px-8 py-3.5 rounded-full inline-flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(229,57,53,0.35)] hover:shadow-[0_15px_35px_rgba(229,57,53,0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-70 disabled:hover:scale-100"
+                />
+              </>
             ) : (
-              <span className="text-[11px] text-gray-400 font-normal hidden sm:inline-block">
-                Need assistance? Contact <strong className="text-navy font-semibold">events@scienceclub-asiet.org</strong>
-              </span>
+              <div className="w-full bg-navy/5 border border-navy/10 rounded-full px-5 py-3 flex items-center justify-between">
+                <span className="text-xs font-oswald uppercase font-bold text-navy tracking-wider flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-red" /> INFORMATIONAL LOG / EXECOOM RECORD
+                </span>
+                <span className="text-[10px] text-gray-500 font-mono font-bold uppercase">No Registration Required</span>
+              </div>
             )}
-            
-            {/* Register CTA — real registration via /api/events/[id]/register or linked form */}
-            <RegisterButton
-              eventId={event.id}
-              opStatus={event.opStatus || (event.status === "COMPLETED" ? "finished" : "open")}
-              formSlug={event.formSlug}
-              formId={event.registrationFormId}
-              className="w-full sm:w-auto ml-auto bg-gradient-to-r from-red via-red to-red text-white text-sm font-oswald uppercase tracking-[0.2em] font-bold px-8 py-3.5 rounded-full inline-flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(229,57,53,0.35)] hover:shadow-[0_15px_35px_rgba(229,57,53,0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-70 disabled:hover:scale-100"
-            />
           </div>
 
         </div>

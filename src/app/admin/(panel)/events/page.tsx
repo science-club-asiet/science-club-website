@@ -14,7 +14,7 @@ export default async function AdminEventsPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("event_categories")
-      .select("id, name, slug, tagline, sort_order")
+      .select("id, name, slug, tagline, sort_order, field_schema")
       .order("sort_order", { ascending: true }),
     supabase
       .from("terms")
