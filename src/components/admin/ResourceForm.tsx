@@ -7,6 +7,7 @@ import { saveResourceAction, type SaveState } from "@/lib/admin/actions";
 import { saveTemplateAction } from "@/lib/admin/template-actions";
 import type { Resource, Field } from "@/lib/admin/resources";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { toast } from "@/components/ui/Toast";
 
 function toDatetimeLocal(iso: unknown): string {
   if (typeof iso !== "string" || !iso) return "";
@@ -89,9 +90,9 @@ export function ResourceForm({
           payload
         );
         setShowTemplateModal(false);
-        alert("Template saved!");
+        toast("Template saved!", "success");
       } catch (err: unknown) {
-        alert("Failed to save template: " + (err as Error).message);
+        toast("Failed to save template: " + (err as Error).message, "error");
       }
     });
   };

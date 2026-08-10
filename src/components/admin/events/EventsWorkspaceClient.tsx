@@ -11,6 +11,7 @@ import { deleteEvent, saveEventCategory, deleteEventCategory, type EventCategory
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 export type AdminEvent = {
   id: string;
@@ -273,28 +274,30 @@ export function EventsWorkspaceClient({
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("list")}
-                    className={cn(
-                      "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
-                      viewMode === "list" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
-                    )}
-                    title="List Table View"
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("card")}
-                    className={cn(
-                      "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
-                      viewMode === "card" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
-                    )}
-                    title="Card Grid View"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
+                  <Tooltip tip="List Table View">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      className={cn(
+                        "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
+                        viewMode === "list" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
+                      )}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip tip="Card Grid View">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("card")}
+                      className={cn(
+                        "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
+                        viewMode === "card" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
+                      )}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
 
                 <div className="relative flex-1 sm:w-64">

@@ -9,7 +9,7 @@ export type FolderNode = {
  * Extracts a deduplicated, sorted list of all folder paths (including subfolders) from media assets.
  */
 export function getDynamicFolders(assets: { folder?: string | null }[], customFolders: string[] = []): string[] {
-  const set = new Set<string>(["general", "events", "posts", "people", "brand", ...customFolders]);
+  const set = new Set<string>(["general", "events", "posts", "people", "brand", "forms", "applications", ...customFolders]);
 
   assets.forEach((asset) => {
     if (asset.folder) {

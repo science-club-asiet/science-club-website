@@ -6,6 +6,7 @@ import { useUploadThing } from "@/lib/uploadthing";
 import { getMediaAssets } from "@/lib/admin/media-actions";
 import type { MediaAsset } from "@/components/admin/media/MediaLibraryClient";
 import { resolver } from "../../registry";
+import { toast } from "@/components/ui/Toast";
 
 /**
  * In-editor media library. Uploads go through the existing UploadThing pipeline;
@@ -26,7 +27,7 @@ export const AssetsPanel = () => {
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: () => load(),
-    onUploadError: (e) => alert(`Upload failed: ${e.message}`),
+    onUploadError: (e) => toast(`Upload failed: ${e.message}`, "error"),
   });
 
   const insertImage = (url: string) => {

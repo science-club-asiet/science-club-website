@@ -45,11 +45,23 @@ export async function createForm(formData: FormData): Promise<void> {
   const title = String(formData.get("title") ?? "").trim() || "Untitled form";
   const baseSlug = String(formData.get("slug") ?? "").trim() || slugify(title);
   const purpose = String(formData.get("purpose") ?? "generic");
+  const category = String(formData.get("category") ?? "General").trim() || "General";
+  const isTemplate = formData.get("is_template") === "on" || formData.get("is_template") === "true";
+
   let slug = baseSlug;
-  let inserted = await supabase.from("forms").insert({ title, slug, purpose, created_by: user!.id }).select("id").single();
+  let inserted = await supabase
+    .from("forms")
+    .insert({ title, slug, purpose, category, is_template: isTemplate, created_by: user!.id })
+    .select("id")
+    .single();
+
   if (inserted.error?.code === "23505") {
     slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
-    inserted = await supabase.from("forms").insert({ title, slug, purpose, created_by: user!.id }).select("id").single();
+    inserted = await supabase
+      .from("forms")
+      .insert({ title, slug, purpose, category, is_template: isTemplate, created_by: user!.id })
+      .select("id")
+      .single();
   }
   if (inserted.error) throw new Error(inserted.error.message);
   revalidatePath("/admin/forms");
@@ -72,6 +84,8 @@ export async function updateFormSettings(
       slug: String(formData.get("slug") ?? ""),
       description: String(formData.get("description") ?? "") || null,
       purpose: String(formData.get("purpose") ?? "generic"),
+      category: String(formData.get("category") ?? "General").trim() || "General",
+      is_template: formData.get("is_template") === "on",
       is_active: formData.get("is_active") === "on",
       confirmation_message: String(formData.get("confirmation_message") ?? "Thank you! Your response has been recorded."),
       closed_message: String(formData.get("closed_message") ?? "This form is no longer accepting responses."),
@@ -115,6 +129,8 @@ export async function duplicateFormAction(formId: string): Promise<{ error?: str
       slug,
       description: originalForm.description,
       purpose: originalForm.purpose,
+      category: originalForm.category || "General",
+      is_template: Boolean(originalForm.is_template),
       is_active: originalForm.is_active,
       confirmation_message: originalForm.confirmation_message,
       closed_message: originalForm.closed_message,
@@ -168,6 +184,147 @@ export async function duplicateFormAction(formId: string): Promise<{ error?: str
 
   revalidatePath("/admin/forms");
   return { id: newForm.id };
+}
+
+/** Instantiates a Template preset into an active live Form */
+export async function instantiateTemplateAction(templateId: string): Promise<{ error?: string; id?: string }> {
+  const { supabase, user } = await requireAdmin();
+
+  const { data: tmpl, error: fe } = await supabase.from("forms").select("*").eq("id", templateId).single();
+  if (fe || !tmpl) return { error: fe?.message || "Template not found" };
+
+  const cleanTitle = tmpl.title.replace(/\s*\(Template\)/i, "").trim();
+  const title = `${cleanTitle} - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  const baseSlug = slugify(cleanTitle);
+  let slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+
+  const { data: newForm, error: ie } = await supabase
+    .from("forms")
+    .insert({
+      title,
+      slug,
+      description: tmpl.description,
+      purpose: tmpl.purpose || "generic",
+      category: tmpl.category || "General",
+      is_template: false, // Live form!
+      is_active: true,
+      confirmation_message: tmpl.confirmation_message,
+      closed_message: tmpl.closed_message,
+      collect_email_type: tmpl.collect_email_type,
+      header_image_url: tmpl.header_image_url,
+      created_by: user!.id,
+    })
+    .select("id")
+    .single();
+
+  if (ie || !newForm) return { error: ie?.message || "Failed to create form from template" };
+
+  // Copy template fields
+  const { data: tmplFields } = await supabase
+    .from("form_fields")
+    .select("*")
+    .eq("form_id", templateId)
+    .order("display_order");
+
+  if (tmplFields && tmplFields.length > 0) {
+    const newFieldsRows = tmplFields.map((f, i) => ({
+      form_id: newForm.id,
+      label: f.label,
+      field_key: f.field_key,
+      field_type: f.field_type,
+      required: f.required,
+      placeholder: f.placeholder,
+      help_text: f.help_text,
+      options: f.options,
+      image_url: f.image_url,
+      validation_rule: f.validation_rule,
+      allow_other: f.allow_other,
+      shuffle_options: f.shuffle_options,
+      scale_min: f.scale_min,
+      scale_max: f.scale_max,
+      scale_min_label: f.scale_min_label,
+      scale_max_label: f.scale_max_label,
+      grid_rows: f.grid_rows,
+      grid_columns: f.grid_columns,
+      file_types: f.file_types,
+      max_file_size: f.max_file_size,
+      max_files: f.max_files,
+      display_order: i,
+    }));
+    await supabase.from("form_fields").insert(newFieldsRows);
+  }
+
+  revalidatePath("/admin/forms");
+  return { id: newForm.id };
+}
+
+/** Saves an existing form as a reusable preset Template */
+export async function saveFormAsTemplateAction(formId: string): Promise<{ error?: string; id?: string }> {
+  const { supabase, user } = await requireAdmin();
+
+  const { data: originalForm, error: fe } = await supabase.from("forms").select("*").eq("id", formId).single();
+  if (fe || !originalForm) return { error: fe?.message || "Form not found" };
+
+  const title = `${originalForm.title} (Template)`;
+  const baseSlug = `template-${originalForm.slug || slugify(originalForm.title)}`;
+  let slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+
+  const { data: newTmpl, error: ie } = await supabase
+    .from("forms")
+    .insert({
+      title,
+      slug,
+      description: originalForm.description,
+      purpose: originalForm.purpose,
+      category: originalForm.category || "General",
+      is_template: true, // Marked as Template!
+      is_active: false,
+      confirmation_message: originalForm.confirmation_message,
+      closed_message: originalForm.closed_message,
+      created_by: user!.id,
+    })
+    .select("id")
+    .single();
+
+  if (ie || !newTmpl) return { error: ie?.message || "Failed to create template" };
+
+  // Copy original fields to template
+  const { data: originalFields } = await supabase
+    .from("form_fields")
+    .select("*")
+    .eq("form_id", formId)
+    .order("display_order");
+
+  if (originalFields && originalFields.length > 0) {
+    const newFieldsRows = originalFields.map((f, i) => ({
+      form_id: newTmpl.id,
+      label: f.label,
+      field_key: f.field_key,
+      field_type: f.field_type,
+      required: f.required,
+      placeholder: f.placeholder,
+      help_text: f.help_text,
+      options: f.options,
+      image_url: f.image_url,
+      validation_rule: f.validation_rule,
+      allow_other: f.allow_other,
+      shuffle_options: f.shuffle_options,
+      scale_min: f.scale_min,
+      scale_max: f.scale_max,
+      scale_min_label: f.scale_min_label,
+      scale_max_label: f.scale_max_label,
+      grid_rows: f.grid_rows,
+      grid_columns: f.grid_columns,
+      file_types: f.file_types,
+      max_file_size: f.max_file_size,
+      max_files: f.max_files,
+      display_order: i,
+    }));
+    await supabase.from("form_fields").insert(newFieldsRows);
+  }
+
+  revalidatePath("/admin/forms");
+  return { id: newTmpl.id };
 }
 
 // ─── Fields ─────────────────────────────────────────────────────────────────
@@ -389,4 +546,112 @@ export async function deleteSubmissionAction(formId: string, submissionId: strin
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/forms/${formId}/submissions`);
   return { ok: true };
+}
+
+// ─── Categories & Seed Templates ──────────────────────────────────────────
+
+export async function createFormCategoryAction(formData: FormData): Promise<void> {
+  const { supabase } = await requireAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  if (!name) throw new Error("Category name is required");
+
+  const slug = slugify(name);
+  await supabase.from("form_categories").insert({ name, slug, description });
+  revalidatePath("/admin/forms");
+}
+
+export async function deleteFormCategoryAction(id: string): Promise<void> {
+  const { supabase } = await requireAdmin();
+  await supabase.from("form_categories").delete().eq("id", id);
+  revalidatePath("/admin/forms");
+}
+
+export async function seedDefaultTemplatesAction(): Promise<void> {
+  const { supabase, user } = await requireAdmin();
+
+  // Check if any templates exist in public.forms
+  const { data: existing } = await supabase.from("forms").select("id").eq("is_template", true).limit(1);
+  if (existing && existing.length > 0) return;
+
+  const defaultTemplates = [
+    {
+      title: "Event Registration Preset",
+      slug: `preset-event-registration-${Date.now()}`,
+      category: "Registrations",
+      description: "Standard registration form for workshops, tech talks, and seminars",
+      fields: [
+        { label: "Full Name", field_key: "full_name", field_type: "text", required: true, display_order: 0 },
+        { label: "Email Address", field_key: "email_address", field_type: "text", required: true, display_order: 1 },
+        { label: "Contact Number", field_key: "phone_number", field_type: "text", required: false, display_order: 2 },
+        { label: "Department / Branch", field_key: "department_branch", field_type: "text", required: true, display_order: 3 },
+        { label: "Year of Study", field_key: "year_of_study", field_type: "select", options: ["1st Year", "2nd Year", "3rd Year", "4th Year"], required: true, display_order: 4 },
+        { label: "Expectations / Questions", field_key: "expectations", field_type: "textarea", required: false, display_order: 5 },
+      ],
+    },
+    {
+      title: "Membership Application Preset",
+      slug: `preset-membership-application-${Date.now()}`,
+      category: "Recruitment",
+      description: "Annual recruitment form for new club members and Execom",
+      fields: [
+        { label: "Full Name", field_key: "full_name", field_type: "text", required: true, display_order: 0 },
+        { label: "Email Address", field_key: "email_address", field_type: "text", required: true, display_order: 1 },
+        { label: "Roll / Admission Number", field_key: "roll_number", field_type: "text", required: true, display_order: 2 },
+        { label: "Department", field_key: "department", field_type: "text", required: true, display_order: 3 },
+        { label: "Areas of Interest", field_key: "interests", field_type: "multiselect", options: ["Robotics & IoT", "Artificial Intelligence", "Web / App Dev", "Astronomy & Physics", "Competitive Coding"], required: true, display_order: 4 },
+        { label: "Why do you want to join Science Club?", field_key: "motivation", field_type: "textarea", required: true, display_order: 5 },
+      ],
+    },
+    {
+      title: "Event Feedback & Rating Survey Preset",
+      slug: `preset-event-feedback-${Date.now()}`,
+      category: "Feedback",
+      description: "Post-event attendee survey with 1-5 scale rating",
+      fields: [
+        { label: "Attendee Name (Optional)", field_key: "attendee_name", field_type: "text", required: false, display_order: 0 },
+        { label: "Event Attended", field_key: "event_name", field_type: "text", required: true, display_order: 1 },
+        { label: "Overall Event Rating", field_key: "overall_rating", field_type: "scale", scale_min: 1, scale_max: 5, scale_min_label: "Poor", scale_max_label: "Excellent", required: true, display_order: 2 },
+        { label: "What was the highlight of the event?", field_key: "highlight", field_type: "textarea", required: false, display_order: 3 },
+        { label: "Suggestions for future events", field_key: "suggestions", field_type: "textarea", required: false, display_order: 4 },
+      ],
+    },
+    {
+      title: "Workshop RSVP & Hackathon Team Entry Preset",
+      slug: `preset-workshop-rsvp-${Date.now()}`,
+      category: "Registrations",
+      description: "RSVP form for team-based workshops and mini-hackathons",
+      fields: [
+        { label: "Team Name", field_key: "team_name", field_type: "text", required: true, display_order: 0 },
+        { label: "Team Lead Name", field_key: "lead_name", field_type: "text", required: true, display_order: 1 },
+        { label: "Team Lead Email", field_key: "lead_email", field_type: "text", required: true, display_order: 2 },
+        { label: "Team Size", field_key: "team_size", field_type: "select", options: ["Solo (1)", "Pair (2)", "Team of 3", "Team of 4"], required: true, display_order: 3 },
+        { label: "GitHub / Portfolio Link", field_key: "portfolio_link", field_type: "text", required: false, display_order: 4 },
+      ],
+    },
+  ];
+
+  for (const tmpl of defaultTemplates) {
+    const { data: insertedForm } = await supabase
+      .from("forms")
+      .insert({
+        title: tmpl.title,
+        slug: tmpl.slug,
+        category: tmpl.category,
+        description: tmpl.description,
+        is_template: true,
+        is_active: false,
+        created_by: user?.id,
+      })
+      .select("id")
+      .single();
+
+    if (insertedForm) {
+      const fieldRows = tmpl.fields.map((f) => ({
+        form_id: insertedForm.id,
+        ...f,
+      }));
+      await supabase.from("form_fields").insert(fieldRows);
+    }
+  }
 }

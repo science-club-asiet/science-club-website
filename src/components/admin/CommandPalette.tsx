@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { NAV_SECTIONS, CREATE_ITEMS } from "./navConfig";
 import { playbookOrganizeWorkshop, playbookNewMemberIntake, playbookPublishResearch } from "@/lib/admin/playbook-actions";
 import { searchAdmin } from "@/lib/admin/search-actions";
+import { toast } from "@/components/ui/Toast";
 
 type Cmd = {
   id: string;
@@ -72,7 +73,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         onClose();
         router.push(url);
       } catch (err: unknown) {
-        alert("Failed to execute playbook: " + (err as Error).message);
+        toast("Failed to execute playbook: " + (err as Error).message, "error");
         setIsExecuting(false);
       }
     } else if (c.href) {

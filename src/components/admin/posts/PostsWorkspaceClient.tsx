@@ -11,6 +11,7 @@ import { deletePost, savePostCategory, deletePostCategory, type PostCategoryItem
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 export type AdminPost = {
   id: string;
@@ -264,28 +265,30 @@ export function PostsWorkspaceClient({
 
               <div className="flex items-center gap-2">
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("list")}
-                    className={cn(
-                      "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
-                      viewMode === "list" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
-                    )}
-                    title="List Table View"
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("card")}
-                    className={cn(
-                      "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
-                      viewMode === "card" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
-                    )}
-                    title="Card Grid View"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
+                  <Tooltip tip="List Table View">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      className={cn(
+                        "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
+                        viewMode === "list" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
+                      )}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip tip="Card Grid View">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("card")}
+                      className={cn(
+                        "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
+                        viewMode === "card" ? "bg-navy text-white shadow-sm" : "text-navy/60 hover:text-navy"
+                      )}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
 
                 <div className="relative w-60 sm:w-64">
@@ -362,21 +365,23 @@ export function PostsWorkspaceClient({
                         </span>
 
                         <div className="flex items-center gap-1">
-                          <Link
-                            href={`/admin/posts/${post.id}/edit`}
-                            className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit Post"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePost(post.id, post.title)}
-                            className="p-1.5 text-red/60 hover:text-red hover:bg-red/5 rounded-lg transition-colors cursor-pointer"
-                            title="Delete Post"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <Tooltip tip="Edit Post">
+                            <Link
+                              href={`/admin/posts/${post.id}/edit`}
+                              className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Link>
+                          </Tooltip>
+                          <Tooltip tip="Delete Post">
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePost(post.id, post.title)}
+                              className="p-1.5 text-red/60 hover:text-red hover:bg-red/5 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>
@@ -452,21 +457,23 @@ export function PostsWorkspaceClient({
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Link
-                                href={`/admin/posts/${post.id}/edit`}
-                                className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Edit Post"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePost(post.id, post.title)}
-                                className="p-1.5 text-red/60 hover:text-red hover:bg-red/5 rounded-lg transition-colors cursor-pointer"
-                                title="Delete Post"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <Tooltip tip="Edit Post">
+                                <Link
+                                  href={`/admin/posts/${post.id}/edit`}
+                                  className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Link>
+                              </Tooltip>
+                              <Tooltip tip="Delete Post">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePost(post.id, post.title)}
+                                  className="p-1.5 text-red/60 hover:text-red hover:bg-red/5 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </Tooltip>
                             </div>
                           </td>
                         </tr>

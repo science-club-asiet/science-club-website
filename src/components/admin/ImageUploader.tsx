@@ -8,6 +8,7 @@ import { MediaPickerModal } from "./media/MediaPickerModal";
 import { toast } from "@/components/ui/Toast";
 import { compressImageFile, formatAltTextFromName } from "@/lib/admin/image-compression";
 import { ImageCropperModal } from "./ImageCropperModal";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 /**
  * Drag-and-drop image field. Renders a hidden input (so the value flows into the
@@ -69,14 +70,15 @@ export function ImageUploader({ name, initial, initialAlt }: { name: string; ini
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt={altText || "Uploaded preview"} className="w-full h-44 object-cover rounded-xl border border-gray-200 bg-gray-50" />
             <div className="absolute top-2 right-2 flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setCropperOpen(true)}
-                className="bg-white/90 rounded-full p-1.5 shadow hover:bg-red hover:text-white transition-colors text-navy"
-                title="Crop / Round Crop Image"
-              >
-                <Crop className="w-4 h-4" />
-              </button>
+              <Tooltip tip="Crop Image">
+                <button
+                  type="button"
+                  onClick={() => setCropperOpen(true)}
+                  className="bg-white/90 rounded-full p-1.5 shadow hover:bg-red hover:text-white transition-colors text-navy"
+                >
+                  <Crop className="w-4 h-4" />
+                </button>
+              </Tooltip>
               <button
                 type="button"
                 onClick={() => setUrl("")}

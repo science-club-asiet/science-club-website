@@ -1,6 +1,8 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { z } from "zod";
 
 const f = createUploadthing();
 
@@ -37,6 +39,31 @@ export const ourFileRouter = {
         created_by: metadata.userId,
       });
       return { url: file.ufsUrl, uploadedBy: metadata.userId };
+    }),
+
+  /**
+   * Public form file upload route. No admin role required — any visitor who
+   * submits a form may upload files. The folder the file lands in is determined
+   * by the upload_folder field setting passed as input metadata.
+   */
+  formFileUploader: f({ blob: { maxFileSize: "16MB", maxFileCount: 1 } })
+    .input(z.object({ folder: z.string().default("forms") }))
+    .middleware(async ({ input }) => {
+      return { folder: input.folder || "forms" };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // Use the service-role client so the admin-only RLS write policy
+      // doesn't silently reject the insert for anonymous form submitters.
+      const supabase = createAdminClient();
+      await supabase.from("media_assets").insert({
+        url: file.ufsUrl,
+        name: file.name,
+        mime: file.type ?? "application/octet-stream",
+        size: file.size,
+        folder: metadata.folder,
+        created_by: null,
+      });
+      return { url: file.ufsUrl, folder: metadata.folder };
     }),
 } satisfies FileRouter;
 

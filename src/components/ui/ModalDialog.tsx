@@ -1,8 +1,10 @@
-"use client";
+﻿"use client";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Edit3, X } from "lucide-react";
 import { useState, useEffect } from "react";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface ConfirmConfig {
   title?: string;
@@ -25,6 +27,62 @@ export interface PromptConfig {
   onCancel: () => void;
 }
 
+// ── Imperative API ────────────────────────────────────────────────────────────
+
+type ConfirmListener = (cfg: ConfirmConfig) => void;
+type PromptListener  = (cfg: PromptConfig)  => void;
+const confirmListeners = new Set<ConfirmListener>();
+const promptListeners  = new Set<PromptListener>();
+
+export function showConfirm(cfg: ConfirmConfig) {
+  confirmListeners.forEach((l) => l(cfg));
+}
+
+export function showPrompt(cfg: PromptConfig) {
+  promptListeners.forEach((l) => l(cfg));
+}
+
+// ── Global provider — mount once in AdminShell ────────────────────────────────
+
+export function DialogProvider() {
+  const [confirmCfg, setConfirmCfg] = useState<ConfirmConfig | null>(null);
+  const [promptCfg,  setPromptCfg]  = useState<PromptConfig  | null>(null);
+
+  useEffect(() => {
+    const cl: ConfirmListener = (cfg) => setConfirmCfg(cfg);
+    const pl: PromptListener  = (cfg) => setPromptCfg(cfg);
+    confirmListeners.add(cl);
+    promptListeners.add(pl);
+    return () => { confirmListeners.delete(cl); promptListeners.delete(pl); };
+  }, []);
+
+  const closeConfirm = () => setConfirmCfg(null);
+  const closePrompt  = () => setPromptCfg(null);
+
+  return (
+    <>
+      <ConfirmModal
+        isOpen={!!confirmCfg}
+        config={confirmCfg ? {
+          ...confirmCfg,
+          onConfirm: () => { confirmCfg.onConfirm(); closeConfirm(); },
+          onCancel:  () => { confirmCfg.onCancel();  closeConfirm(); },
+        } : null}
+      />
+      <PromptModal
+        isOpen={!!promptCfg}
+        config={promptCfg ? {
+          ...promptCfg,
+          onSubmit: (val) => { promptCfg.onSubmit(val); closePrompt(); },
+          onCancel: () => { promptCfg.onCancel(); closePrompt(); },
+        } : null}
+      />
+    </>
+  );
+}
+
+// ── ConfirmModal ──────────────────────────────────────────────────────────────
+
 export function ConfirmModal({ isOpen, config }: { isOpen: boolean; config: ConfirmConfig | null }) {
   if (!isOpen || !config) return null;
 
@@ -39,7 +97,7 @@ export function ConfirmModal({ isOpen, config }: { isOpen: boolean; config: Conf
           className="w-full max-w-md bg-navy text-white border border-white/15 rounded-2xl p-6 shadow-2xl space-y-5 font-inter relative"
         >
           <div className="flex items-start gap-4">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${config.isDanger ? 'bg-red/10 text-red border border-red/30' : 'bg-white/10 text-white'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${config.isDanger ? "bg-red/10 text-red border border-red/30" : "bg-white/10 text-white"}`}>
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div className="space-y-1">
@@ -62,7 +120,7 @@ export function ConfirmModal({ isOpen, config }: { isOpen: boolean; config: Conf
             <button
               onClick={config.onConfirm}
               className={`px-5 py-2.5 rounded-full font-oswald text-xs uppercase tracking-widest font-bold transition-all shadow-md cursor-pointer ${
-                config.isDanger ? 'bg-red text-white hover:bg-white hover:text-navy' : 'bg-white text-navy hover:bg-red hover:text-white'
+                config.isDanger ? "bg-red text-white hover:bg-white hover:text-navy" : "bg-white text-navy hover:bg-red hover:text-white"
               }`}
             >
               {config.confirmText || "Confirm"}
@@ -73,6 +131,8 @@ export function ConfirmModal({ isOpen, config }: { isOpen: boolean; config: Conf
     </AnimatePresence>
   );
 }
+
+// ── PromptModal ───────────────────────────────────────────────────────────────
 
 export function PromptModal({ isOpen, config }: { isOpen: boolean; config: PromptConfig | null }) {
   const [val, setVal] = useState(config?.initialValue || "");

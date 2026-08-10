@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { FolderAutocompleteInput } from "@/components/admin/media/FolderAutocompleteInput";
 import {
   DndContext,
   closestCenter,
@@ -110,84 +111,24 @@ function FolderDestinationPicker({
   onChange: (folderPath: string) => void;
 }) {
   const currentPath = value || "forms";
-  const parts = currentPath.split("/");
-  const basePart = parts[0] || "forms";
-  const subPart = parts.slice(1).join("/");
-
-  const KNOWN_BASES = ["forms", "applications", "events", "execom", "general"];
-  const isCustomBase = !KNOWN_BASES.includes(basePart);
-
-  const [selectedBase, setSelectedBase] = useState(isCustomBase ? "custom" : basePart);
-  const [customBaseText, setCustomBaseText] = useState(isCustomBase ? basePart : "");
-  const [subfolderText, setSubfolderText] = useState(subPart);
-
-  const updatePath = (b: string, cbText: string, sub: string) => {
-    const finalBase = b === "custom" ? (cbText.trim() || "forms") : b;
-    const finalSub = sub.trim();
-    const full = finalSub ? `${finalBase}/${finalSub}` : finalBase;
-    onChange(full);
-  };
 
   return (
     <div className="space-y-2 pt-2 border-t border-gray-100 mt-2">
       <label className="block text-[10px] font-bold uppercase tracking-wider text-navy/70">
-        Media Library Storage Destination
+        Media Library Storage Destination Path
       </label>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-[9px] font-semibold text-gray-400 mb-0.5">Base Folder</label>
-          <select
-            value={selectedBase}
-            onChange={(e) => {
-              const val = e.target.value;
-              setSelectedBase(val);
-              updatePath(val, customBaseText, subfolderText);
-            }}
-            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-navy font-semibold focus:outline-none focus:border-red cursor-pointer"
-          >
-            <option value="forms">📁 Forms</option>
-            <option value="applications">📁 Applications</option>
-            <option value="events">📁 Events</option>
-            <option value="execom">📁 Execom</option>
-            <option value="general">📁 General</option>
-            <option value="custom">✏️ Custom Base Folder...</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[9px] font-semibold text-gray-400 mb-0.5">Subfolder (Optional)</label>
-          <input
-            value={subfolderText}
-            onChange={(e) => {
-              setSubfolderText(e.target.value);
-              updatePath(selectedBase, customBaseText, e.target.value);
-            }}
-            placeholder="e.g. 2026/phase-1"
-            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-navy font-semibold focus:outline-none focus:border-red"
-          />
-        </div>
-      </div>
-
-      {selectedBase === "custom" && (
-        <div>
-          <label className="block text-[9px] font-semibold text-gray-400 mb-0.5">Custom Base Folder Name</label>
-          <input
-            value={customBaseText}
-            onChange={(e) => {
-              setCustomBaseText(e.target.value);
-              updatePath("custom", e.target.value, subfolderText);
-            }}
-            placeholder="e.g. workshops"
-            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-navy font-semibold focus:outline-none focus:border-red"
-          />
-        </div>
-      )}
+      <FolderAutocompleteInput
+        value={currentPath}
+        onChange={(val) => onChange(val || "forms")}
+        allFolders={["forms", "forms/submissions", "applications", "events", "execom", "general"]}
+        placeholder="e.g. forms/submissions"
+      />
 
       <div className="flex items-center gap-1.5 text-[10px] text-gray-400 pt-0.5">
         <Folder className="w-3.5 h-3.5 text-red shrink-0" />
         <span>
-          Final Storage Path: <strong className="font-mono text-navy font-bold">{selectedBase === "custom" ? (customBaseText || "forms") : selectedBase}{subfolderText ? `/${subfolderText}` : ""}</strong>
+          Final Media Path: <strong className="font-mono text-navy font-bold">{currentPath}</strong>
         </span>
       </div>
     </div>
@@ -949,10 +890,12 @@ export function FormBuilder({
   formId,
   initialForm,
   initialFields,
+  categories = [],
 }: {
   formId: string;
   initialForm?: Record<string, any>;
   initialFields: BuilderField[];
+  categories?: string[];
 }) {
   const [fields, setFields] = useState<BuilderField[]>(initialFields);
   const [activeTab, setActiveTab] = useState<"builder" | "settings" | "preview">("builder");
@@ -1568,20 +1511,24 @@ export function FormBuilder({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">
-                    Form Purpose / Category
+                    Form Category
                   </label>
                   <select
-                    name="purpose"
-                    defaultValue={formSettings.purpose || "generic"}
+                    name="category"
+                    defaultValue={formSettings.category || "General"}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy font-semibold focus:outline-none focus:border-red"
                   >
-                    <option value="generic">Generic Application</option>
-                    <option value="membership">Membership Registration</option>
-                    <option value="event">Event Registration</option>
+                    {Array.from(
+                      new Set(["General", "Registrations", "Recruitment", "Feedback", "Competitions", ...(categories || [])])
+                    ).map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
-                <div className="flex items-center pt-5">
+                <div className="space-y-3 pt-1">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -1595,6 +1542,23 @@ export function FormBuilder({
                       </span>
                       <span className="text-[10px] text-gray-400 block">
                         Toggle false to manually lock form registration
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_template"
+                      defaultChecked={Boolean(formSettings.is_template)}
+                      className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-navy block">
+                        Save as Master Preset / Template
+                      </span>
+                      <span className="text-[10px] text-amber-600 font-medium block">
+                        When checked, this form appears in the Presets & Templates tab for 1-click reuse
                       </span>
                     </div>
                   </label>

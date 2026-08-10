@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useMemo, useEffect } from "react";
 import { submitFormAction } from "@/lib/admin/formActions";
 import type { PublicForm, PublicFormField } from "@/lib/data/forms";
-import { Upload, CheckCircle2, ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Loader2, FileCheck } from "lucide-react";
+import { Upload, CheckCircle2, ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Loader2, FileCheck, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUploadThing } from "@/lib/uploadthing";
+import { SelectField } from "@/components/ui/SelectField";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 const base =
   "w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-xs text-navy focus:outline-none focus:border-red focus:ring-2 focus:ring-red/10 transition-all shadow-xs";
@@ -82,14 +85,15 @@ function CustomDatePicker({
           required={required}
           className={`${base} pr-10 font-mono text-xs`}
         />
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="absolute right-3 text-red hover:text-navy p-1 transition-colors cursor-pointer"
-          title="Toggle Calendar Popover"
-        >
-          <Calendar className="w-4 h-4" />
-        </button>
+        <Tooltip tip="Toggle Calendar" side="right">
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="absolute right-3 text-red hover:text-navy p-1 transition-colors cursor-pointer"
+          >
+            <Calendar className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
 
       {isOpen && (
@@ -156,19 +160,85 @@ function CustomDatePicker({
 function FileUploadField({
   f,
   onAnswerChange,
+  initialValue,
 }: {
   f: PublicFormField;
   onAnswerChange: (key: string, val: any) => void;
+  initialValue?: string;
 }) {
-  const [selectedFileName, setSelectedFileName] = useState<string>("");
+  // Seed from initialValue so state survives section navigation (component remounts)
+  const isUrl = (v?: string) => typeof v === "string" && v.startsWith("http");
+  const [selectedFileName, setSelectedFileName] = useState<string>(
+    () => (isUrl(initialValue) ? initialValue!.split("/").pop() ?? "" : "")
+  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    () => (isUrl(initialValue) ? initialValue! : null)
+  );
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(
+    () => (isUrl(initialValue) ? initialValue! : null)
+  );
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const folder = f.uploadFolder || "forms";
+
+  const { startUpload } = useUploadThing("formFileUploader", {
+    onUploadBegin: () => { setIsUploading(true); setUploadError(null); },
+    onClientUploadComplete: (res) => {
+      setIsUploading(false);
+      const url = res?.[0]?.url;
+      if (url) {
+        setUploadedUrl(url);
+        onAnswerChange(f.fieldKey, url);
+      }
+    },
+    onUploadError: (err) => {
+      setIsUploading(false);
+      setUploadError(err.message || "Upload failed. Please try again.");
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setSelectedFileName("");
+      setPreviewUrl(null);
+      setUploadedUrl(null);
+      onAnswerChange(f.fieldKey, "");
+      return;
+    }
+
+    setSelectedFileName(file.name);
+    setUploadedUrl(null);
+    setUploadError(null);
+
+    // Show instant local preview for images
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (evt) => setPreviewUrl(evt.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
+    }
+
+    // Upload to UploadThing → registers in media_assets with the right folder
+    await startUpload([file], { folder });
+  };
 
   return (
     <div
-      onClick={() => inputRef.current?.click()}
-      className="border-2 border-dashed border-gray-200 hover:border-red rounded-2xl p-6 text-center bg-gray-50/50 hover:bg-gray-50 transition-all cursor-pointer relative space-y-2 select-none"
+      onClick={() => !isUploading && inputRef.current?.click()}
+      className={cn(
+        "border-2 border-dashed rounded-2xl p-6 text-center transition-all relative space-y-2 select-none",
+        isUploading ? "border-red/50 bg-red/5 cursor-wait" : "border-gray-200 hover:border-red bg-gray-50/50 hover:bg-gray-50 cursor-pointer"
+      )}
     >
-      {selectedFileName ? (
+      {isUploading ? (
+        <Loader2 className="w-8 h-8 text-red mx-auto animate-spin" />
+      ) : previewUrl ? (
+        <img src={previewUrl} alt="Preview" className="w-20 h-20 object-cover rounded-xl mx-auto border border-gray-200 shadow-sm" />
+      ) : selectedFileName ? (
         <FileCheck className="w-8 h-8 text-emerald-600 mx-auto" />
       ) : (
         <Upload className="w-7 h-7 text-gray-400 mx-auto" />
@@ -177,35 +247,45 @@ function FileUploadField({
       <input
         ref={inputRef}
         type="file"
-        name={f.fieldKey}
-        required={f.required}
+        required={f.required && !uploadedUrl}
         className="hidden"
         id={`file_${f.fieldKey}`}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            setSelectedFileName(file.name);
-            onAnswerChange(f.fieldKey, file.name);
-          } else {
-            setSelectedFileName("");
-            onAnswerChange(f.fieldKey, "");
-          }
-        }}
+        onChange={handleFileChange}
+        onClick={(e) => e.stopPropagation()}
       />
 
+      {/* Store the uploaded URL as a hidden field so FormData picks it up */}
+      {uploadedUrl && (
+        <input type="hidden" name={f.fieldKey} value={uploadedUrl} />
+      )}
+
       <div>
-        <p className="text-xs font-bold text-navy hover:text-red transition-colors">
-          {selectedFileName ? (
+        <p className="text-xs font-bold text-navy">
+          {isUploading ? (
+            <span className="text-red font-bold block">Uploading to media library...</span>
+          ) : uploadedUrl ? (
             <span className="text-emerald-700 font-bold block truncate max-w-md mx-auto">
-              ✓ Selected: {selectedFileName} (Click to change file)
+              ✓ Uploaded: {selectedFileName}
+            </span>
+          ) : selectedFileName ? (
+            <span className="text-amber-600 font-bold block truncate max-w-md mx-auto">
+              {selectedFileName} — uploading...
             </span>
           ) : (
             "Click anywhere in this box to choose a file"
           )}
         </p>
-        <span className="text-[10px] text-gray-400 block mt-1">
-          Max {f.maxFiles} file(s), up to {f.maxFileSize}
-        </span>
+        {uploadError && (
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-red font-semibold mt-1.5">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            {uploadError}
+          </div>
+        )}
+        {!uploadError && (
+          <span className="text-[10px] text-gray-400 block mt-1">
+            Max {f.maxFiles} file(s), up to {f.maxFileSize}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -237,7 +317,7 @@ function Field({
 
     case "select":
       return (
-        <select {...common} className={base}>
+        <SelectField {...common} className={base}>
           <option value="" disabled>
             {f.placeholder || "Choose option..."}
           </option>
@@ -246,7 +326,7 @@ function Field({
               {o}
             </option>
           ))}
-        </select>
+        </SelectField>
       );
 
     case "multiselect":
@@ -367,7 +447,7 @@ function Field({
       );
 
     case "file":
-      return <FileUploadField f={f} onAnswerChange={onAnswerChange} />;
+      return <FileUploadField f={f} onAnswerChange={onAnswerChange} initialValue={answers[f.fieldKey] ? String(answers[f.fieldKey]) : undefined} />;
 
     case "checkbox":
       return (
@@ -410,7 +490,15 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
   const [submitResult, setSubmitResult] = useState<{ ok?: boolean; error?: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const activeStepRef = useRef(currentStep);
+  const isAdvancingRef = useRef(false);
+
+  useEffect(() => {
+    activeStepRef.current = currentStep;
+  }, [currentStep]);
+
   const handleAnswerChange = (key: string, val: any) => {
+    console.log("[FormRenderer] Answer changed:", key, "=", val);
     setAnswers((prev) => ({ ...prev, [key]: val }));
   };
 
@@ -420,7 +508,7 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
 
   for (const f of form.fields) {
     if (f.fieldType === "section") {
-      if (currentSec) {
+      if (currentSec && currentSec.fields.length > 0) {
         sections.push(currentSec);
       }
       currentSec = { title: f.label, help: f.helpText, fields: [] };
@@ -431,14 +519,18 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
       currentSec.fields.push(f);
     }
   }
-  if (currentSec) {
+  if (currentSec && (currentSec.fields.length > 0 || sections.length === 0)) {
     sections.push(currentSec);
   }
 
   const totalSteps = sections.length > 0 ? sections.length : 1;
   const activeSection = sections[currentStep] || { fields: form.fields };
 
+  console.log(`[FormRenderer RENDER] Form: "${form.title}" | Step: ${currentStep + 1} of ${totalSteps} | Active Fields Count: ${activeSection.fields?.length || 0}`);
+  console.log("[FormRenderer RENDER] All Sections:", sections);
+
   if (submitResult?.ok) {
+    console.log("[FormRenderer RENDER] Submit Result Success!");
     return (
       <div className="rounded-2xl border-2 border-dashed border-red/30 p-8 sm:p-10 text-center space-y-3 bg-white">
         <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto" />
@@ -465,23 +557,74 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
   }
 
   const handleNextStep = () => {
+    console.log(`[FormRenderer handleNextStep] Called at Step ${currentStep + 1} of ${totalSteps}`);
     if (!formRef.current) return;
 
-    // Trigger HTML5 Required Validation on Active Section Inputs
-    const isFormValid = formRef.current.reportValidity();
-    if (!isFormValid) return; // Browser shows red validation popup and stops!
+    // Validate active section inputs specifically
+    const activeInputs = Array.from(
+      formRef.current.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        "input:not([type=hidden]), textarea, select"
+      )
+    );
 
-    // If valid, advance to next step
-    setCurrentStep((prev) => Math.min(prev + 1, totalSteps - 1));
+    console.log(`[FormRenderer handleNextStep] Active Inputs Count to Validate: ${activeInputs.length}`);
+
+    for (const input of activeInputs) {
+      console.log(`[FormRenderer handleNextStep] Checking input name="${input.name}" required=${input.required} value="${input.value}" valid=${input.checkValidity()}`);
+      if (!input.checkValidity()) {
+        console.warn(`[FormRenderer handleNextStep] Input name="${input.name}" FAILED validation! Reporting validity.`);
+        input.reportValidity();
+        return;
+      }
+    }
+
+    if (currentStep < totalSteps - 1) {
+      console.log(`[FormRenderer handleNextStep] SUCCESS -> Advancing from Step ${currentStep + 1} to Step ${currentStep + 2}`);
+      isAdvancingRef.current = true;
+      setCurrentStep((prev) => Math.min(prev + 1, totalSteps - 1));
+      setTimeout(() => {
+        isAdvancingRef.current = false;
+      }, 400);
+    } else {
+      console.warn(`[FormRenderer handleNextStep] Already on last step (${currentStep + 1} of ${totalSteps}). Not advancing.`);
+    }
   };
 
-  const handleFinalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFinalSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    console.log(`[FormRenderer handleFinalSubmit] Triggered at Step ${currentStep + 1} of ${totalSteps} (activeStepRef=${activeStepRef.current + 1}, isAdvancing=${isAdvancingRef.current})`);
+
     if (!formRef.current) return;
 
-    const isFormValid = formRef.current.reportValidity();
-    if (!isFormValid) return;
+    // Failsafe 1: Refuse submission if a step transition is actively occurring
+    if (isAdvancingRef.current) {
+      console.warn("[FormRenderer handleFinalSubmit] REJECTED SUBMISSION because isAdvancingRef is true (Step transition in progress!)");
+      return;
+    }
 
+    // Failsafe 2: Refuse submission unless activeStepRef was strictly on the last step
+    if (activeStepRef.current < totalSteps - 1) {
+      console.warn(`[FormRenderer handleFinalSubmit] REJECTED SUBMISSION because activeStepRef (${activeStepRef.current + 1}) < totalSteps (${totalSteps}).`);
+      return;
+    }
+
+    // Validate active section inputs before final submission
+    const activeInputs = Array.from(
+      formRef.current.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        "input:not([type=hidden]), textarea, select"
+      )
+    );
+
+    for (const input of activeInputs) {
+      console.log(`[FormRenderer handleFinalSubmit] Checking input name="${input.name}" required=${input.required} value="${input.value}" valid=${input.checkValidity()}`);
+      if (!input.checkValidity()) {
+        console.warn(`[FormRenderer handleFinalSubmit] Input name="${input.name}" FAILED validation! Stopping submit.`);
+        input.reportValidity();
+        return;
+      }
+    }
+
+    console.log("[FormRenderer handleFinalSubmit] All inputs valid. Preparing FormData for server submission...");
     const formData = new FormData(formRef.current);
 
     // Merge answers from previous sections into FormData
@@ -495,8 +638,10 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
       }
     });
 
+    console.log("[FormRenderer handleFinalSubmit] Calling submitFormAction...");
     startTransition(async () => {
       const res = await submitFormAction(form.id, null, formData);
+      console.log("[FormRenderer handleFinalSubmit] Server Result:", res);
       setSubmitResult(res);
     });
   };
@@ -506,16 +651,20 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
       ref={formRef}
       encType="multipart/form-data"
       onSubmit={(e) => {
-        if (currentStep < totalSteps - 1) {
-          e.preventDefault();
-          handleNextStep();
-        } else {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log(`[FormRenderer onSubmit] Form submit event caught at Step ${currentStep + 1} of ${totalSteps}`);
+        if (currentStep === totalSteps - 1) {
           handleFinalSubmit(e);
+        } else {
+          console.log(`[FormRenderer onSubmit] Blocked submit on step ${currentStep + 1} (Not last step)`);
         }
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
+          console.log(`[FormRenderer onKeyDown Enter] Caught Enter key at Step ${currentStep + 1} of ${totalSteps}`);
           e.preventDefault();
+          e.stopPropagation();
           if (currentStep < totalSteps - 1) {
             handleNextStep();
           }
@@ -643,7 +792,7 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
                 <Loader2 className="w-4 h-4 animate-spin" /> Submitting…
               </>
             ) : (
-              "Submit Application"
+              "Submit Response"
             )}
           </button>
         )}

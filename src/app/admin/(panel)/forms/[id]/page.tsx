@@ -15,6 +15,9 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
   const { data: form } = await supabase.from("forms").select("*").eq("id", id).single();
   if (!form) notFound();
 
+  const { data: categoriesData } = await supabase.from("form_categories").select("name").order("sort_order");
+  const categoriesList = (categoriesData ?? []).map((c) => c.name);
+
   const { data: fieldsData } = await supabase
     .from("form_fields")
     .select("*")
@@ -117,7 +120,7 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Main Form Builder Engine (Full Width Layout) */}
-      <FormBuilder formId={id} initialForm={form} initialFields={fields} />
+      <FormBuilder formId={id} initialForm={form} initialFields={fields} categories={categoriesList} />
     </div>
   );
 }

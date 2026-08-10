@@ -6,6 +6,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { AdminTopbar } from "./AdminTopbar";
 import { CommandPalette } from "./CommandPalette";
 import { ToastProvider } from "@/components/ui/Toast";
+import { DialogProvider } from "@/components/ui/ModalDialog";
 import AdminPanelLoading from "@/app/admin/(panel)/loading";
 import { useAdminStore } from "@/lib/admin/adminStore";
 
@@ -94,6 +95,7 @@ export function AdminShell({
       </div>
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       <ToastProvider />
+      <DialogProvider />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Search,
   ArrowLeft,
   CheckCircle2,
   Calendar,
@@ -25,7 +27,9 @@ import {
 } from "lucide-react";
 import { deleteSubmissionAction } from "@/lib/admin/formActions";
 import { toast } from "@/components/ui/Toast";
+import { showConfirm } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 export type FormSubmissionItem = {
   id: string;
@@ -89,18 +93,74 @@ export function FormResponsesView({
     return String(val);
   };
 
-  const handleDeleteSubmission = (subId: string) => {
-    if (!confirm("Are you sure you want to delete this submission? This action cannot be undone.")) return;
+  const renderFieldValue = (val: unknown) => {
+    if (val === null || val === undefined || val === "") return <span className="text-gray-400">—</span>;
+    if (typeof val === "boolean") return <span>{val ? "Yes" : "No"}</span>;
+    if (Array.isArray(val)) return <span>{val.join(", ")}</span>;
 
-    // 0ms Optimistic Delete
-    setSubmissions((prev) => prev.filter((s) => s.id !== subId));
-    if (individualIndex >= submissions.length - 1) {
-      setIndividualIndex((i) => Math.max(i - 1, 0));
+    const str = String(val);
+    const isImage =
+      str.startsWith("data:image/") ||
+      str.startsWith("http://") ||
+      str.startsWith("https://") ||
+      str.startsWith("/uploads/") ||
+      /\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i.test(str);
+
+    if (isImage) {
+      return (
+        <div className="flex items-center gap-3 py-1">
+          <a
+            href={str}
+            target="_blank"
+            rel="noreferrer"
+            className="group relative rounded-xl overflow-hidden border border-gray-200 shadow-xs block shrink-0"
+          >
+            <img
+              src={str}
+              alt="Uploaded media"
+              className="w-16 h-16 object-cover group-hover:scale-105 transition-transform duration-200"
+            />
+            <div className="absolute inset-0 bg-navy/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <ExternalLink className="w-4 h-4 text-white" />
+            </div>
+          </a>
+          <div className="text-xs space-y-1">
+            <a
+              href={str}
+              target="_blank"
+              rel="noreferrer"
+              className="text-navy font-semibold hover:text-red hover:underline flex items-center gap-1"
+            >
+              <ExternalLink className="w-3 h-3 text-red" /> View Full Image
+            </a>
+            <span className="text-[10px] text-gray-400 font-mono block truncate max-w-xs">{str}</span>
+          </div>
+        </div>
+      );
     }
 
-    start(async () => {
-      await deleteSubmissionAction(formId, subId);
-      toast("Submission deleted", "success");
+    return <span>{str}</span>;
+  };
+
+  const handleDeleteSubmission = (subId: string) => {
+    showConfirm({
+      title: "Delete Submission",
+      message: "Are you sure you want to delete this submission? This action cannot be undone.",
+      isDanger: true,
+      confirmText: "Delete",
+      onConfirm: () => {
+        // 0ms Optimistic Delete
+        setSubmissions((prev) => prev.filter((s) => s.id !== subId));
+        if (individualIndex >= submissions.length - 1) {
+          setIndividualIndex((i) => Math.max(i - 1, 0));
+        }
+
+        start(async () => {
+          await deleteSubmissionAction(formId, subId);
+          toast("Submission deleted", "success");
+        });
+      },
+      onCancel: () => {},
     });
   };
 
@@ -345,9 +405,9 @@ export function FormResponsesView({
                     return (
                       <div key={sub.id} className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200/80 flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-xs font-semibold text-navy">
-                            {formatVal(ansVal)}
-                          </p>
+                          <div className="text-xs font-semibold text-navy">
+                            {renderFieldValue(ansVal)}
+                          </div>
                           <span className="text-[10px] text-gray-400 font-mono mt-0.5 block">
                             Submitted: {fmtDate(sub.created_at)}
                           </span>
@@ -375,41 +435,60 @@ export function FormResponsesView({
             </div>
           ) : (
             <>
-              {/* Stepper & Delete Control Bar */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+              {/* Stepper, Selectable Dropdown & Delete Control Bar */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
                   disabled={individualIndex === 0}
                   onClick={() => setIndividualIndex((i) => Math.max(i - 1, 0))}
-                  className="bg-gray-100 hover:bg-gray-200 text-navy px-4 py-2 rounded-xl text-xs font-oswald uppercase tracking-wider font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="bg-gray-100 hover:bg-gray-200 text-navy px-4 py-2.5 rounded-xl text-xs font-oswald uppercase tracking-wider font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1 shrink-0 w-full sm:w-auto justify-center"
                 >
                   <ChevronLeft className="w-4 h-4" /> Previous
                 </button>
 
-                <div className="text-center">
-                  <span className="font-oswald text-sm font-bold uppercase text-navy">
-                    Response {individualIndex + 1} of {submissions.length}
-                  </span>
-                  <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                    Submitted: {fmtDate(submissions[individualIndex].created_at)}
+                {/* Dropdown Selectable Jump Control with Response Snippets */}
+                <div className="flex flex-col items-center gap-1 w-full sm:w-auto min-w-[240px] max-w-md">
+                  <div className="relative w-full">
+                    <select
+                      value={individualIndex}
+                      onChange={(e) => setIndividualIndex(Number(e.target.value))}
+                      className="w-full bg-gray-50 border border-gray-300 hover:border-navy text-navy font-oswald text-xs sm:text-sm font-bold uppercase rounded-xl px-3 py-2 focus:outline-none focus:border-red focus:ring-2 focus:ring-red/10 cursor-pointer text-center appearance-none pr-8 shadow-xs"
+                    >
+                      {submissions.map((sub, idx) => {
+                        const valuesList = Object.values(sub.data || {})
+                          .filter((v) => typeof v === "string" && v.trim() && !v.startsWith("data:image/") && !v.startsWith("http"))
+                          .map(String);
+                        const labelSnippet = valuesList.length > 0 ? ` • ${valuesList.slice(0, 2).join(" | ").slice(0, 26)}` : "";
+                        return (
+                          <option key={sub.id} value={idx}>
+                            Response {idx + 1} of {submissions.length}{labelSnippet}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-navy pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-mono text-center">
+                    Submitted: {fmtDate(submissions[individualIndex]?.created_at)}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteSubmission(submissions[individualIndex].id)}
-                    className="p-2 text-red/70 hover:text-red hover:bg-red/10 rounded-xl transition-colors cursor-pointer"
-                    title="Delete this submission"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-center">
+                  <Tooltip tip="Delete Submission" side="bottom">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSubmission(submissions[individualIndex].id)}
+                      className="p-2 text-red/70 hover:text-red hover:bg-red/10 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-red/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
 
                   <button
                     type="button"
                     disabled={individualIndex === submissions.length - 1}
                     onClick={() => setIndividualIndex((i) => Math.min(i + 1, submissions.length - 1))}
-                    className="bg-navy hover:bg-red text-white px-4 py-2 rounded-xl text-xs font-oswald uppercase tracking-wider font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                    className="bg-navy hover:bg-red text-white px-4 py-2.5 rounded-xl text-xs font-oswald uppercase tracking-wider font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1 w-full sm:w-auto justify-center"
                   >
                     Next <ChevronRight className="w-4 h-4" />
                   </button>
@@ -426,9 +505,9 @@ export function FormResponsesView({
                       <span className="text-xs font-bold uppercase tracking-widest text-gray-500 block">
                         {label}
                       </span>
-                      <p className="text-sm font-semibold text-navy break-words">
-                        {formatVal(val)}
-                      </p>
+                      <div className="text-sm font-semibold text-navy break-words">
+                        {renderFieldValue(val)}
+                      </div>
                     </div>
                   );
                 })}
@@ -466,21 +545,22 @@ export function FormResponsesView({
                     <tr key={sub.id} className="hover:bg-gray-50/80 transition-colors">
                       <td className="p-3.5 font-bold text-gray-400">{idx + 1}</td>
                       <td className="p-3.5 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSubmission(sub.id)}
-                          className="p-1 text-red/70 hover:text-red hover:bg-red/10 rounded-lg transition-colors cursor-pointer"
-                          title="Delete submission row"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <Tooltip tip="Delete Row" side="right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSubmission(sub.id)}
+                            className="p-1 text-red/70 hover:text-red hover:bg-red/10 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
                       </td>
                       <td className="p-3.5 whitespace-nowrap text-gray-500 font-mono text-[11px]">
                         {fmtDate(sub.created_at)}
                       </td>
                       {questionKeys.map((k) => (
                         <td key={k} className="p-3.5 text-navy max-w-xs truncate">
-                          {formatVal(sub.data?.[k])}
+                          {renderFieldValue(sub.data?.[k])}
                         </td>
                       ))}
                     </tr>
