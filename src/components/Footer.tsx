@@ -6,6 +6,21 @@ import { Atom, Globe, MessageCircle, Share2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+const LINK_MAP: Record<string, string> = {
+  "News": "/news",
+  "First Team": "/info/execom",
+  "Club History": "/info/about",
+  "Join The Board": "/info/join",
+  "My Account": "/admin",
+  "Events & Experiences": "/events",
+  "Resources": "/info/mission",
+  "Campus Tour": "/info/about",
+  "Legal Notice": "/info/about",
+  "Privacy Policy": "/info/about",
+  "Help Center": "/info/join",
+  "Cookie Preferences": "/info/about",
+};
+
 const footerLinks = [
   {
     heading: "Science Club",
@@ -95,7 +110,7 @@ export function Footer() {
                 {col.links.map((label) => (
                   <li key={label}>
                     <Link
-                      href="#"
+                      href={LINK_MAP[label] || "/"}
                       className="group flex items-center gap-2 opacity-70 hover:opacity-100 font-medium transition-all duration-200 hover:text-red"
                     >
                       <span className="w-0 h-[1px] bg-red group-hover:w-4 transition-all duration-300 ease-out" />

@@ -194,6 +194,8 @@ function AwwwardsHamburgerButton({
   );
 }
 
+const MotionLink = motion.create(Link);
+
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeHoverId, setActiveHoverId] = useState<string>("home");
@@ -388,36 +390,25 @@ export function Header() {
                 </motion.span>
               </motion.button>
 
-              {/* Account — redirects to /login when signed out */}
-              <motion.a
-                href="/account"
-                aria-label="My account"
+              {/* Account — redirects to /admin or /login */}
+              <MotionLink
+                href="/admin"
+                aria-label="My account / Admin panel"
                 style={{ color: iconColor, backgroundColor: isHomePage || isScrolled ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)" }}
                 className="transition-colors hidden sm:flex items-center justify-center p-2 w-10 h-10 rounded-full cursor-pointer"
               >
                 <User className="w-5 h-5 hover:text-red transition-colors" />
-              </motion.a>
+              </MotionLink>
 
               {/* Join Us Red Pill CTA */}
-              <motion.a
+              <Link
                 href="/info/join"
                 className="hidden md:flex items-center gap-2 bg-red text-white px-8 py-2.5 uppercase text-[17px] font-bold tracking-wide rounded-full overflow-hidden relative group"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
                 {/* Shimmer sweep on hover */}
                 <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                <span>Join Us</span>
-                <motion.span
-                  className="inline-flex items-center"
-                  initial={{ x: 0 }}
-                  whileHover={{ x: 3 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </motion.span>
-              </motion.a>
+                <span className="relative z-10">JOIN US</span>
+              </Link>
             </div>
             
           </div>

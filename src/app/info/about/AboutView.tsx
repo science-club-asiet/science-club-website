@@ -643,7 +643,7 @@ export function AboutView({ storyEras, stats }: { storyEras: StoryEra[]; stats: 
             viewport={{ once: true }}
           >
             <Link
-              href="/join"
+              href="/info/join"
               className="group relative inline-flex items-center gap-6 bg-navy text-white px-10 md:px-16 py-6 md:py-8 rounded-full overflow-hidden hover:scale-105 transition-transform duration-500 shadow-2xl"
             >
               <div className="absolute inset-0 bg-red translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1]" />

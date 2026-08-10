@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export function CtaSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,12 +64,8 @@ export function CtaSection() {
         </motion.div>
 
         {/* Massive Magnetic Button */}
-        <motion.a 
-          href="#"
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.7, delay: 0.2, type: "spring", bounce: 0.5 }}
+        <Link 
+          href="/info/join"
           className="group relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 bg-navy rounded-full flex flex-col items-center justify-center overflow-hidden hover:scale-105 transition-transform duration-500 ease-out shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-[8px] border-transparent hover:border-white/10"
         >
           {/* Sweeping background on hover */}
@@ -88,7 +85,7 @@ export function CtaSection() {
             <ArrowRight className="absolute w-8 h-8 text-white transition-transform duration-500 ease-[0.22,1,0.36,1] group-hover:translate-x-[150%] -rotate-45" />
             <ArrowRight className="absolute w-8 h-8 text-navy transition-transform duration-500 ease-[0.22,1,0.36,1] -translate-x-[150%] group-hover:translate-x-0 -rotate-45" />
           </div>
-        </motion.a>
+        </Link>
 
       </div>
     </section>

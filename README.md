@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Science Club ASIET — Platform & Web Application
 
-## Getting Started
+A single-page-style marketing and administration platform for the Science Club at ASIET, built with Next.js 16, React 19, Tailwind CSS v4, Lenis smooth scrolling, GSAP ScrollTrigger, and Supabase.
 
-First, run the development server:
+---
+
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 16.2.3 (App Router, Turbopack)
+- **UI & Motion**: React 19.2.4, Framer Motion 12, GSAP 3.14 + ScrollTrigger
+- **Smooth Scroll**: Lenis 1.3
+- **Styling**: Tailwind CSS v4 (inline theme tokens in `src/app/globals.css`)
+- **Backend & Database**: Supabase (PostgreSQL, Auth, RLS, Realtime)
+- **Typography**: Oswald (Headings) + Inter (Body Copy) via `next/font`
+
+---
+
+## 🚀 Available Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev       # Start Turbopack development server at http://localhost:3000
+npm run build     # Compile production build
+npm run lint      # Run ESLint validation checks
+npx tsc --noEmit  # Typecheck TypeScript codebase
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🏛️ Platform Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Public Site**:
+  - `/` — Main Hub (Parallax Hero, Club Highlights, Event Carousel, Execom Roster, Newsroom, Join CTA)
+  - `/events` — Comprehensive Event Catalog with search, filters, modal popups, and registration
+  - `/news` & `/news/[slug]` — Campus Newsroom, Announcements, Research Publications
+  - `/info/about` — Founding Story, Timeline Eras, Core Pillars, Campus Laboratory Highlights
+  - `/info/mission` — Club Manifesto, Strategic Goals, Impact Testimonials
+  - `/info/execom` — Executive Committee Directory, Team Categories, Past Office Bearers
+  - `/info/join` — Recruitment Portal, Perks, Membership FAQs, Interactive Application Form
+  - `/gallery` — Photo Albums & Campus Event Candids
 
-## Learn More
+- **Admin Workspaces** (`/admin`):
+  - **Events Workspace**: Event management, category filters, TablePagination, Nexus Visual Builder shortcuts
+  - **Posts Workspace**: News & article publishing, draft/live status toggles, TablePagination
+  - **Members & Execom**: RLS user role management (`owner`, `admin`, `execom`, `member`), department & year filters
+  - **Recruitment Kanban**: Drag-and-drop applicant pipeline (*Submitted → Under Review → Interview → Accepted*)
+  - **Site Content Hub**: Global branding variables, Mission pillars, Story eras, Join perks
+  - **Form Builder**: Dynamic custom field schemas & template presets
+  - **Media Library**: UploadThing CDN asset management
+  - **CMS Workspace**: Custom data collection & field schema builder
+  - **System Settings**: Database latency benchmarks, environment readiness indicators, multi-entity activity audit trail with category/role/date filters & shifting pagination
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📜 Workspace Rules
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Scroll Architecture**:
+   - Lenis owns the window scroll position (`window.__lenis?.scrollTo`).
+   - GSAP ScrollTrigger reads scroll position only (no ScrollTrigger `snap`).
+   - Modal locks pause Lenis (`window.__lenis?.stop()` / `?.start()`) rather than setting `body { overflow: hidden }`.
+2. **UI Typography**:
+   - Never use `//` in text or typography anywhere in the UI. Use clean bullet dots (`•`) or clean uppercase titles instead.
