@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -165,7 +165,18 @@ export function FormsManagerClient({
   const [isPending, startTransition] = useTransition();
 
   // Block Presets State
-  const [blockPresets, setBlockPresets] = useState<BlockPreset[]>(INITIAL_BLOCK_PRESETS);
+  const [blockPresets, setBlockPresets] = useState<BlockPreset[]>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("sc_admin_block_presets_v3");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      }
+    } catch {}
+    return INITIAL_BLOCK_PRESETS;
+  });
 
   // New Form / Template / Category / Block Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -179,19 +190,6 @@ export function FormsManagerClient({
   // Block Editor Specific State (Visual Field Builder inside Modal)
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [blockFields, setBlockFields] = useState<PresetFieldItem[]>([]);
-
-  // Load custom presets from localStorage on mount if available
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("sc_admin_block_presets_v3");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setBlockPresets(parsed);
-        }
-      }
-    } catch {}
-  }, []);
 
   const saveBlockPresetsToStorage = (updated: BlockPreset[]) => {
     setBlockPresets(updated);
@@ -409,8 +407,9 @@ export function FormsManagerClient({
           await createFormCategoryAction(fd);
           toast(`Category "${newTitle}" created!`, "success");
           setIsModalOpen(false);
-        } catch (err: any) {
-          toast(`Error creating category: ${err?.message}`, "error");
+        } catch (err: unknown) {
+          const e = err as Error;
+          toast(`Error creating category: ${e?.message || "Unknown error"}`, "error");
         }
       });
       return;
@@ -427,8 +426,9 @@ export function FormsManagerClient({
     startTransition(async () => {
       try {
         await createForm(fd);
-      } catch (err: any) {
-        toast(`Error creating form: ${err?.message || "Unknown error"}`, "error");
+      } catch (err: unknown) {
+        const e = err as Error;
+        toast(`Error creating form: ${e?.message || "Unknown error"}`, "error");
       }
     });
   };
@@ -753,7 +753,7 @@ export function FormsManagerClient({
                 No Block Presets Found
               </h3>
               <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                No field block presets match "{searchQuery}". Click "+ New Field Block" to build custom reusable field combinations.
+                No field block presets match &quot;{searchQuery}&quot;. Click &quot;+ New Field Block&quot; to build custom reusable field combinations.
               </p>
             </div>
           ) : (

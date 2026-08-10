@@ -16,8 +16,8 @@ function Field({
   setValue,
 }: {
   field: FieldSchema;
-  value: any;
-  setValue: (v: any) => void;
+  value: unknown;
+  setValue: (v: unknown) => void;
 }) {
   switch (field.kind) {
     case "text":
@@ -27,7 +27,7 @@ function Field({
           <span className={labelCls}>{field.label}</span>
           <input
             type="text"
-            value={value ?? ""}
+            value={(value as string) ?? ""}
             placeholder={field.placeholder}
             onChange={(e) => setValue(e.target.value)}
             className={inputCls}
@@ -40,7 +40,7 @@ function Field({
           <span className={labelCls}>{field.label}</span>
           <textarea
             rows={3}
-            value={value ?? ""}
+            value={(value as string) ?? ""}
             placeholder={field.placeholder}
             onChange={(e) => setValue(e.target.value)}
             className={`${inputCls} resize-y`}
@@ -56,36 +56,24 @@ function Field({
           </span>
           <input
             type="number"
-            value={value ?? ""}
+            value={(value as number | string) ?? ""}
             min={field.min}
             max={field.max}
-            step={field.step}
-            onChange={(e) => setValue(e.target.value === "" ? undefined : Number(e.target.value))}
+            step={field.step ?? 1}
+            onChange={(e) => setValue(e.target.value === "" ? "" : Number(e.target.value))}
             className={inputCls}
-          />
-        </label>
-      );
-    case "color":
-      return (
-        <label className="flex items-center justify-between">
-          <span className="text-gray-500 text-xs">{field.label}</span>
-          <input
-            type="color"
-            value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000"}
-            onChange={(e) => setValue(e.target.value)}
-            className="w-6 h-6 p-0 border-0 cursor-pointer"
           />
         </label>
       );
     case "toggle":
       return (
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-gray-500 text-xs">{field.label}</span>
+        <label className="flex items-center justify-between cursor-pointer py-1">
+          <span className="text-xs text-gray-700 font-medium">{field.label}</span>
           <input
             type="checkbox"
             checked={!!value}
             onChange={(e) => setValue(e.target.checked)}
-            className="w-4 h-4 accent-blue-600 cursor-pointer"
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer"
           />
         </label>
       );
@@ -94,47 +82,79 @@ function Field({
         <label className="block">
           <span className={labelCls}>{field.label}</span>
           <select
-            value={value ?? ""}
+            value={(value as string | number) ?? ""}
             onChange={(e) => {
               const opt = field.options.find((o) => String(o.value) === e.target.value);
               setValue(opt ? opt.value : e.target.value);
             }}
-            className={inputCls}
+            className={`${inputCls} cursor-pointer`}
           >
-            {field.options.map((o) => (
-              <option key={String(o.value)} value={String(o.value)}>
-                {o.label}
+            {field.options.map((opt) => (
+              <option key={String(opt.value)} value={String(opt.value)}>
+                {opt.label}
               </option>
             ))}
           </select>
+        </label>
+      );
+    case "color":
+      return (
+        <label className="flex items-center justify-between py-1">
+          <span className="text-gray-500 text-xs">{field.label}</span>
+          <input
+            type="color"
+            value={typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000"}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-6 h-6 p-0 border-0 cursor-pointer"
+          />
         </label>
       );
     case "image":
       return (
         <div>
           <span className={labelCls}>{field.label}</span>
-          <InspectorImage value={value ?? ""} onChange={setValue} />
+          <InspectorImage
+            value={(value as string) ?? ""}
+            onChange={(url) => setValue(url)}
+          />
         </div>
       );
     case "icon":
       return (
         <div>
           <span className={labelCls}>{field.label}</span>
-          <div className="grid grid-cols-7 gap-1 max-h-40 overflow-y-auto p-1 bg-gray-50 border border-gray-200 rounded">
-            {ICON_NAMES.map((name) => {
-              const Ico = ICONS[name];
-              const selected = value === name;
-              return (
-                <button
-                  key={name}
-                  title={name}
-                  onClick={() => setValue(name)}
-                  className={`flex items-center justify-center aspect-square rounded ${selected ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-200"}`}
-                >
-                  <Ico size={15} />
-                </button>
-              );
-            })}
+          <div className="space-y-2">
+            <select
+              value={(value as string) ?? "Sparkles"}
+              onChange={(e) => setValue(e.target.value)}
+              className={`${inputCls} cursor-pointer`}
+            >
+              {ICON_NAMES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            {/* Quick picker for the top 12 most-used icons */}
+            <div className="grid grid-cols-6 gap-1 bg-gray-50 p-1.5 rounded border border-gray-200">
+              {ICON_NAMES.slice(0, 12).map((name) => {
+                const IconComp = ICONS[name];
+                const active = value === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setValue(name)}
+                    title={name}
+                    className={`flex items-center justify-center p-1.5 rounded transition-colors ${
+                      active ? "bg-blue-600 text-white" : "hover:bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    <IconComp size={14} />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       );
@@ -143,7 +163,13 @@ function Field({
     case "visibility":
       return <VisibilityControl label={field.label} />;
     case "array":
-      return <ArrayField field={field} value={value ?? []} setValue={setValue} />;
+      return (
+        <ArrayField
+          field={field}
+          value={(value as unknown[]) ?? []}
+          setValue={setValue}
+        />
+      );
     default:
       return null;
   }
@@ -161,7 +187,7 @@ function LinkTargetControl({ label }: { label: string }) {
   const type = u.startsWith("mailto:") ? "email" : u.startsWith("tel:") ? "phone" : u.startsWith("#") ? "section" : u.startsWith("/") ? "page" : "url";
   const raw = type === "email" ? u.replace(/^mailto:/, "") : type === "phone" ? u.replace(/^tel:/, "") : u;
 
-  const setUrl = (v: string) => actions.setProp((p: any) => (p.url = v));
+  const setUrl = (v: string) => actions.setProp((p: Record<string, unknown>) => (p.url = v));
   const onType = (t: string) =>
     setUrl(t === "email" ? "mailto:" : t === "phone" ? "tel:" : t === "section" ? "#" : t === "page" ? "/" : "");
   const onValue = (v: string) => setUrl(type === "email" ? `mailto:${v}` : type === "phone" ? `tel:${v}` : v);
@@ -184,11 +210,11 @@ function LinkTargetControl({ label }: { label: string }) {
         <input type="text" value={raw} placeholder={placeholder} onChange={(e) => onValue(e.target.value)} className={inputCls} />
         <label className="flex items-center justify-between cursor-pointer">
           <span className="text-gray-500 text-xs">Open in new tab</span>
-          <input type="checkbox" checked={target === "_blank"} onChange={(e) => actions.setProp((p: any) => (p.target = e.target.checked ? "_blank" : "_self"))} className="w-4 h-4 accent-blue-600" />
+          <input type="checkbox" checked={target === "_blank"} onChange={(e) => actions.setProp((p: Record<string, unknown>) => (p.target = e.target.checked ? "_blank" : "_self"))} className="w-4 h-4 accent-blue-600" />
         </label>
         <label className="flex items-center justify-between cursor-pointer">
           <span className="text-gray-500 text-xs">Nofollow</span>
-          <input type="checkbox" checked={(rel ?? "").includes("nofollow")} onChange={(e) => actions.setProp((p: any) => (p.rel = e.target.checked ? "nofollow noopener" : ""))} className="w-4 h-4 accent-blue-600" />
+          <input type="checkbox" checked={(rel ?? "").includes("nofollow")} onChange={(e) => actions.setProp((p: Record<string, unknown>) => (p.rel = e.target.checked ? "nofollow noopener" : ""))} className="w-4 h-4 accent-blue-600" />
         </label>
       </div>
     </div>
@@ -210,7 +236,7 @@ function VisibilityControl({ label }: { label: string }) {
           return (
             <button
               key={b.id}
-              onClick={() => actions.setProp((p: any) => { p.hideOn = { ...(p.hideOn || {}), [b.id]: !hidden }; })}
+              onClick={() => actions.setProp((p: Record<string, unknown>) => { p.hideOn = { ...((p.hideOn as Record<string, boolean>) || {}), [b.id]: !hidden }; })}
               className={`py-1.5 rounded border text-[10px] font-medium ${hidden ? "bg-red-50 border-red-200 text-red-600" : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"}`}
               title={hidden ? `Hidden on ${b.label}` : `Visible on ${b.label}`}
             >
@@ -230,18 +256,18 @@ function ArrayField({
   setValue,
 }: {
   field: Extract<FieldSchema, { kind: "array" }>;
-  value: any[];
-  setValue: (v: any[]) => void;
+  value: unknown[];
+  setValue: (v: unknown[]) => void;
 }) {
-  const items: any[] = Array.isArray(value) ? value : [];
+  const items: Record<string, unknown>[] = (Array.isArray(value) ? value : []) as Record<string, unknown>[];
 
   const blankItem = () => {
-    const obj: Record<string, any> = {};
+    const obj: Record<string, unknown> = {};
     for (const f of field.item) obj[f.name] = f.kind === "toggle" ? false : "";
     return obj;
   };
 
-  const update = (i: number, patch: any) => {
+  const update = (i: number, patch: Record<string, unknown>) => {
     const next = items.map((it, idx) => (idx === i ? { ...it, ...patch } : it));
     setValue(next);
   };
@@ -306,8 +332,8 @@ function ArrayField({
 export function SettingsFields({ schema }: { schema: FieldSchema[] }) {
   const { props, actions } = useNode((node) => ({ props: node.data.props }));
 
-  const setValue = (name: string, v: any) =>
-    actions.setProp((p: any) => {
+  const setValue = (name: string, v: unknown) =>
+    actions.setProp((p: Record<string, unknown>) => {
       p[name] = v;
     });
 
@@ -317,7 +343,7 @@ export function SettingsFields({ schema }: { schema: FieldSchema[] }) {
         <Field
           key={field.name}
           field={field}
-          value={props?.[field.name]}
+          value={(props as Record<string, unknown>)?.[field.name]}
           setValue={(v) => setValue(field.name, v)}
         />
       ))}

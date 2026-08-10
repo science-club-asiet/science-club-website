@@ -11,8 +11,8 @@ import { createContext, useContext } from "react";
 export type Breakpoint = "desktop" | "tablet" | "mobile";
 
 export type ResponsiveStyles = {
-  tablet?: Record<string, any>;
-  mobile?: Record<string, any>;
+  tablet?: React.CSSProperties;
+  mobile?: React.CSSProperties;
 };
 
 export const BREAKPOINTS: { id: Breakpoint; label: string; maxWidth?: number; canvas: string }[] = [
@@ -28,10 +28,10 @@ export function bpFromWidth(width: string): Breakpoint {
 
 /** The effective inline style at a breakpoint (base + cascaded overrides). */
 export function mergeStyle(
-  base: Record<string, any> = {},
+  base: React.CSSProperties = {},
   responsive: ResponsiveStyles | undefined,
   bp: Breakpoint
-): Record<string, any> {
+): React.CSSProperties {
   if (!responsive || bp === "desktop") return base ?? {};
   if (bp === "tablet") return { ...base, ...(responsive.tablet ?? {}) };
   return { ...base, ...(responsive.tablet ?? {}), ...(responsive.mobile ?? {}) };
@@ -39,7 +39,7 @@ export function mergeStyle(
 
 const camelToKebab = (s: string) => s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
 
-const toDecl = (obj: Record<string, any>) =>
+const toDecl = (obj: React.CSSProperties) =>
   Object.entries(obj)
     .filter(([, v]) => v !== undefined && v !== "")
     .map(([k, v]) => `${camelToKebab(k)}:${v} !important`)

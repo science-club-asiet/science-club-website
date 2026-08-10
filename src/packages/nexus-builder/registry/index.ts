@@ -24,8 +24,8 @@ export const entriesByType: Record<string, RegistryEntry> = Object.fromEntries(
 );
 
 /** type → Craft user-component, for <Editor resolver={...}>. */
-export const resolver: Record<string, React.ComponentType<any>> = Object.fromEntries(
-  registry.map((e) => [e.type, e.editorComponent ?? makeCraftComponent(e)])
+export const resolver: Record<string, React.ComponentType<Record<string, unknown>>> = Object.fromEntries(
+  registry.map((e) => [e.type, (e.editorComponent ?? makeCraftComponent(e)) as React.ComponentType<Record<string, unknown>>])
 );
 
 export type ToolboxGroup = { category: Category; label: string; items: RegistryEntry[] };

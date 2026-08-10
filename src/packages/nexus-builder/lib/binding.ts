@@ -7,7 +7,7 @@ import { createContext, useContext } from "react";
  * `ItemContext`; elements inside with a `bindField` prop pull their primary
  * content from that field (Webflow's "Get text from → field").
  */
-export type ItemData = Record<string, any> | null;
+export type ItemData = Record<string, unknown> | null;
 
 export const ItemContext = createContext<ItemData>(null);
 export const useItem = () => useContext(ItemContext);
@@ -21,8 +21,8 @@ const PRIMARY: Record<string, string> = {
 export const isBindable = (type: string) => type in PRIMARY;
 
 /** Substitute the primary prop with `item[bindField]` when bound. */
-export function resolveBindings(type: string, props: any, item: ItemData): any {
-  const field = props?.bindField;
+export function resolveBindings<T extends Record<string, unknown>>(type: string, props: T, item: ItemData): T {
+  const field = props?.bindField as string | undefined;
   if (!field || !item) return props;
   const prop = PRIMARY[type];
   if (!prop) return props;

@@ -18,7 +18,7 @@ import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from
 import { FolderAutocompleteInput } from "@/components/admin/media/FolderAutocompleteInput";
 import { FolderCreateModal } from "@/components/admin/media/FolderCreateModal";
 import { FolderMoveModal } from "@/components/admin/media/FolderMoveModal";
-import { compressImageFile, formatAltTextFromName } from "@/lib/admin/image-compression";
+import { compressImageFile } from "@/lib/admin/image-compression";
 import { ImageCropperModal } from "@/components/admin/ImageCropperModal";
 
 export type MediaAsset = {

@@ -7,7 +7,18 @@ import { updateProfile, updateTags, setRole, setMembership } from "@/lib/admin/a
 import { cn } from "@/lib/utils";
 
 export type DetailProfile = { id: string; full_name: string | null; email: string; department: string | null; year_of_study: string | null; role: string; is_member: boolean; tags: string[] | null };
-export type Registration = { id: string; attended: boolean; price_paid: number; certificate_id: string | null; created_at: string; events: { id: string; title: string; date: string; }; };
+export type Registration = {
+  id: string;
+  attended: boolean;
+  price_paid: number;
+  certificate_id: string | null;
+  registered_at: string;
+  events: {
+    id: string;
+    title: string;
+    event_date: string | null;
+  } | null;
+};
 
 export default function MemberDetailClient({ profile, registrations, isOwner }: { profile: DetailProfile, registrations: Registration[], isOwner: boolean }) {
   const [tab, setTab] = useState<"profile" | "participation" | "certificates" | "controls">("profile");
@@ -40,8 +51,8 @@ export default function MemberDetailClient({ profile, registrations, isOwner }: 
     const attended = registrations.filter(r => r.attended && r.certificate_id);
     const header = ["Event Title", "Date", "Certificate ID"];
     const rows = attended.map(r => [
-      `"${r.events.title}"`,
-      `"${r.events.date}"`,
+      `"${r.events?.title || "Unknown Event"}"`,
+      `"${r.events?.event_date ? new Date(r.events.event_date).toLocaleDateString() : "—"}"`,
       `"${r.certificate_id}"`
     ]);
     const csv = [header.join(","), ...rows.map(r => r.join(","))].join("\n");
@@ -155,9 +166,13 @@ export default function MemberDetailClient({ profile, registrations, isOwner }: 
                       <tr key={r.id}>
                         <td className="px-4 py-3">
                           <p className="font-medium">{r.events?.title || "Unknown Event"}</p>
-                          <p className="text-xs text-gray-500">{r.events?.date}</p>
+                          <p className="text-xs text-gray-500">
+                            {r.events?.event_date ? new Date(r.events.event_date).toLocaleDateString() : "—"}
+                          </p>
                         </td>
-                        <td className="px-4 py-3 text-gray-500">{new Date(r.created_at).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-gray-500">
+                          {r.registered_at ? new Date(r.registered_at).toLocaleDateString() : "—"}
+                        </td>
                         <td className="px-4 py-3">
                           {r.attended ? (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-green-100 text-green-700 px-2 py-0.5 rounded-full">

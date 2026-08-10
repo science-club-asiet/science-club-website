@@ -27,33 +27,41 @@ const clDefaultStyle = {
   position: "relative",
 };
 
+type CollectionListProps = {
+  collection?: string;
+  limit?: number;
+  sort?: "newest" | "oldest" | "custom";
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+};
+
 /** Editor: renders the item template ONCE, previewing the first published item
  *  so bound elements show real data. Public rendering repeats it per item
  *  (handled in NexusRenderer). */
-const CollectionListEditor = (props: any) => {
+const CollectionListEditor = (props: CollectionListProps) => {
   const { connectors: { connect, drag } } = useNode();
-  const [item, setItem] = useState<Record<string, any> | null>(null);
+  const [item, setItem] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     let on = true;
     if (props.collection) {
       getPublishedItems(props.collection, { limit: 1, sort: props.sort })
         .then((r) => { if (on) setItem(r.items[0]?.data ?? null); })
-        .catch(() => {});
-    } else {
-      setItem(null);
+        .catch(() => { if (on) setItem(null); });
     }
     return () => { on = false; };
   }, [props.collection, props.sort]);
 
+  const activeItem = props.collection ? item : null;
+
   return (
-    <div ref={(r: any) => { if (r) connect(drag(r)); }} style={props.style}>
+    <div ref={(r) => { if (r) connect(drag(r)); }} style={props.style}>
       {!props.collection && (
         <div style={{ gridColumn: "1 / -1", padding: 16, border: "1px dashed #cbd5e1", borderRadius: 8, color: "#94a3b8", fontSize: 12, textAlign: "center" }}>
           Collection List — pick a collection slug in Settings, then build one item template inside.
         </div>
       )}
-      <ItemContext.Provider value={item}>{props.children}</ItemContext.Provider>
+      <ItemContext.Provider value={activeItem}>{props.children}</ItemContext.Provider>
     </div>
   );
 };
@@ -73,7 +81,9 @@ export const cmsEntries: RegistryEntry[] = [
     isCanvas: true,
     // Public per-item rendering is intercepted in NexusRenderer; this render is
     // only the wrapping grid.
-    render: ({ style, children }: any) => <div style={style}>{children}</div>,
+    render: ({ style, children }: { style?: React.CSSProperties; children?: React.ReactNode }) => (
+      <div style={style}>{children}</div>
+    ),
     defaultProps: { collection: "", limit: 6, sort: "newest", style: { ...clDefaultStyle } },
     settings: collectionListSettings,
     editorComponent: CollectionListEditor,

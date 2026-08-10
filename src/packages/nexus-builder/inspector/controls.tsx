@@ -9,7 +9,7 @@ const checker = {
   backgroundPosition: "0 0,4px 4px",
 } as const;
 
-type Unit = "px" | "%" | "rem" | "em" | "vh" | "vw" | "fr" | "auto";
+export type Unit = "px" | "%" | "rem" | "em" | "vh" | "vw" | "fr" | "auto";
 
 function parseVal(v: string): { num: string; unit: Unit } {
   if (v == null || v === "") return { num: "", unit: "px" };

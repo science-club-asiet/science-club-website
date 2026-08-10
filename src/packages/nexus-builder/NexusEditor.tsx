@@ -19,7 +19,7 @@ import { resolver } from "./registry";
 export type NexusEditorProps = {
   kind: string;
   id: string;
-  data: any;
+  data: unknown;
   title: string;
   backHref: string;
   previewHref?: string;

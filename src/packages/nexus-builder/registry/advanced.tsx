@@ -58,7 +58,7 @@ function AccordionWidget({ items = [] }: { items: { title: string; content: stri
 }
 
 // ── Slider ───────────────────────────────────────────────────────────────────
-function SliderWidget({ slides = [] }: { slides: { image: string; caption: string }[] }) {
+function SliderWidget({ slides = [] }: { slides: { image: string; caption?: string }[] }) {
   const [i, setI] = useState(0);
   const count = slides.length || 1;
   const go = (dir: number) => setI((prev) => (prev + dir + count) % count);
@@ -96,7 +96,7 @@ function SliderWidget({ slides = [] }: { slides: { image: string; caption: strin
 }
 
 // ── Navbar (no scroll-locking mobile overlay — Lenis-safe) ───────────────────
-function NavbarWidget({ brand, links = [] }: { brand: string; links: { label: string; url: string }[] }) {
+function NavbarWidget({ brand = "Science Club", links = [] }: { brand?: string; links?: { label: string; url: string }[] }) {
   return (
     <nav className="flex items-center justify-between flex-wrap gap-3 py-3">
       <span className="font-oswald uppercase font-bold text-navy text-lg">{brand}</span>
@@ -123,7 +123,9 @@ export const advancedEntries: RegistryEntry[] = [
     icon: AppWindow,
     category: "advanced",
     editorInert: true,
-    render: ({ tabs, style }: any) => <div style={style}><TabsWidget tabs={tabs} /></div>,
+    render: ({ tabs, style }: { tabs?: { label: string; content: string }[]; style?: React.CSSProperties }) => (
+      <div style={style}><TabsWidget tabs={tabs ?? []} /></div>
+    ),
     defaultProps: {
       tabs: [
         { label: "Tab 1", content: "<p>First tab content.</p>" },
@@ -139,7 +141,9 @@ export const advancedEntries: RegistryEntry[] = [
     icon: Rows3,
     category: "advanced",
     editorInert: true,
-    render: ({ items, style }: any) => <div style={style}><AccordionWidget items={items} /></div>,
+    render: ({ items, style }: { items?: { title: string; content: string }[]; style?: React.CSSProperties }) => (
+      <div style={style}><AccordionWidget items={items ?? []} /></div>
+    ),
     defaultProps: {
       items: [
         { title: "Question one", content: "<p>Answer one.</p>" },
@@ -163,7 +167,9 @@ export const advancedEntries: RegistryEntry[] = [
     icon: GalleryHorizontal,
     category: "advanced",
     editorInert: true,
-    render: ({ slides, style }: any) => <div style={style}><SliderWidget slides={slides} /></div>,
+    render: ({ slides, style }: { slides?: { image: string; caption?: string }[]; style?: React.CSSProperties }) => (
+      <div style={style}><SliderWidget slides={slides ?? []} /></div>
+    ),
     defaultProps: {
       slides: [
         { image: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1200&auto=format&fit=crop", caption: "First slide" },
@@ -187,7 +193,9 @@ export const advancedEntries: RegistryEntry[] = [
     icon: Menu,
     category: "advanced",
     editorInert: true,
-    render: ({ brand, links, style }: any) => <div style={style}><NavbarWidget brand={brand} links={links} /></div>,
+    render: ({ brand, links, style }: { brand?: string; links?: { label: string; url: string }[]; style?: React.CSSProperties }) => (
+      <div style={style}><NavbarWidget brand={brand} links={links} /></div>
+    ),
     defaultProps: {
       brand: "Science Club",
       links: [
@@ -214,7 +222,7 @@ export const advancedEntries: RegistryEntry[] = [
     icon: Code2,
     category: "advanced",
     editorInert: true,
-    render: ({ html, style }: any) => (
+    render: ({ html, style }: { html?: string; style?: React.CSSProperties }) => (
       <div style={style} dangerouslySetInnerHTML={{ __html: html || '<div style="padding:16px;color:#94a3b8;border:1px dashed #cbd5e1;text-align:center;font-size:12px">Empty embed — paste HTML in settings</div>' }} />
     ),
     defaultProps: { html: "", style: { width: "100%" } },

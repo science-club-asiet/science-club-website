@@ -12,7 +12,15 @@ const Skeleton = () => <div className="h-24 rounded-xl bg-gray-100 animate-pulse
 
 function useRows(fetcher: () => Promise<Row[]>) {
   const [rows, setRows] = useState<Row[] | null>(null);
-  useEffect(() => { fetcher().then(setRows); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    let ignore = false;
+    void fetcher().then((data) => {
+      if (!ignore) setRows(data);
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [fetcher]);
   return rows;
 }
 

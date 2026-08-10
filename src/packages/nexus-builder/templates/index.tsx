@@ -18,13 +18,12 @@ const INK = "#1f2937";
 const MUTE = "#6b7280";
 
 const { Section, Container, Grid, Card, Heading, Text, Button, Badge, Icon } = resolver;
-
-const section = (extra: any = {}) => ({
+const section = (extra: React.CSSProperties = {}): React.CSSProperties => ({
   display: "flex", flexDirection: "column", alignItems: "center", width: "100%",
   paddingTop: "88px", paddingBottom: "88px", paddingLeft: "24px", paddingRight: "24px",
   backgroundColor: "transparent", position: "relative", ...extra,
 });
-const container = (extra: any = {}) => ({
+const container = (extra: React.CSSProperties = {}): React.CSSProperties => ({
   display: "flex", flexDirection: "column", width: "100%", maxWidth: "1120px",
   marginLeft: "auto", marginRight: "auto",
   paddingTop: "0px", paddingBottom: "0px", paddingLeft: "0px", paddingRight: "0px",
@@ -45,7 +44,7 @@ const btn = (bg = RED, color = "#ffffff") => ({
   borderRadius: "8px", textDecoration: "none", fontWeight: "700", fontSize: "14px",
   fontFamily: oswald, textTransform: "uppercase", letterSpacing: "0.04em", cursor: "pointer",
 });
-const card = (extra: any = {}) => ({
+const card = (extra: React.CSSProperties = {}): React.CSSProperties => ({
   display: "flex", flexDirection: "column", gap: "12px", width: "100%",
   paddingTop: "28px", paddingBottom: "28px", paddingLeft: "28px", paddingRight: "28px",
   backgroundColor: "#ffffff", borderRadius: "16px",
@@ -58,65 +57,80 @@ const heroTemplate = () => (
   <Element is={Section} canvas style={section({ alignItems: "center", paddingTop: "104px", paddingBottom: "104px" })}>
     <Element is={Container} canvas style={container({ alignItems: "center", gap: "22px", maxWidth: "780px" })}>
       <Badge text="Science Club" style={badge} />
-      <Heading text="Where curiosity becomes discovery" tagName="h1" style={{ fontFamily: oswald, fontSize: "58px", fontWeight: "700", color: NAVY, textAlign: "center", lineHeight: "1.05", marginBottom: "0px", textTransform: "uppercase" }} />
-      <Text text="Hands-on experiments, talks, and projects that turn big questions into real work. Join a community of builders and thinkers." style={{ fontFamily: inter, fontSize: "18px", color: MUTE, textAlign: "center", lineHeight: "1.6", marginBottom: "6px", maxWidth: "620px" }} />
-      <Button text="Join the club" url="/info/join" style={btn()} />
+      <Heading text="Curiosity in Action" tagName="h1" style={{ fontFamily: oswald, fontSize: "64px", fontWeight: "700", color: NAVY, textAlign: "center", textTransform: "uppercase", letterSpacing: "-0.02em", lineHeight: "1.05", marginBottom: "0px" }} />
+      <Text text="A student-led community exploring science, technology, and applied research through hands-on workshops, keynotes, and collaborative projects." style={{ fontFamily: inter, fontSize: "18px", color: MUTE, textAlign: "center", maxWidth: "620px", lineHeight: "1.6", marginBottom: "8px" }} />
+      <Element is={Container} canvas style={{ display: "flex", flexDirection: "row", gap: "14px", justifyContent: "center", marginTop: "8px" }}>
+        <Button text="Explore Events" url="/events" style={btn(RED, "#ffffff")} />
+        <Button text="Join the Club" url="/info/join" style={{ ...btn("transparent", NAVY), borderWidth: "1px", borderStyle: "solid", borderColor: "#d1d5db" }} />
+      </Element>
     </Element>
   </Element>
 );
 
-const featuresTemplate = () => {
-  const feature = (icon: string, title: string, body: string) => (
-    <Element is={Card} canvas style={card({ alignItems: "flex-start" })}>
-      <Icon icon={icon} size={30} style={{ display: "inline-flex", color: RED }} />
-      <Heading text={title} tagName="h3" style={{ fontFamily: oswald, fontSize: "20px", fontWeight: "700", color: NAVY, marginBottom: "0px", textTransform: "uppercase" }} />
-      <Text text={body} style={{ fontFamily: inter, fontSize: "15px", color: MUTE, lineHeight: "1.6", marginBottom: "0px" }} />
-    </Element>
-  );
-  return (
-    <Element is={Section} canvas style={section()}>
-      <Element is={Container} canvas style={container({ gap: "40px", alignItems: "center" })}>
-        <Heading text="What we do" tagName="h2" style={{ fontFamily: oswald, fontSize: "40px", fontWeight: "700", color: NAVY, textAlign: "center", marginBottom: "0px", textTransform: "uppercase" }} />
-        <Element is={Grid} canvas columns={3} style={{ display: "grid", gap: "24px", width: "100%", position: "relative" }}>
-          {feature("FlaskConical", "Experiments", "Weekly hands-on labs where members design and run their own experiments.")}
-          {feature("Rocket", "Projects", "Ship real builds — from rockets to robotics — with mentors and teammates.")}
-          {feature("Users", "Community", "A network of curious people who help each other learn faster.")}
+const featuresTemplate = () => (
+  <Element is={Section} canvas style={section({ backgroundColor: "#f8fafc" })}>
+    <Element is={Container} canvas style={container({ gap: "40px" })}>
+      <Element is={Container} canvas style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", textAlign: "center" }}>
+        <Badge text="What We Do" style={badge} />
+        <Heading text="Three Pillars of Our Community" tagName="h2" style={{ fontFamily: oswald, fontSize: "40px", fontWeight: "700", color: NAVY, textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: "0px" }} />
+        <Text text="Everything we organize falls into three core avenues designed to build skills and community." style={{ fontFamily: inter, fontSize: "16px", color: MUTE, maxWidth: "560px", marginBottom: "0px" }} />
+      </Element>
+      <Element is={Grid} canvas style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "24px", width: "100%" }}>
+        <Element is={Card} canvas style={card()}>
+          <Icon name="Compass" size={32} color={RED} style={{ marginBottom: "6px" }} />
+          <Heading text="Exploration" tagName="h3" style={{ fontFamily: oswald, fontSize: "22px", fontWeight: "700", color: NAVY, textTransform: "uppercase", marginBottom: "0px" }} />
+          <Text text="Keynotes, debates, and reading groups delving into fundamental scientific questions." style={{ fontFamily: inter, fontSize: "14px", color: MUTE, lineHeight: "1.6", marginBottom: "0px" }} />
+        </Element>
+        <Element is={Card} canvas style={card()}>
+          <Icon name="Hammer" size={32} color={RED} style={{ marginBottom: "6px" }} />
+          <Heading text="Building" tagName="h3" style={{ fontFamily: oswald, fontSize: "22px", fontWeight: "700", color: NAVY, textTransform: "uppercase", marginBottom: "0px" }} />
+          <Text text="Hands-on technical workshops, hackathons, and hardware sprints building real prototypes." style={{ fontFamily: inter, fontSize: "14px", color: MUTE, lineHeight: "1.6", marginBottom: "0px" }} />
+        </Element>
+        <Element is={Card} canvas style={card()}>
+          <Icon name="Users2" size={32} color={RED} style={{ marginBottom: "6px" }} />
+          <Heading text="Community" tagName="h3" style={{ fontFamily: oswald, fontSize: "22px", fontWeight: "700", color: NAVY, textTransform: "uppercase", marginBottom: "0px" }} />
+          <Text text="Industrial visits, science outreach to schools, and a lifelong network of curious peers." style={{ fontFamily: inter, fontSize: "14px", color: MUTE, lineHeight: "1.6", marginBottom: "0px" }} />
         </Element>
       </Element>
     </Element>
-  );
-};
+  </Element>
+);
 
 const ctaTemplate = () => (
-  <Element is={Section} canvas style={section({ paddingTop: "72px", paddingBottom: "72px" })}>
-    <Element is={Container} canvas style={container({ alignItems: "center", gap: "18px", maxWidth: "900px", paddingTop: "56px", paddingBottom: "56px", paddingLeft: "40px", paddingRight: "40px", backgroundColor: NAVY, borderRadius: "24px" })}>
-      <Heading text="Ready to build something?" tagName="h2" style={{ fontFamily: oswald, fontSize: "38px", fontWeight: "700", color: "#ffffff", textAlign: "center", marginBottom: "0px", textTransform: "uppercase" }} />
-      <Text text="Membership is open. Come to the next session — no experience required." style={{ fontFamily: inter, fontSize: "16px", color: "rgba(255,255,255,0.75)", textAlign: "center", marginBottom: "6px" }} />
-      <Button text="Get started" url="/info/join" style={btn()} />
+  <Element is={Section} canvas style={section({ backgroundColor: NAVY })}>
+    <Element is={Container} canvas style={container({ alignItems: "center", gap: "18px", maxWidth: "720px", textAlign: "center" })}>
+      <Badge text="Open Admissions" style={{ ...badge, backgroundColor: "rgba(255,255,255,0.12)", color: "#ffffff" }} />
+      <Heading text="Ready to Build Something Extraordinary?" tagName="h2" style={{ fontFamily: oswald, fontSize: "48px", fontWeight: "700", color: "#ffffff", textTransform: "uppercase", letterSpacing: "-0.01em", lineHeight: "1.1", marginBottom: "0px" }} />
+      <Text text="Join over 200 passionate students across engineering disciplines. No prior experience required — just bring curiosity." style={{ fontFamily: inter, fontSize: "16px", color: "#cbd5e1", lineHeight: "1.6", marginBottom: "10px" }} />
+      <Button text="Apply for Membership" url="/info/join" style={btn(RED, "#ffffff")} />
     </Element>
   </Element>
 );
 
-const statsTemplate = () => {
-  const stat = (num: string, label: string) => (
-    <Element is={Card} canvas style={card({ alignItems: "center", gap: "6px" })}>
-      <Heading text={num} tagName="h3" style={{ fontFamily: oswald, fontSize: "46px", fontWeight: "700", color: RED, textAlign: "center", marginBottom: "0px" }} />
-      <Text text={label} style={{ fontFamily: inter, fontSize: "13px", color: MUTE, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0px" }} />
-    </Element>
-  );
-  return (
-    <Element is={Section} canvas style={section({ paddingTop: "64px", paddingBottom: "64px" })}>
-      <Element is={Container} canvas style={container()}>
-        <Element is={Grid} canvas columns={4} style={{ display: "grid", gap: "20px", width: "100%", position: "relative" }}>
-          {stat("120+", "Active members")}
-          {stat("40", "Events a year")}
-          {stat("15", "Live projects")}
-          {stat("8", "Partner labs")}
+const statsTemplate = () => (
+  <Element is={Section} canvas style={section({ backgroundColor: "#ffffff", borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9" })}>
+    <Element is={Container} canvas style={container()}>
+      <Element is={Grid} canvas style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "32px", width: "100%", textAlign: "center" }}>
+        <Element is={Container} canvas style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <Heading text="250+" tagName="h3" style={{ fontFamily: oswald, fontSize: "44px", fontWeight: "700", color: RED, lineHeight: "1", marginBottom: "0px" }} />
+          <Text text="Active Members" style={{ fontFamily: oswald, fontSize: "13px", color: MUTE, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0px" }} />
+        </Element>
+        <Element is={Container} canvas style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <Heading text="34" tagName="h3" style={{ fontFamily: oswald, fontSize: "44px", fontWeight: "700", color: NAVY, lineHeight: "1", marginBottom: "0px" }} />
+          <Text text="Events Organized" style={{ fontFamily: oswald, fontSize: "13px", color: MUTE, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0px" }} />
+        </Element>
+        <Element is={Container} canvas style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <Heading text="12" tagName="h3" style={{ fontFamily: oswald, fontSize: "44px", fontWeight: "700", color: NAVY, lineHeight: "1", marginBottom: "0px" }} />
+          <Text text="Research Projects" style={{ fontFamily: oswald, fontSize: "13px", color: MUTE, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0px" }} />
+        </Element>
+        <Element is={Container} canvas style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <Heading text="5" tagName="h3" style={{ fontFamily: oswald, fontSize: "44px", fontWeight: "700", color: NAVY, lineHeight: "1", marginBottom: "0px" }} />
+          <Text text="National Awards" style={{ fontFamily: oswald, fontSize: "13px", color: MUTE, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0px" }} />
         </Element>
       </Element>
     </Element>
-  );
-};
+  </Element>
+);
 
 const testimonialTemplate = () => (
   <Element is={Section} canvas style={section()}>
@@ -129,7 +143,7 @@ const testimonialTemplate = () => (
   </Element>
 );
 
-export type TemplateDef = { id: string; label: string; icon: React.ComponentType<any>; build: () => React.ReactElement };
+export type TemplateDef = { id: string; label: string; icon: React.ComponentType<{ className?: string; size?: number }>; build: () => React.ReactElement };
 
 export const TEMPLATES: TemplateDef[] = [
   { id: "hero", label: "Hero", icon: LayoutTemplate, build: heroTemplate },

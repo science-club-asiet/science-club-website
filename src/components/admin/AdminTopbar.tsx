@@ -29,7 +29,7 @@ export function AdminTopbar({
     try {
       await setAdminTermCookie(t);
       router.refresh();
-    } catch (e: unknown) {
+    } catch {
       toast("Failed to switch session", "error");
     }
     setLoading(false);
@@ -42,7 +42,7 @@ export function AdminTopbar({
       await setSiteCurrentTerm(term);
       toast("Set as active term", "success");
       router.refresh();
-    } catch (e: unknown) {
+    } catch {
       toast("Failed to update site active term", "error");
     }
     setLoading(false);

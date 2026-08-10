@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { ChevronDown, AlignLeft, AlignCenter, AlignRight, AlignJustify, Italic, Underline } from "lucide-react";
-import { UnitInput, ColorInput } from "./controls";
+import { UnitInput, ColorInput, type Unit } from "./controls";
 import { ALL_STYLE_GROUPS, type StyleGroup } from "../registry/types";
 
 type Props = {
   getStyle: (property: string, defaultValue?: string) => string;
-  setStyle: (property: string, value: any) => void;
+  setStyle: (property: string, value: unknown) => void;
   groups?: StyleGroup[];
 };
 
@@ -49,7 +49,15 @@ function Section({ title, children, defaultOpen = false, show = true }: { title:
 const lbl = "text-gray-500 text-[11px]";
 const inputCls = "bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[11px] text-gray-700 focus:outline-none focus:border-blue-500";
 
-function TextRow({ label, prop, def = "", placeholder, get, set, w = "w-24" }: any) {
+type RowProps = {
+  label: string;
+  prop: string;
+  def?: string;
+  get: (prop: string, def?: string) => string;
+  set: (prop: string, val: string) => void;
+};
+
+function TextRow({ label, prop, def = "", placeholder, get, set, w = "w-24" }: RowProps & { placeholder?: string; w?: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className={lbl}>{label}</span>
@@ -57,17 +65,17 @@ function TextRow({ label, prop, def = "", placeholder, get, set, w = "w-24" }: a
     </div>
   );
 }
-function SelectRow({ label, prop, def, options, get, set, onSet }: any) {
+function SelectRow({ label, prop, def, options, get, set, onSet }: RowProps & { options: { label: string; value: string }[]; onSet?: (val: string) => void }) {
   return (
     <div className="flex items-center justify-between">
       <span className={lbl}>{label}</span>
       <select value={get(prop, def)} onChange={(e) => (onSet ? onSet(e.target.value) : set(prop, e.target.value))} className={`${inputCls} w-28 cursor-pointer`}>
-        {options.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
   );
 }
-function ColorRow({ label, prop, def, get, set, clear }: any) {
+function ColorRow({ label, prop, def, get, set, clear }: RowProps & { clear?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className={lbl}>{label}</span>
@@ -75,7 +83,7 @@ function ColorRow({ label, prop, def, get, set, clear }: any) {
     </div>
   );
 }
-function UnitRow({ label, prop, def = "", get, set, units }: any) {
+function UnitRow({ label, prop, def = "", get, set, units }: RowProps & { units?: Unit[] }) {
   return (
     <div className="flex items-center justify-between">
       <span className={lbl}>{label}</span>
@@ -223,7 +231,7 @@ export const StyleControls = ({ getStyle: get, setStyle: set, groups = ALL_STYLE
 
       {/* ── BACKGROUND ── */}
       <Section title="Background" show={has("background")}>
-        <ColorRow label="Color" prop="backgroundColor" def="#ffffff" get={get} set={set} clear={{ label: "Clear", value: "transparent" }} />
+        <ColorRow label="Color" prop="backgroundColor" def="#ffffff" get={get} set={set} clear={true} />
         <div className="pt-1 border-t border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <span className={lbl}>Gradient</span>

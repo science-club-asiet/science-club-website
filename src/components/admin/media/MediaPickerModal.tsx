@@ -82,14 +82,34 @@ export function MediaPickerModal({
   }, [fetchAssets]);
 
   useEffect(() => {
+    let ignore = false;
     if (isOpen) {
-      void fetchAssets().then(() => {
-        void syncUploadThingAssets().then((res) => {
-          if (res.synced > 0) void fetchAssets();
-        }).catch(() => {});
-      });
+      void createClient()
+        .from("media_assets")
+        .select("id, url, name, folder, created_at")
+        .order("created_at", { ascending: false })
+        .then(({ data, error }) => {
+          if (!ignore) {
+            if (!error && data) setAssets(data);
+            setLoading(false);
+          }
+          void syncUploadThingAssets().then((res) => {
+            if (!ignore && res.synced > 0) {
+              void createClient()
+                .from("media_assets")
+                .select("id, url, name, folder, created_at")
+                .order("created_at", { ascending: false })
+                .then(({ data: d2, error: e2 }) => {
+                  if (!ignore && !e2 && d2) setAssets(d2);
+                });
+            }
+          }).catch(() => {});
+        });
     }
-  }, [isOpen, fetchAssets]);
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen]);
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {

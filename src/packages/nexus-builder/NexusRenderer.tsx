@@ -19,7 +19,7 @@ import { getPublishedItems } from "@/lib/admin/cmsActions";
 
 type SerializedNode = {
   type: { resolvedName: string } | string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   nodes?: string[];
   hidden?: boolean;
 };
@@ -30,7 +30,7 @@ function parse(data: unknown): SerializedNodes | null {
   if (!data) return null;
   try {
     const obj = typeof data === "string" ? JSON.parse(data) : data;
-    if (!obj || typeof obj !== "object" || !(obj as any).ROOT) return null;
+    if (!obj || typeof obj !== "object" || !(obj as Record<string, unknown>).ROOT) return null;
     return obj as SerializedNodes;
   } catch {
     return null;
@@ -42,20 +42,22 @@ function CollectionListRenderer({
   collection, limit, sort, style, renderItem,
 }: {
   collection: string; limit?: number; sort?: string; style?: React.CSSProperties;
-  renderItem: (item: Record<string, any>) => React.ReactNode;
+  renderItem: (item: Record<string, unknown>) => React.ReactNode;
 }) {
-  const [items, setItems] = useState<Record<string, any>[] | null>(null);
+  const [items, setItems] = useState<Record<string, unknown>[] | null>(null);
   useEffect(() => {
     let on = true;
-    if (!collection) { setItems([]); return; }
-    getPublishedItems(collection, { limit, sort: sort as any })
-      .then((r) => { if (on) setItems(r.items.map((i) => i.data)); })
-      .catch(() => { if (on) setItems([]); });
+    if (collection) {
+      getPublishedItems(collection, { limit, sort: sort as "newest" | "oldest" | "custom" })
+        .then((r) => { if (on) setItems(r.items.map((i) => i.data)); })
+        .catch(() => { if (on) setItems([]); });
+    }
     return () => { on = false; };
   }, [collection, limit, sort]);
 
-  if (!items || !items.length) return <div style={style} />;
-  return <div style={style}>{items.map((it, i) => <React.Fragment key={i}>{renderItem(it)}</React.Fragment>)}</div>;
+  const activeItems = collection ? items : [];
+  if (!activeItems || !activeItems.length) return <div style={style} />;
+  return <div style={style}>{activeItems.map((it, i) => <React.Fragment key={i}>{renderItem(it)}</React.Fragment>)}</div>;
 }
 
 function renderNode(id: string, nodes: SerializedNodes, acc: Acc, item: ItemData = null): React.ReactNode {
@@ -72,10 +74,10 @@ function renderNode(id: string, nodes: SerializedNodes, acc: Acc, item: ItemData
     return (
       <CollectionListRenderer
         key={id}
-        collection={p.collection}
-        limit={p.limit}
-        sort={p.sort}
-        style={p.style}
+        collection={(p.collection as string) || ""}
+        limit={p.limit as number | undefined}
+        sort={p.sort as string | undefined}
+        style={p.style as React.CSSProperties | undefined}
         renderItem={(itemData) => childIds.map((cid) => <React.Fragment key={cid}>{renderNode(cid, nodes, acc, itemData)}</React.Fragment>)}
       />
     );
@@ -90,9 +92,9 @@ function renderNode(id: string, nodes: SerializedNodes, acc: Acc, item: ItemData
   }
 
   const props = resolveBindings(typeName!, node.props ?? {}, item);
-  const element = entry.render({ ...props, children }) as React.ReactElement<any>;
+  const element = entry.render({ ...props, children }) as React.ReactElement<React.HTMLAttributes<HTMLElement> & { style?: React.CSSProperties }>;
 
-  const extra: Record<string, any> = {};
+  const extra: Record<string, unknown> = {};
   let style = { ...(element.props.style || {}) };
   let clone = false;
 
@@ -116,14 +118,14 @@ function renderNode(id: string, nodes: SerializedNodes, acc: Acc, item: ItemData
   if (Object.keys(aProps).length) {
     extra["data-nx-anim"] = aProps["data-nx-anim"];
     extra["data-nx-trigger"] = aProps["data-nx-trigger"];
-    style = { ...style, ...aProps.style };
+    style = { ...style, ...((aProps.style as React.CSSProperties) || {}) };
     acc.anim = true;
     clone = true;
   }
 
   if (clone) {
     extra.style = style;
-    return React.cloneElement(element, extra);
+    return React.cloneElement(element, extra as React.HTMLAttributes<HTMLElement>);
   }
   return element;
 }

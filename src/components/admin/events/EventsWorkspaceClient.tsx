@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Calendar, Plus, Search, Edit2, Trash2, Tag, Layers, CheckCircle2,
-  XCircle, ArrowUpRight, FolderPlus, Sparkles, Filter, LayoutGrid, List
+  XCircle, ArrowUpRight, FolderPlus, LayoutGrid, List
 } from "lucide-react";
 import { deleteEvent, saveEventCategory, deleteEventCategory, type EventCategoryItem } from "@/lib/admin/event-actions";
 import { toast } from "@/components/ui/Toast";
-import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
+import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/ui/Tooltip";
 
@@ -36,7 +36,6 @@ export function EventsWorkspaceClient({
   events,
   categories,
   terms = ["2025-26", "2026-27", "2024-25"],
-  forms = [],
 }: {
   events: AdminEvent[];
   categories: EventCategoryItem[];
@@ -268,6 +267,19 @@ export function EventsWorkspaceClient({
                     )}
                   >
                     {c.name}
+                  </button>
+                ))}
+                <span className="text-[10px] font-bold uppercase tracking-wider text-navy/40 ml-2 mr-1">Status:</span>
+                {["all", "open", "completed", "draft"].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setSelectedStatus(st)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg text-[11px] font-medium uppercase transition-colors cursor-pointer",
+                      selectedStatus === st ? "bg-navy text-white font-bold" : "bg-gray-100 text-navy/70 hover:bg-gray-200"
+                    )}
+                  >
+                    {st}
                   </button>
                 ))}
               </div>

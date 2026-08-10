@@ -30,7 +30,6 @@ export function ImageCropperModal({
   initialResolution = "500x500",
 }: ImageCropperModalProps) {
   const [loadedImage, setLoadedImage] = useState<HTMLImageElement | null>(null);
-  const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
   const [shape, setShape] = useState<CropShape>(initialShape);
   const [aspectRatio, setAspectRatio] = useState<AspectRatioOption>(initialAspectRatio);
   const [targetResolution, setTargetResolution] = useState<TargetResolution>(initialResolution);
@@ -51,7 +50,6 @@ export function ImageCropperModal({
   useEffect(() => {
     if (!imageSrc) {
       setLoadedImage(null);
-      setImageObjectUrl(null);
       return;
     }
 
@@ -61,8 +59,6 @@ export function ImageCropperModal({
     } else if (imageSrc instanceof File) {
       url = URL.createObjectURL(imageSrc);
     }
-
-    setImageObjectUrl(url);
 
     const img = new Image();
     img.crossOrigin = "anonymous";

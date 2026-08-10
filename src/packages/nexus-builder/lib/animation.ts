@@ -30,7 +30,7 @@ export const ANIMATION_CSS = `
 export const ANIMATION_NOSCRIPT_CSS = `[data-nx-anim]{opacity:1 !important;transform:none !important}`;
 
 /** DOM props (data attrs + inline transition timing) for an animated node. */
-export function animationProps(config?: AnimationConfig): Record<string, any> {
+export function animationProps(config?: AnimationConfig): Record<string, unknown> {
   if (!config || !config.type || config.type === "none") return {};
   return {
     "data-nx-anim": config.type,

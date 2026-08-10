@@ -39,13 +39,13 @@ export async function searchAdmin(query: string): Promise<SearchResult[]> {
 
   if (events) {
     events.forEach(e => {
-      results.push({ id: `ev-${e.id}`, label: e.title, group: "Events", href: `/admin/events/${e.id}` });
+      results.push({ id: `ev-${e.id}`, label: e.title, group: "Events", href: `/admin/events/${e.id}/edit` });
     });
   }
   
   if (posts) {
     posts.forEach(p => {
-      results.push({ id: `po-${p.id}`, label: p.title, group: "Posts", href: `/admin/posts/${p.id}` });
+      results.push({ id: `po-${p.id}`, label: p.title, group: "Posts", href: `/admin/posts/${p.id}/edit` });
     });
   }
   

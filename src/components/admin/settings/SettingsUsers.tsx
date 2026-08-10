@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Users, Search, ShieldAlert, ShieldCheck, CheckCircle2, XCircle } from "lucide-react";
+import { Search, CheckCircle2, XCircle } from "lucide-react";
 import { updateUserRole, toggleUserMembership } from "@/lib/admin/settings-actions";
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";

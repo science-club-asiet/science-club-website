@@ -11,14 +11,14 @@ const DraggableItem = ({ entry }: { entry: RegistryEntry }) => {
 
   return (
     <div
-      ref={(ref: any) => {
+      ref={(ref: HTMLDivElement | null) => {
         if (!ref || !Comp) return;
         // Layout blocks are created as *canvas* nodes so things can be dropped
         // inside them (the core of the nesting model).
         create(
           ref,
           entry.isCanvas
-            ? React.createElement(Element as any, { canvas: true, is: Comp })
+            ? React.createElement(Element as React.ComponentType<{ canvas?: boolean; is?: React.ComponentType<Record<string, unknown>> }>, { canvas: true, is: Comp })
             : React.createElement(Comp)
         );
       }}

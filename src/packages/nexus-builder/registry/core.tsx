@@ -7,7 +7,7 @@ import {
   SquareStack, Sparkles, BadgeCheck as BadgeIcon, Quote as QuoteIcon,
 } from "lucide-react";
 import { settingsComponentFor } from "./makeCraftComponent";
-import { mergeStyle, useBreakpoint } from "../lib/responsive";
+import { mergeStyle, useBreakpoint, type ResponsiveStyles } from "../lib/responsive";
 import { useItem, resolveBindings } from "../lib/binding";
 import { ICONS } from "./icons";
 import type { FieldSchema, RegistryEntry } from "./types";
@@ -32,7 +32,7 @@ const layoutStyle = {
 // Neutral placeholder for media with no source yet — avoids passing src="" to
 // <img>/<video> (which triggers a full-page re-request warning) and gives a
 // clear "set me" affordance instead of a broken-image icon.
-const mediaPlaceholder = (style: any = {}) => ({
+const mediaPlaceholder = (style: React.CSSProperties = {}): React.CSSProperties => ({
   ...style,
   minHeight: style?.height && style.height !== "auto" ? undefined : 160,
   display: "flex",
@@ -65,10 +65,10 @@ function inlineText(opts: {
   propName: string;
   fixedTag?: string;
   isLink?: boolean;
-  defaultProps: Record<string, any>;
+  defaultProps: Record<string, unknown>;
   settings: FieldSchema[];
 }) {
-  const Comp = (props: any) => {
+  const Comp = (props: Record<string, unknown>) => {
     const {
       connectors: { connect, drag },
       actions: { setProp },
@@ -98,14 +98,14 @@ function inlineText(opts: {
       }
     }, [editable]);
 
-    const tag = opts.fixedTag ?? props.tagName ?? "p";
+    const tag = opts.fixedTag ?? (props.tagName as string) ?? "p";
     const linkAttrs = opts.isLink
-      ? { href: props.url || "#", onClickCapture: (e: any) => e.preventDefault() }
+      ? { href: (props.url as string) || "#", onClickCapture: (e: React.MouseEvent) => e.preventDefault() }
       : {};
 
     return (
       <ContentEditable
-        innerRef={(ref: any) => {
+        innerRef={(ref: HTMLElement | null) => {
           elRef.current = ref;
           if (!ref) return;
           connect(ref);
@@ -113,11 +113,11 @@ function inlineText(opts: {
           // with the mouse fights Craft's drag handler.
           if (!editable) drag(ref);
         }}
-        html={bound[opts.propName] ?? ""}
+        html={String(bound[opts.propName] ?? "")}
         disabled={!editable || isBound}
-        onChange={(e) => setProp((p: any) => (p[opts.propName] = e.target.value))}
+        onChange={(e) => setProp((p: Record<string, unknown>) => (p[opts.propName] = e.target.value))}
         tagName={tag}
-        style={mergeStyle(props.style, props.responsive, bp)}
+        style={mergeStyle(props.style as React.CSSProperties | undefined, props.responsive as ResponsiveStyles | undefined, bp)}
         className={editable ? "outline-none cursor-text" : opts.isLink ? "cursor-pointer" : "cursor-default"}
         onDoubleClick={() => { if (!isBound) setEditable(true); }}
         onBlur={() => setEditable(false)}
@@ -147,15 +147,6 @@ const headingTag: FieldSchema = {
     { label: "H5", value: "h5" },
   ],
 };
-const targetField: FieldSchema = {
-  kind: "select",
-  name: "target",
-  label: "Open in",
-  options: [
-    { label: "Same tab", value: "_self" },
-    { label: "New tab", value: "_blank" },
-  ],
-};
 
 export const coreEntries: RegistryEntry[] = [
   // ── Layout ─────────────────────────────────────────────────────────────────
@@ -165,7 +156,8 @@ export const coreEntries: RegistryEntry[] = [
     icon: LayoutTemplate,
     category: "layout",
     isCanvas: true,
-    render: ({ tag = "section", style, children }) => React.createElement(tag, { style }, children),
+    render: ({ tag = "section", style, children }: { tag?: string; style?: React.CSSProperties; children?: React.ReactNode }) =>
+      React.createElement(tag as string, { style }, children),
     defaultProps: { tag: "section", style: { ...layoutStyle, paddingTop: "80px", paddingBottom: "80px" } },
     settings: [
       { kind: "select", name: "tag", label: "HTML tag", options: [
@@ -182,7 +174,8 @@ export const coreEntries: RegistryEntry[] = [
     icon: Square,
     category: "layout",
     isCanvas: true,
-    render: ({ tag = "div", style, children }) => React.createElement(tag, { style }, children),
+    render: ({ tag = "div", style, children }: { tag?: string; style?: React.CSSProperties; children?: React.ReactNode }) =>
+      React.createElement(tag as string, { style }, children),
     defaultProps: { tag: "div", style: { ...layoutStyle, maxWidth: "1100px", marginLeft: "auto", marginRight: "auto" } },
     settings: [
       { kind: "select", name: "tag", label: "HTML tag", options: [
@@ -198,7 +191,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: ColumnsIcon,
     category: "layout",
     isCanvas: true,
-    render: ({ style, children }) => <div style={style}>{children}</div>,
+    render: ({ style, children }: { style?: React.CSSProperties; children?: React.ReactNode }) => <div style={style}>{children}</div>,
     defaultProps: { style: { ...layoutStyle, flexDirection: "row", gap: "20px" } },
     settings: [],
   },
@@ -208,7 +201,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: LayoutGrid,
     category: "layout",
     isCanvas: true,
-    render: ({ columns = 2, style, children }) => (
+    render: ({ columns = 2, style, children }: { columns?: number; style?: React.CSSProperties; children?: React.ReactNode }) => (
       <div style={{ ...style, display: "grid", gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
         {children}
       </div>
@@ -225,7 +218,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: Square,
     category: "layout",
     isCanvas: true,
-    render: ({ style, children }) => <div style={style}>{children}</div>,
+    render: ({ style, children }: { style?: React.CSSProperties; children?: React.ReactNode }) => <div style={style}>{children}</div>,
     defaultProps: {
       style: { ...layoutStyle, paddingTop: "0px", paddingBottom: "0px", paddingLeft: "0px", paddingRight: "0px", width: "auto" },
     },
@@ -237,7 +230,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: MoveVertical,
     category: "layout",
     styleGroups: ["spacing", "size"],
-    render: ({ style }) => <div style={style} />,
+    render: ({ style }: { style?: React.CSSProperties }) => <div style={style} />,
     defaultProps: { style: { width: "100%", height: "50px" } },
     settings: [],
   },
@@ -247,7 +240,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: Minus,
     category: "layout",
     styleGroups: ["spacing", "size", "border"],
-    render: ({ style }) => <hr style={style} />,
+    render: ({ style }: { style?: React.CSSProperties }) => <hr style={style} />,
     defaultProps: {
       style: { width: "100%", border: "none", borderTop: "1px solid #E5E7EB", marginTop: "20px", marginBottom: "20px" },
     },
@@ -260,8 +253,8 @@ export const coreEntries: RegistryEntry[] = [
     label: "Heading",
     icon: HeadingIcon,
     category: "typography",
-    render: ({ tagName = "h1", text, style }) =>
-      React.createElement(tagName, { style, dangerouslySetInnerHTML: { __html: text ?? "" } }),
+    render: ({ tagName = "h1", text, style }: { tagName?: string; text?: string; style?: React.CSSProperties }) =>
+      React.createElement(tagName as string, { style, dangerouslySetInnerHTML: { __html: text ?? "" } }),
     defaultProps: {
       text: "Heading",
       tagName: "h1",
@@ -285,7 +278,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Text",
     icon: Type,
     category: "typography",
-    render: ({ text, style }) => <p style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
+    render: ({ text, style }: { text?: string; style?: React.CSSProperties }) => <p style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
     defaultProps: {
       text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
       style: { ...textStyle, marginBottom: "16px", color: "#4B5563" },
@@ -308,7 +301,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Rich Text",
     icon: AlignLeft,
     category: "typography",
-    render: ({ html, style }) => (
+    render: ({ html, style }: { html?: string; style?: React.CSSProperties }) => (
       <div className="prose max-w-none" style={style} dangerouslySetInnerHTML={{ __html: html ?? "" }} />
     ),
     defaultProps: {
@@ -333,7 +326,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Link",
     icon: Link2,
     category: "typography",
-    render: ({ text, url, target, style }) => (
+    render: ({ text, url, target, style }: { text?: string; url?: string; target?: string; style?: React.CSSProperties }) => (
       <a href={url || "#"} target={target} style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />
     ),
     defaultProps: {
@@ -363,7 +356,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Button",
     icon: MousePointer2,
     category: "typography",
-    render: ({ text, url, target, style }) => (
+    render: ({ text, url, target, style }: { text?: string; url?: string; target?: string; style?: React.CSSProperties }) => (
       <a href={url || "#"} target={target} style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />
     ),
     defaultProps: {
@@ -404,7 +397,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: ImageIcon,
     category: "media",
     styleGroups: ["spacing", "size", "position", "border", "effects"],
-    render: ({ src, alt, style, lazy, decorative }) =>
+    render: ({ src, alt, style, lazy, decorative }: { src?: string; alt?: string; style?: React.CSSProperties; lazy?: boolean; decorative?: boolean }) =>
       src
         // eslint-disable-next-line @next/next/no-img-element
         ? <img src={src} alt={decorative ? "" : (alt ?? "")} loading={lazy ? "lazy" : undefined} style={style} />
@@ -428,7 +421,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: VideoIcon,
     category: "media",
     styleGroups: ["spacing", "size", "position", "border", "effects"],
-    render: ({ src, autoPlay, loop, controls, style }) =>
+    render: ({ src, autoPlay, loop, controls, style }: { src?: string; autoPlay?: boolean; loop?: boolean; controls?: boolean; style?: React.CSSProperties }) =>
       src
         ? <video src={src} autoPlay={autoPlay} loop={loop} controls={controls} muted={autoPlay} style={style} />
         : <div style={mediaPlaceholder(style)}>No video selected</div>,
@@ -454,7 +447,7 @@ export const coreEntries: RegistryEntry[] = [
     icon: SquareStack,
     category: "layout",
     isCanvas: true,
-    render: ({ style, children }) => <div style={style}>{children}</div>,
+    render: ({ style, children }: { style?: React.CSSProperties; children?: React.ReactNode }) => <div style={style}>{children}</div>,
     defaultProps: {
       style: {
         display: "flex", flexDirection: "column", gap: "12px", width: "100%",
@@ -472,8 +465,8 @@ export const coreEntries: RegistryEntry[] = [
     icon: Sparkles,
     category: "media",
     styleGroups: ["spacing", "size", "position", "typography", "effects"],
-    render: ({ icon, size, style }) => (
-      <span style={style}>{React.createElement(ICONS[icon] ?? ICONS.Star, { size: Number(size) || 32 })}</span>
+    render: ({ icon, size, style }: { icon?: string; size?: number | string; style?: React.CSSProperties }) => (
+      <span style={style}>{React.createElement((icon && ICONS[icon]) ? ICONS[icon] : ICONS.Sparkles, { size: Number(size) || 32 })}</span>
     ),
     defaultProps: {
       icon: "Sparkles",
@@ -490,7 +483,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Badge",
     icon: BadgeIcon,
     category: "typography",
-    render: ({ text, style }) => <span style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
+    render: ({ text, style }: { text?: string; style?: React.CSSProperties }) => <span style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
     defaultProps: {
       text: "New",
       style: {
@@ -521,7 +514,7 @@ export const coreEntries: RegistryEntry[] = [
     label: "Quote",
     icon: QuoteIcon,
     category: "typography",
-    render: ({ text, style }) => <blockquote style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
+    render: ({ text, style }: { text?: string; style?: React.CSSProperties }) => <blockquote style={style} dangerouslySetInnerHTML={{ __html: text ?? "" }} />,
     defaultProps: {
       text: "“Design is not just what it looks like and feels like. Design is how it works.”",
       style: {

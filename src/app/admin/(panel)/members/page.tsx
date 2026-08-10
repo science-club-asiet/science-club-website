@@ -14,12 +14,12 @@ export default async function MembersPage() {
       .order("created_at", { ascending: true }),
     supabase
       .from("event_registrations")
-      .select("user_id")
+      .select("profile_id")
       .eq("attended", true),
   ]);
 
-  const attendedCounts = (attendedRegs ?? []).reduce((acc: Record<string, number>, reg) => {
-    acc[reg.user_id] = (acc[reg.user_id] || 0) + 1;
+  const attendedCounts = (attendedRegs ?? []).reduce((acc: Record<string, number>, reg: { profile_id: string }) => {
+    acc[reg.profile_id] = (acc[reg.profile_id] || 0) + 1;
     return acc;
   }, {});
 

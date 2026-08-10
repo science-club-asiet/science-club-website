@@ -120,7 +120,7 @@ export async function duplicateFormAction(formId: string): Promise<{ error?: str
 
   const title = `${originalForm.title} (Copy)`;
   const baseSlug = `${originalForm.slug || slugify(originalForm.title)}-copy`;
-  let slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+  const slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
 
   const { data: newForm, error: ie } = await supabase
     .from("forms")
@@ -196,7 +196,7 @@ export async function instantiateTemplateAction(templateId: string): Promise<{ e
   const cleanTitle = tmpl.title.replace(/\s*\(Template\)/i, "").trim();
   const title = `${cleanTitle} - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
   const baseSlug = slugify(cleanTitle);
-  let slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+  const slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
 
   const { data: newForm, error: ie } = await supabase
     .from("forms")
@@ -267,7 +267,7 @@ export async function saveFormAsTemplateAction(formId: string): Promise<{ error?
 
   const title = `${originalForm.title} (Template)`;
   const baseSlug = `template-${originalForm.slug || slugify(originalForm.title)}`;
-  let slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+  const slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
 
   const { data: newTmpl, error: ie } = await supabase
     .from("forms")
@@ -359,7 +359,7 @@ export async function addFieldAction(formId: string, fieldType: string): Promise
 
 export async function duplicateFieldAction(formId: string, fieldId: string): Promise<BuilderField> {
   const { supabase } = await requireAdmin();
-  let source: any = null;
+  let source: Record<string, unknown> | null = null;
 
   if (fieldId && !fieldId.startsWith("temp_")) {
     const { data } = await supabase.from("form_fields").select("*").eq("id", fieldId).maybeSingle();

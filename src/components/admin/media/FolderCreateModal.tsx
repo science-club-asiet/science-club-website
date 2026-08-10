@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FolderPlus, X } from "lucide-react";
 import { FolderAutocompleteInput } from "./FolderAutocompleteInput";
@@ -19,12 +19,12 @@ export function FolderCreateModal({
   onSubmit: (folderPath: string) => void;
 }) {
   const [folderPath, setFolderPath] = useState(initialValue);
+  const [prevInit, setPrevInit] = useState(initialValue);
 
-  useEffect(() => {
-    if (isOpen) {
-      setFolderPath(initialValue);
-    }
-  }, [isOpen, initialValue]);
+  if (initialValue !== prevInit) {
+    setPrevInit(initialValue);
+    setFolderPath(initialValue);
+  }
 
   if (!isOpen) return null;
 

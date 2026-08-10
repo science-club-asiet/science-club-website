@@ -5,7 +5,7 @@ import { Layers, Trash2, Copy, RotateCcw } from "lucide-react";
 import { StyleControls } from "../../inspector/StyleControls";
 import { AnimationControls } from "../../inspector/AnimationControls";
 import { useDuplicate } from "../../lib/useDuplicate";
-import { mergeStyle, useBreakpoint, BREAKPOINTS } from "../../lib/responsive";
+import { mergeStyle, useBreakpoint, BREAKPOINTS, type ResponsiveStyles } from "../../lib/responsive";
 import type { AnimationConfig } from "../../lib/animation";
 import { getEntry } from "../../registry";
 import { isBindable } from "../../lib/binding";
@@ -44,33 +44,37 @@ export const InspectorRight = () => {
     );
   }
 
-  const setStyle = (property: string, value: any) => {
-    actions.setProp(active.id, (props: any) => {
+  const setStyle = (property: string, value: unknown) => {
+    actions.setProp(active.id, (props: Record<string, unknown>) => {
       if (bp === "desktop") {
-        props.style = { ...(props.style || {}), [property]: value };
+        props.style = { ...((props.style as Record<string, unknown>) || {}), [property]: value };
       } else {
-        props.responsive = props.responsive || {};
-        props.responsive[bp] = { ...(props.responsive[bp] || {}), [property]: value };
+        const resp = ((props.responsive as Record<string, unknown>) || {}) as Record<string, Record<string, unknown>>;
+        props.responsive = resp;
+        resp[bp] = { ...(resp[bp] || {}), [property]: value };
       }
     });
   };
   // Show the *effective* value at the active breakpoint (base + cascaded overrides).
-  const getStyle = (property: string, defaultValue = "") => {
-    const merged = mergeStyle(active?.props?.style, active?.props?.responsive, bp);
-    return merged[property] ?? defaultValue;
+  const getStyle = (property: string, defaultValue = ""): string => {
+    const merged = mergeStyle(active?.props?.style as React.CSSProperties | undefined, active?.props?.responsive as ResponsiveStyles | undefined, bp);
+    const val = (merged as Record<string, unknown>)[property];
+    return val !== undefined && val !== null ? String(val) : defaultValue;
   };
 
   const resetBreakpoint = () => {
     if (bp === "desktop") return;
-    actions.setProp(active.id, (props: any) => {
-      if (props.responsive) props.responsive[bp] = {};
+    actions.setProp(active.id, (props: Record<string, unknown>) => {
+      if (props.responsive) {
+        (props.responsive as Record<string, unknown>)[bp] = {};
+      }
     });
   };
 
   const anim = active?.props?.animation as AnimationConfig | undefined;
   const setAnim = (patch: Partial<AnimationConfig>) =>
-    actions.setProp(active.id, (props: any) => {
-      props.animation = { type: "none", ...(props.animation || {}), ...patch };
+    actions.setProp(active.id, (props: Record<string, unknown>) => {
+      props.animation = { type: "none", ...((props.animation as Record<string, unknown>) || {}), ...patch };
     });
 
   return (
@@ -140,11 +144,11 @@ export const InspectorRight = () => {
             <input
               type="text"
               value={(active.props?.bindField as string) ?? ""}
-              onChange={(e) => actions.setProp(active.id, (p: any) => (p.bindField = e.target.value))}
+              onChange={(e) => actions.setProp(active.id, (p: Record<string, unknown>) => (p.bindField = e.target.value))}
               placeholder="field key (inside a Collection List)"
               className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-blue-500"
             />
-            <p className="text-[10px] text-gray-400 mt-1">Pulls this element's content from the collection field. Leave blank for static content.</p>
+            <p className="text-[10px] text-gray-400 mt-1">Pulls this element&apos;s content from the collection field. Leave blank for static content.</p>
           </div>
         )}
         {activeTab === "settings" && active.settings && (

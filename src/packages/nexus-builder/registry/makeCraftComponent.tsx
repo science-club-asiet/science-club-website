@@ -1,7 +1,7 @@
 import React from "react";
 import { useNode } from "@craftjs/core";
 import { SettingsFields } from "../inspector/SettingsFields";
-import { mergeStyle, useBreakpoint, isHiddenOn } from "../lib/responsive";
+import { mergeStyle, useBreakpoint, isHiddenOn, type HideOn, type ResponsiveStyles } from "../lib/responsive";
 import { useEnabled } from "../lib/editorState";
 import { useItem, resolveBindings } from "../lib/binding";
 import type { FieldSchema, RegistryEntry } from "./types";
@@ -40,7 +40,7 @@ const EmptyHint = () => (
  * render forwards `props.children`.
  */
 export function makeCraftComponent(entry: RegistryEntry) {
-  const Comp = (props: any) => {
+  const Comp = (props: Record<string, unknown> & { hideOn?: HideOn; style?: React.CSSProperties; responsive?: ResponsiveStyles; children?: React.ReactNode }) => {
     const {
       connectors: { connect, drag },
     } = useNode();
@@ -59,12 +59,12 @@ export function makeCraftComponent(entry: RegistryEntry) {
       ...bound,
       style: dimmed ? { ...mergeStyle(props.style, props.responsive, bp), opacity: 0.4 } : mergeStyle(props.style, props.responsive, bp),
     };
-    const element = entry.render(renderProps) as React.ReactElement<any>;
+    const element = entry.render(renderProps) as React.ReactElement<React.HTMLAttributes<HTMLElement> & { style?: React.CSSProperties; children?: React.ReactNode }>;
 
     // Preview mode: render exactly as the public page would — fully interactive,
     // no inert wrapper, no empty hint, no selection chrome.
     if (!enabled) {
-      return React.cloneElement(element, { ref: setRef } as any);
+      return React.cloneElement(element, { ref: setRef } as React.RefAttributes<HTMLElement>);
     }
 
     // Inert components (live sections / form fields): keep the styled root as
@@ -73,7 +73,7 @@ export function makeCraftComponent(entry: RegistryEntry) {
     if (entry.editorInert) {
       return React.cloneElement(
         element,
-        { ref: setRef } as any,
+        { ref: setRef } as React.RefAttributes<HTMLElement>,
         <div style={{ pointerEvents: "none" }}>{element.props.children}</div>
       );
     }
@@ -81,10 +81,10 @@ export function makeCraftComponent(entry: RegistryEntry) {
     // Empty droppable container: show an editor-only hint so it's visible and
     // easy to drop into (the persisted style stays hug-content on public pages).
     if (entry.isCanvas && React.Children.count(props.children) === 0) {
-      return React.cloneElement(element, { ref: setRef } as any, <EmptyHint />);
+      return React.cloneElement(element, { ref: setRef } as React.RefAttributes<HTMLElement>, <EmptyHint />);
     }
 
-    return React.cloneElement(element, { ref: setRef } as any);
+    return React.cloneElement(element, { ref: setRef } as React.RefAttributes<HTMLElement>);
   };
 
   Comp.displayName = entry.type;

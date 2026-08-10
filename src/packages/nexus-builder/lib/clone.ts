@@ -46,7 +46,7 @@ export function getCloneTree(query: Query, idToClone: string): NodeTree {
       },
     };
 
-    const freshNode = query.parseFreshNode(tmpNode as any).toNode();
+    const freshNode = query.parseFreshNode(tmpNode as { id: string; data: Node["data"] }).toNode();
     newNodes[newNodeId] = freshNode;
     return newNodeId;
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { FolderAutocompleteInput } from "@/components/admin/media/FolderAutocompleteInput";
 import {
   DndContext,
@@ -23,9 +23,6 @@ import {
   Plus,
   Type,
   AlignLeft,
-  Mail,
-  Phone,
-  Hash,
   List,
   CheckSquare,
   CircleDot,
@@ -34,10 +31,7 @@ import {
   Sparkles,
   Eye,
   Settings2,
-  ArrowUp,
-  ArrowDown,
   Layers,
-  HelpCircle,
   CheckCircle2,
   LayoutList,
   BookmarkPlus,
@@ -71,13 +65,15 @@ import {
 } from "@/lib/admin/formActions";
 import {
   FIELD_TYPES,
-  FIELDS_WITH_OPTIONS,
   type BuilderField,
   type ValidationRule,
 } from "@/lib/admin/formTypes";
 import { MediaPickerModal } from "@/components/admin/media/MediaPickerModal";
 import { toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
+
+const generateTempId = (prefix = "temp") => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+const generateFieldKey = (label: string) => `${label.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${Math.random().toString(36).slice(2, 5)}`;
 
 export type CustomPreset = {
   id: string;
@@ -139,11 +135,9 @@ function FieldCard({
   formId,
   field,
   index,
-  total,
   onPatch,
   onDuplicate,
   onDelete,
-  onMove,
   onDropNewField,
   isCollapsed,
   onToggleCollapse,
@@ -152,11 +146,11 @@ function FieldCard({
   formId: string;
   field: BuilderField;
   index: number;
-  total: number;
+  total?: number;
   onPatch: (patch: Partial<BuilderField>) => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  onMove: (dir: -1 | 1) => void;
+  onMove?: (dir: -1 | 1) => void;
   onDropNewField?: (type: string, positionIdx: number) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -893,13 +887,21 @@ export function FormBuilder({
   categories = [],
 }: {
   formId: string;
-  initialForm?: Record<string, any>;
+  initialForm?: Record<string, unknown>;
   initialFields: BuilderField[];
   categories?: string[];
 }) {
   const [fields, setFields] = useState<BuilderField[]>(initialFields);
   const [activeTab, setActiveTab] = useState<"builder" | "settings" | "preview">("builder");
-  const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("sc_custom_form_presets");
+        if (saved) return JSON.parse(saved);
+      }
+    } catch {}
+    return [];
+  });
   const [savePresetModalOpen, setSavePresetModalOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -915,16 +917,9 @@ export function FormBuilder({
   const [, start] = useTransition();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const [formSettings, setFormSettings] = useState(initialForm || {});
+  const [formSettings] = useState<Record<string, unknown>>(initialForm || {});
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingForm, setSavingForm] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("sc_custom_form_presets");
-      if (saved) setCustomPresets(JSON.parse(saved));
-    } catch {}
-  }, []);
 
   const sectionChildrenCounts: Record<string, number> = {};
   const hiddenFieldIds = new Set<string>();
@@ -1013,12 +1008,12 @@ export function FormBuilder({
 
   // 0ms Optimistic Field Insertion (Supports Position Insertion via Drag and Drop)
   const add = (type: string, presetLabel?: string, positionIdx?: number) => {
-    const tempId = "temp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const tempId = generateTempId("temp");
     const labelVal = presetLabel || (typeInfoMap[type]?.label || type);
     const tempField: BuilderField = {
       id: tempId,
       label: labelVal,
-      field_key: labelVal.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Math.random().toString(36).slice(2, 5),
+      field_key: generateFieldKey(labelVal),
       field_type: type,
       required: false,
       placeholder: "",
@@ -1080,9 +1075,9 @@ export function FormBuilder({
 
       const tempClones: BuilderField[] = blockToClone.map((item, idx) => ({
         ...item,
-        id: "temp_clone_" + Date.now() + "_" + idx + "_" + Math.random().toString(36).slice(2, 5),
+        id: generateTempId(`temp_clone_${idx}`),
         label: idx === 0 ? `${item.label} (Copy)` : item.label,
-        field_key: `${item.field_key}_copy_${Math.random().toString(36).slice(2, 5)}`,
+        field_key: generateFieldKey(`${item.field_key}_copy`),
       }));
 
       // INSTANT UI UPDATE (0ms)
@@ -1113,12 +1108,12 @@ export function FormBuilder({
     }
 
     // INDIVIDUAL QUESTION DUPLICATION
-    const tempId = "temp_clone_" + Date.now() + "_" + Math.random().toString(36).slice(2, 5);
+    const tempId = generateTempId("temp_clone");
     const tempClone: BuilderField = {
       ...source,
       id: tempId,
       label: `${source.label} (Copy)`,
-      field_key: `${source.field_key}_copy_${Math.random().toString(36).slice(2, 5)}`,
+      field_key: generateFieldKey(`${source.field_key}_copy`),
     };
 
     // INSTANT UI UPDATE (0ms)
@@ -1478,7 +1473,7 @@ export function FormBuilder({
                   <input
                     type="text"
                     name="title"
-                    defaultValue={formSettings.title || ""}
+                    defaultValue={(formSettings.title as string) || ""}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy font-semibold focus:outline-none focus:border-red"
                   />
                 </div>
@@ -1490,7 +1485,7 @@ export function FormBuilder({
                   <input
                     type="text"
                     name="slug"
-                    defaultValue={formSettings.slug || ""}
+                    defaultValue={(formSettings.slug as string) || ""}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-mono text-navy focus:outline-none focus:border-red"
                   />
                 </div>
@@ -1503,7 +1498,7 @@ export function FormBuilder({
                 <textarea
                   name="description"
                   rows={2}
-                  defaultValue={formSettings.description || ""}
+                  defaultValue={(formSettings.description as string) || ""}
                   className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy focus:outline-none focus:border-red"
                 />
               </div>
@@ -1515,7 +1510,7 @@ export function FormBuilder({
                   </label>
                   <select
                     name="category"
-                    defaultValue={formSettings.category || "General"}
+                    defaultValue={(formSettings.category as string) || "General"}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy font-semibold focus:outline-none focus:border-red"
                   >
                     {Array.from(
@@ -1595,7 +1590,7 @@ export function FormBuilder({
                   <input
                     type="number"
                     name="max_responses"
-                    defaultValue={formSettings.max_responses || ""}
+                    defaultValue={(formSettings.max_responses as number | string) || ""}
                     placeholder="Unlimited"
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy focus:outline-none focus:border-red"
                   />
@@ -1620,7 +1615,7 @@ export function FormBuilder({
                   <textarea
                     name="confirmation_message"
                     rows={2}
-                    defaultValue={formSettings.confirmation_message || "Thank you! Your response has been recorded."}
+                    defaultValue={(formSettings.confirmation_message as string) || "Thank you! Your response has been recorded."}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy focus:outline-none focus:border-red"
                   />
                 </div>
@@ -1632,7 +1627,7 @@ export function FormBuilder({
                   <textarea
                     name="closed_message"
                     rows={2}
-                    defaultValue={formSettings.closed_message || "This form is no longer accepting responses."}
+                    defaultValue={(formSettings.closed_message as string) || "This form is no longer accepting responses."}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-navy focus:outline-none focus:border-red"
                   />
                 </div>
@@ -1749,6 +1744,7 @@ export function FormBuilder({
                     </label>
 
                     {f.image_url && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={f.image_url} alt="" className="max-h-48 rounded-xl border border-gray-200 object-cover" />
                     )}
 

@@ -26,9 +26,9 @@ function headingBlock(
     icon,
     category: "sections",
     editorInert: true,
-    render: ({ heading, style }: any) => (
+    render: ({ heading, style }: { heading?: string; style?: React.CSSProperties }) => (
       <div style={style}>
-        <Block heading={heading} />
+        <Block heading={heading || defaultHeading} />
       </div>
     ),
     defaultProps: { heading: defaultHeading, style: {} },
@@ -43,9 +43,9 @@ export const blockEntries: RegistryEntry[] = [
     icon: CalendarDays,
     category: "sections",
     editorInert: true,
-    render: ({ heading, limit, style }: any) => (
+    render: ({ heading, limit, style }: { heading?: string; limit?: number; style?: React.CSSProperties }) => (
       <div style={style}>
-        <EventsListBlock heading={heading} limit={limit} />
+        <EventsListBlock heading={heading || "Upcoming Events"} limit={limit ?? 6} />
       </div>
     ),
     defaultProps: { heading: "Upcoming Events", limit: 6, style: {} },
@@ -57,9 +57,9 @@ export const blockEntries: RegistryEntry[] = [
     icon: Newspaper,
     category: "sections",
     editorInert: true,
-    render: ({ heading, limit, style }: any) => (
+    render: ({ heading, limit, style }: { heading?: string; limit?: number; style?: React.CSSProperties }) => (
       <div style={style}>
-        <NewsFeedBlock heading={heading} limit={limit} />
+        <NewsFeedBlock heading={heading || "Latest News"} limit={limit ?? 6} />
       </div>
     ),
     defaultProps: { heading: "Latest News", limit: 6, style: {} },

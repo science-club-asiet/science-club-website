@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition, useMemo, useEffect } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import { submitFormAction } from "@/lib/admin/formActions";
 import type { PublicForm, PublicFormField } from "@/lib/data/forms";
 import { Upload, CheckCircle2, ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Loader2, FileCheck, AlertCircle } from "lucide-react";
@@ -163,7 +163,7 @@ function FileUploadField({
   initialValue,
 }: {
   f: PublicFormField;
-  onAnswerChange: (key: string, val: any) => void;
+  onAnswerChange: (key: string, val: unknown) => void;
   initialValue?: string;
 }) {
   // Seed from initialValue so state survives section navigation (component remounts)
@@ -178,28 +178,30 @@ function FileUploadField({
     () => (isUrl(initialValue) ? initialValue! : null)
   );
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const folder = f.uploadFolder || "forms";
-
-  const { startUpload } = useUploadThing("formFileUploader", {
-    onUploadBegin: () => { setIsUploading(true); setUploadError(null); },
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
-      setIsUploading(false);
-      const url = res?.[0]?.url;
-      if (url) {
+      if (res && res[0]?.url) {
+        const url = res[0].url;
         setUploadedUrl(url);
+        setPreviewUrl(url);
+        setSelectedFileName(res[0].name || url.split("/").pop() || "Uploaded File");
         onAnswerChange(f.fieldKey, url);
+        setUploadError(null);
       }
     },
-    onUploadError: (err) => {
-      setIsUploading(false);
-      setUploadError(err.message || "Upload failed. Please try again.");
+    onUploadError: (err: Error) => {
+      setUploadError(err.message || "Failed to upload file");
+      setSelectedFileName("");
+      setPreviewUrl(null);
+      setUploadedUrl(null);
+      onAnswerChange(f.fieldKey, "");
     },
   });
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
       setSelectedFileName("");
@@ -222,8 +224,8 @@ function FileUploadField({
       setPreviewUrl(null);
     }
 
-    // Upload to UploadThing → registers in media_assets with the right folder
-    await startUpload([file], { folder });
+    // Upload to UploadThing
+    void startUpload([file]);
   };
 
   return (
@@ -237,6 +239,7 @@ function FileUploadField({
       {isUploading ? (
         <Loader2 className="w-8 h-8 text-red mx-auto animate-spin" />
       ) : previewUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img src={previewUrl} alt="Preview" className="w-20 h-20 object-cover rounded-xl mx-auto border border-gray-200 shadow-sm" />
       ) : selectedFileName ? (
         <FileCheck className="w-8 h-8 text-emerald-600 mx-auto" />
@@ -250,7 +253,7 @@ function FileUploadField({
         required={f.required && !uploadedUrl}
         className="hidden"
         id={`file_${f.fieldKey}`}
-        onChange={handleFileChange}
+        onChange={handleFileSelect}
         onClick={(e) => e.stopPropagation()}
       />
 
@@ -297,15 +300,17 @@ function Field({
   onAnswerChange,
 }: {
   f: PublicFormField;
-  answers: Record<string, any>;
-  onAnswerChange: (key: string, val: any) => void;
+  answers: Record<string, unknown>;
+  onAnswerChange: (key: string, val: unknown) => void;
 }) {
+  const rawVal = answers[f.fieldKey];
+  const strVal = rawVal !== undefined && rawVal !== null ? String(rawVal) : "";
   const common = {
     id: f.fieldKey,
     name: f.fieldKey,
     required: f.required,
     placeholder: f.placeholder,
-    value: answers[f.fieldKey] ?? "",
+    value: strVal,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       onAnswerChange(f.fieldKey, e.target.value),
   };
@@ -330,7 +335,7 @@ function Field({
       );
 
     case "multiselect":
-      const currentArr: string[] = Array.isArray(answers[f.fieldKey]) ? answers[f.fieldKey] : [];
+      const currentArr: string[] = Array.isArray(answers[f.fieldKey]) ? (answers[f.fieldKey] as string[]) : [];
       const handleCheckboxChange = (optVal: string, checked: boolean) => {
         let updated = [...currentArr];
         if (checked) {
@@ -473,7 +478,7 @@ function Field({
           name={f.fieldKey}
           required={f.required}
           placeholder={f.placeholder}
-          value={answers[f.fieldKey]}
+          value={typeof answers[f.fieldKey] === "string" ? (answers[f.fieldKey] as string) : undefined}
           onChange={(val) => onAnswerChange(f.fieldKey, val)}
         />
       );
@@ -485,7 +490,7 @@ function Field({
 
 export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: string }) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [isSubmitting, startTransition] = useTransition();
   const [submitResult, setSubmitResult] = useState<{ ok?: boolean; error?: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -497,7 +502,7 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
     activeStepRef.current = currentStep;
   }, [currentStep]);
 
-  const handleAnswerChange = (key: string, val: any) => {
+  const handleAnswerChange = (key: string, val: unknown) => {
     console.log("[FormRenderer] Answer changed:", key, "=", val);
     setAnswers((prev) => ({ ...prev, [key]: val }));
   };
@@ -727,6 +732,7 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
                 {f.helpText && <p className="text-xs text-gray-500">{f.helpText}</p>}
                 {f.imageUrl && (
                   <div className="rounded-xl overflow-hidden border border-gray-200 max-h-96 bg-black/5 flex items-center justify-center mt-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={f.imageUrl} alt={f.label} className="max-h-96 object-contain" />
                   </div>
                 )}
@@ -746,6 +752,7 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
               {f.helpText && <p className="text-xs text-gray-400">{f.helpText}</p>}
 
               {f.imageUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={f.imageUrl} alt="" className="max-h-56 rounded-xl border border-gray-200 object-cover my-2" />
               )}
 

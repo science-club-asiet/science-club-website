@@ -26,17 +26,23 @@ export function AdminShell({
   activeTerm: string;
 }) {
   const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = useState(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      if (typeof window !== "undefined") {
+        return localStorage.getItem("sc_admin_sidebar_collapsed") === "true";
+      }
+    } catch {}
+    return false;
+  });
   const setSession = useAdminStore((s) => s.setSession);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("sc_admin_sidebar_collapsed");
-      if (saved === "true") setSidebarCollapsed(true);
-    } catch {}
-  }, []);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileMenuOpen(false);
+  }
 
   const toggleSidebarCollapse = () => {
     setSidebarCollapsed((prev) => {
@@ -51,10 +57,6 @@ export function AdminShell({
   useEffect(() => {
     setSession({ email, role, term, availableTerms, activeTerm });
   }, [email, role, term, availableTerms, activeTerm, setSession]);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

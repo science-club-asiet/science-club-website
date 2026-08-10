@@ -51,7 +51,7 @@ export function ImageUploader({ name, initial, initialAlt }: { name: string; ini
         const compressed = await compressImageFile(file);
         setIsCompressing(false);
         void startUpload([compressed]);
-      } catch (err) {
+      } catch {
         setIsCompressing(false);
         void startUpload([file]);
       }

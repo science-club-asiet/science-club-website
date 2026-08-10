@@ -114,7 +114,6 @@ export async function syncUploadThingAssets() {
     }
 
     const { data: existing } = await supabase.from("media_assets").select("url");
-    const existingUrls = new Set((existing ?? []).map((a) => a.url));
     const existingKeys = new Set(
       (existing ?? [])
         .map((a) => {

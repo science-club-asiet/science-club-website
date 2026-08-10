@@ -30,21 +30,19 @@ export async function playbookOrganizeWorkshop() {
     .insert({
       title: "Workshop Registration",
       slug: `workshop-reg-${Date.now()}`,
-      is_published: false,
-      fields: [
-        { name: "name", label: "Full Name", type: "text", required: true },
-        { name: "email", label: "Email Address", type: "email", required: true },
-        { name: "department", label: "Department", type: "text", required: true },
-      ],
+      purpose: "event",
+      is_active: false,
     })
     .select("id")
     .single();
 
   if (formErr || !form) throw new Error("Failed to create Form: " + formErr?.message);
 
-  // Link form to event (assuming we want to link them if there's a field, 
-  // but events table currently doesn't have registration_form_id in resources.ts. 
-  // We'll skip explicit foreign key linking if it doesn't exist, but maybe we can just put it in description or if it exists.)
+  await supabase.from("form_fields").insert([
+    { form_id: form.id, field_key: "full_name", label: "Full Name", field_type: "text", required: true, display_order: 0 },
+    { form_id: form.id, field_key: "email", label: "Email Address", field_type: "email", required: true, display_order: 1 },
+    { form_id: form.id, field_key: "department", label: "Department", field_type: "text", required: true, display_order: 2 },
+  ]);
 
   // 3. Create the Announcement Post
   await supabase.from("posts").insert({
@@ -74,7 +72,7 @@ export async function playbookOrganizeWorkshop() {
   revalidatePath("/admin/posts");
   revalidatePath("/admin/forms");
 
-  return `/admin/events/${event.id}`;
+  return `/admin/events/${event.id}/edit`;
 }
 
 export async function playbookNewMemberIntake() {
@@ -85,17 +83,19 @@ export async function playbookNewMemberIntake() {
     .insert({
       title: "Membership Application",
       slug: `membership-app-${Date.now()}`,
-      is_published: false,
-      fields: [
-        { name: "name", label: "Full Name", type: "text", required: true },
-        { name: "email", label: "Email Address", type: "email", required: true },
-        { name: "motivation", label: "Why do you want to join?", type: "textarea", required: true },
-      ],
+      purpose: "membership",
+      is_active: false,
     })
     .select("id")
     .single();
 
   if (error || !form) throw new Error("Failed to create Form: " + error?.message);
+
+  await supabase.from("form_fields").insert([
+    { form_id: form.id, field_key: "full_name", label: "Full Name", field_type: "text", required: true, display_order: 0 },
+    { form_id: form.id, field_key: "email", label: "Email Address", field_type: "email", required: true, display_order: 1 },
+    { form_id: form.id, field_key: "motivation", label: "Why do you want to join?", field_type: "textarea", required: true, display_order: 2 },
+  ]);
 
   const tasks = [
     "Review application form fields",
@@ -149,5 +149,5 @@ export async function playbookPublishResearch() {
   await supabase.from("tasks").insert(tasks);
 
   revalidatePath("/admin/posts");
-  return `/admin/posts/${post.id}`;
+  return `/admin/posts/${post.id}/edit`;
 }

@@ -18,7 +18,7 @@ const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm tex
 const labelCls = "block text-sm font-medium text-gray-700 mb-1";
 
 // ── Form wrapper (canvas) ────────────────────────────────────────────────────
-const PublicForm = ({ style, children }: any) => {
+const PublicForm = ({ style, children }: { style?: React.CSSProperties; children?: React.ReactNode }) => {
   const ctx = useContext(FormActionContext);
   if (!ctx) return <form style={style} onSubmit={(e) => e.preventDefault()}>{children}</form>;
   return (
@@ -29,11 +29,11 @@ const PublicForm = ({ style, children }: any) => {
   );
 };
 
-const FormEditor = (props: any) => {
+const FormEditor = (props: { style?: React.CSSProperties; children?: React.ReactNode }) => {
   const { connectors: { connect, drag } } = useNode();
   return (
     <form
-      ref={(r: any) => { if (r) connect(drag(r)); }}
+      ref={(r) => { if (r) connect(drag(r)); }}
       style={props.style}
       onSubmit={(e) => e.preventDefault()}
     >
@@ -58,6 +58,15 @@ const baseFieldSettings: FieldSchema[] = [
 ];
 const helpEl = (t?: string) => (t ? <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>{t}</p> : null);
 
+type InputFieldProps = {
+  label?: string;
+  name?: string;
+  placeholder?: string;
+  required?: boolean;
+  helpText?: string;
+  style?: React.CSSProperties;
+};
+
 function inputField(
   type: string,
   label: string,
@@ -72,7 +81,7 @@ function inputField(
     icon,
     category: "forms",
     editorInert: true,
-    render: ({ label: lbl, name, placeholder, required, helpText, style }: any) => (
+    render: ({ label: lbl, name, placeholder, required, helpText, style }: InputFieldProps) => (
       <div style={style}>
         <label className={labelCls}>{lbl}{required ? " *" : ""}</label>
         <input type={inputType} name={name} placeholder={placeholder} required={required} className={inputCls} />
@@ -91,7 +100,9 @@ export const formEntries: RegistryEntry[] = [
     icon: FormInput,
     category: "forms",
     isCanvas: true,
-    render: ({ style, children }: any) => <PublicForm style={style}>{children}</PublicForm>,
+    render: ({ style, children }: { style?: React.CSSProperties; children?: React.ReactNode }) => (
+      <PublicForm style={style}>{children}</PublicForm>
+    ),
     defaultProps: { style: { display: "flex", flexDirection: "column", gap: "16px", padding: "24px", width: "100%" } },
     settings: [],
     editorComponent: FormEditor,
@@ -104,7 +115,7 @@ export const formEntries: RegistryEntry[] = [
     icon: TextCursorInput,
     category: "forms",
     editorInert: true,
-    render: ({ label: lbl, name, placeholder, required, style }: any) => (
+    render: ({ label: lbl, name, placeholder, required, style }: InputFieldProps) => (
       <div style={style}>
         <label className={labelCls}>{lbl}{required ? " *" : ""}</label>
         <textarea name={name} placeholder={placeholder} required={required} rows={4} className={inputCls} />
@@ -119,12 +130,12 @@ export const formEntries: RegistryEntry[] = [
     icon: ChevronDownSquare,
     category: "forms",
     editorInert: true,
-    render: ({ label: lbl, name, required, options, style }: any) => (
+    render: ({ label: lbl, name, required, options, style }: { label?: string; name?: string; required?: boolean; options?: { label: string }[]; style?: React.CSSProperties }) => (
       <div style={style}>
         <label className={labelCls}>{lbl}{required ? " *" : ""}</label>
         <select name={name} required={required} className={inputCls} defaultValue="">
           <option value="" disabled>Select…</option>
-          {(options ?? []).map((o: any, i: number) => (
+          {(options ?? []).map((o, i: number) => (
             <option key={i} value={o.label}>{o.label}</option>
           ))}
         </select>
@@ -148,11 +159,11 @@ export const formEntries: RegistryEntry[] = [
     icon: CircleDot,
     category: "forms",
     editorInert: true,
-    render: ({ label: lbl, name, options, style }: any) => (
+    render: ({ label: lbl, name, options, style }: { label?: string; name?: string; options?: { label: string }[]; style?: React.CSSProperties }) => (
       <div style={style}>
         <span className={labelCls}>{lbl}</span>
         <div className="space-y-1.5">
-          {(options ?? []).map((o: any, i: number) => (
+          {(options ?? []).map((o, i: number) => (
             <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
               <input type="radio" name={name} value={o.label} /> {o.label}
             </label>
@@ -177,7 +188,7 @@ export const formEntries: RegistryEntry[] = [
     icon: CheckSquare,
     category: "forms",
     editorInert: true,
-    render: ({ label: lbl, name, style }: any) => (
+    render: ({ label: lbl, name, style }: { label?: string; name?: string; style?: React.CSSProperties }) => (
       <label style={style} className="flex items-center gap-2 text-sm text-gray-700">
         <input type="checkbox" name={name} value="yes" /> {lbl}
       </label>
@@ -194,7 +205,7 @@ export const formEntries: RegistryEntry[] = [
     icon: MousePointerClick,
     category: "forms",
     editorInert: true,
-    render: ({ text, style }: any) => (
+    render: ({ text, style }: { text?: string; style?: React.CSSProperties }) => (
       <div style={style}>
         <button type="submit" className="inline-block bg-red text-white font-oswald uppercase font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity">
           {text}

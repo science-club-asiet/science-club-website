@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Folder, FolderPlus, FolderOpen, Check, Layers, ChevronRight } from "lucide-react";
+import { X, Folder, FolderOpen, Check, Layers, ChevronRight } from "lucide-react";
 import { FolderAutocompleteInput } from "./FolderAutocompleteInput";
 import { formatFolderLabel } from "@/lib/admin/media-folder-utils";
 
@@ -22,10 +22,12 @@ export function FolderMoveModal({
   onSubmit: (targetFolder: string) => void;
 }) {
   const [targetFolder, setTargetFolder] = useState(initialFolder);
+  const [prevFolder, setPrevFolder] = useState(initialFolder);
 
-  useEffect(() => {
+  if (initialFolder !== prevFolder) {
+    setPrevFolder(initialFolder);
     setTargetFolder(initialFolder);
-  }, [initialFolder, isOpen]);
+  }
 
   // Group base folders and subfolders for quick chips display
   const folderTree = useMemo(() => {

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, Layers, Tag, Image as ImageIcon, Newspaper, Sparkles, AlertCircle } from "lucide-react";
+import { Save, ArrowLeft, Layers, Image as ImageIcon, Newspaper, Sparkles, AlertCircle } from "lucide-react";
 import { savePost } from "@/lib/admin/post-actions";
 import { toast } from "@/components/ui/Toast";
 import { ImageUploader } from "@/components/admin/ImageUploader";

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { saveSiteContent } from "@/lib/admin/settings-actions";
 import { toast } from "@/components/ui/Toast";
-import { Save, Image as ImageIcon, Globe, Mail, MapPin, Share2 } from "lucide-react";
+import { Save, Image as ImageIcon, Globe, Mail, Share2 } from "lucide-react";
 import { MediaPickerModal } from "@/components/admin/media/MediaPickerModal";
 
 export function SettingsGeneral({ settings }: { settings: Record<string, unknown> }) {

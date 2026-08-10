@@ -20,7 +20,7 @@ export function useDuplicate() {
       const siblings = query.node(parentId).get().data.nodes;
       const index = siblings.indexOf(nodeId);
 
-      const tree = getCloneTree(query as any, nodeId);
+      const tree = getCloneTree(query as unknown as Parameters<typeof getCloneTree>[0], nodeId);
       actions.addNodeTree(tree, parentId, index + 1);
       actions.selectNode(tree.rootNodeId);
     },

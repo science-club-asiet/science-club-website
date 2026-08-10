@@ -11,7 +11,7 @@ const TABLE: Record<string, string> = {
   page: "pages" 
 };
 
-export async function saveNexusData(kind: string, id: string, nexusData: any) {
+export async function saveNexusData(kind: string, id: string, nexusData: unknown) {
   const { supabase } = await requireAdmin();
   const table = TABLE[kind];
   

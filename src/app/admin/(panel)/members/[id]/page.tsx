@@ -27,15 +27,15 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       attended,
       price_paid,
       certificate_id,
-      created_at,
+      registered_at,
       events (
         id,
         title,
-        date
+        event_date
       )
     `)
-    .eq("user_id", id)
-    .order("created_at", { ascending: false });
+    .eq("profile_id", id)
+    .order("registered_at", { ascending: false });
 
   const isOwner = currentUser?.role === "owner";
 

@@ -51,8 +51,8 @@ export type RegistryEntry = {
   icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
   category: Category;
   isCanvas?: boolean; // droppable container
-  render: (props: any) => React.ReactElement;
-  defaultProps: Record<string, any>; // must include a `style` object
+  render: (props: Record<string, unknown> & { style?: React.CSSProperties; children?: React.ReactNode }) => React.ReactElement;
+  defaultProps: Record<string, unknown>; // must include a `style` object
   settings: FieldSchema[];
   /** Which Style-tab sections apply to this component. Omit = all. */
   styleGroups?: StyleGroup[];
@@ -64,7 +64,7 @@ export type RegistryEntry = {
    */
   editorInert?: boolean;
   /** Escape hatch: a fully-built Craft user-component (e.g. inline-editable text). */
-  editorComponent?: React.ComponentType<any> & { craft?: any };
+  editorComponent?: React.ComponentType<Record<string, unknown>> & { craft?: Record<string, unknown> };
 };
 
 export const CATEGORY_ORDER: Category[] = [

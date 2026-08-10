@@ -81,7 +81,7 @@ export const AssetsPanel = () => {
             {assets.map((a) => (
               <button
                 key={a.id}
-                ref={(ref: any) => {
+                ref={(ref: HTMLButtonElement | null) => {
                   if (ref) create(ref, React.createElement(resolver.Image, { src: a.url, alt: a.alt ?? "" }));
                 }}
                 onClick={() => insertImage(a.url)}

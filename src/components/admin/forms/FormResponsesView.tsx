@@ -10,13 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Search,
   ArrowLeft,
-  CheckCircle2,
-  Calendar,
-  Clock,
-  FileText,
-  HelpCircle,
   HelpCircle as QuestionIcon,
   Trash2,
   FileSpreadsheet,
@@ -115,6 +109,7 @@ export function FormResponsesView({
             rel="noreferrer"
             className="group relative rounded-xl overflow-hidden border border-gray-200 shadow-xs block shrink-0"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={str}
               alt="Uploaded media"

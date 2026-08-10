@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Edit3, X } from "lucide-react";
@@ -136,10 +136,12 @@ export function ConfirmModal({ isOpen, config }: { isOpen: boolean; config: Conf
 
 export function PromptModal({ isOpen, config }: { isOpen: boolean; config: PromptConfig | null }) {
   const [val, setVal] = useState(config?.initialValue || "");
+  const [prevConfig, setPrevConfig] = useState(config);
 
-  useEffect(() => {
+  if (config !== prevConfig) {
+    setPrevConfig(config);
     setVal(config?.initialValue || "");
-  }, [config]);
+  }
 
   if (!isOpen || !config) return null;
 

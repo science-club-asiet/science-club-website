@@ -18,13 +18,13 @@ export function ItemEditor({
   item?: CollectionItem | null;
 }) {
   const router = useRouter();
-  const [data, setData] = useState<Record<string, any>>(item?.data ?? {});
+  const [data, setData] = useState<Record<string, unknown>>(item?.data ?? {});
   const [slug, setSlug] = useState(item?.slug ?? "");
   const [published, setPublished] = useState(item?.is_published ?? true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
-  const set = (k: string, v: any) => setData((d) => ({ ...d, [k]: v }));
+  const set = (k: string, v: unknown) => setData((d) => ({ ...d, [k]: v }));
 
   const submit = async () => {
     setSaving(true); setErr("");
@@ -36,31 +36,32 @@ export function ItemEditor({
 
   const renderField = (f: CollectionField) => {
     const v = data[f.name];
+    const s = v !== undefined && v !== null ? String(v) : "";
     switch (f.type) {
       case "textarea":
       case "richtext":
-        return <textarea rows={f.type === "richtext" ? 6 : 3} value={v ?? ""} onChange={(e) => set(f.name, e.target.value)} className={inputCls} />;
+        return <textarea rows={f.type === "richtext" ? 6 : 3} value={s} onChange={(e) => set(f.name, e.target.value)} className={inputCls} />;
       case "number":
-        return <input type="number" value={v ?? ""} onChange={(e) => set(f.name, e.target.value === "" ? null : Number(e.target.value))} className={inputCls} />;
+        return <input type="number" value={typeof v === "number" ? v : s} onChange={(e) => set(f.name, e.target.value === "" ? null : Number(e.target.value))} className={inputCls} />;
       case "boolean":
         return <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!v} onChange={(e) => set(f.name, e.target.checked)} /> {f.label}</label>;
       case "select":
         return (
-          <select value={v ?? ""} onChange={(e) => set(f.name, e.target.value)} className={inputCls}>
+          <select value={s} onChange={(e) => set(f.name, e.target.value)} className={inputCls}>
             <option value="">—</option>
             {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         );
       case "image":
-        return <InspectorImage value={v ?? ""} onChange={(url) => set(f.name, url)} />;
+        return <InspectorImage value={s} onChange={(url) => set(f.name, url)} />;
       case "date":
-        return <input type="datetime-local" value={v ?? ""} onChange={(e) => set(f.name, e.target.value)} className={inputCls} />;
+        return <input type="datetime-local" value={s} onChange={(e) => set(f.name, e.target.value)} className={inputCls} />;
       case "tags":
-        return <input value={Array.isArray(v) ? v.join(", ") : (v ?? "")} onChange={(e) => set(f.name, e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="comma, separated" className={inputCls} />;
+        return <input value={Array.isArray(v) ? v.join(", ") : s} onChange={(e) => set(f.name, e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="comma, separated" className={inputCls} />;
       case "json":
         return <textarea rows={4} value={typeof v === "string" ? v : JSON.stringify(v ?? "", null, 2)} onChange={(e) => { try { set(f.name, JSON.parse(e.target.value)); } catch { set(f.name, e.target.value); } }} className={`${inputCls} font-mono text-xs`} />;
       default:
-        return <input value={v ?? ""} onChange={(e) => set(f.name, e.target.value)} className={inputCls} />;
+        return <input value={s} onChange={(e) => set(f.name, e.target.value)} className={inputCls} />;
     }
   };
 
