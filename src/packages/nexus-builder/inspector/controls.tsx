@@ -1,5 +1,6 @@
 import React from "react";
 import { COLOR_TOKENS } from "../lib/tokens";
+import { useScrub } from "./useScrub";
 
 const asHex = (value: string, fallback: string) => (/^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback);
 
@@ -19,7 +20,7 @@ function parseVal(v: string): { num: string; unit: Unit } {
   return { num: String(v), unit: "px" };
 }
 
-/** Number field + unit selector. Handles the `auto` keyword cleanly. */
+/** Number field + unit selector. Handles the `auto` keyword cleanly. Supports drag-scrubbing. */
 export function UnitInput({
   value,
   onChange,
@@ -42,6 +43,13 @@ export function UnitInput({
     onChange(`${n === "" ? "0" : n}${u}`);
   };
 
+  const scrub = useScrub({
+    value: parseFloat(num) || 0,
+    onChange: (n) => commit(String(n), typingUnit),
+    step: typingUnit === "rem" || typingUnit === "em" ? 0.1 : 1,
+    precision: typingUnit === "rem" || typingUnit === "em" ? 2 : 0,
+  });
+
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       <input
@@ -49,7 +57,13 @@ export function UnitInput({
         value={isAuto ? "" : num}
         placeholder={isAuto ? "auto" : "0"}
         onChange={(e) => commit(e.target.value, typingUnit)}
-        className="w-12 bg-gray-50 border border-gray-200 rounded px-1.5 py-1 text-[11px] text-right text-gray-700 focus:outline-none focus:border-blue-500"
+        onPointerDown={scrub.onPointerDown}
+        onPointerMove={scrub.onPointerMove}
+        onPointerUp={scrub.onPointerUp}
+        onPointerCancel={scrub.onPointerCancel}
+        style={scrub.style}
+        title="Drag horizontally to adjust · Shift ×10 · Alt ×0.1"
+        className="w-12 bg-gray-50 border border-gray-200 rounded px-1.5 py-1 text-[11px] text-right text-gray-700 focus:outline-none focus:border-blue-500 hover:bg-white transition-colors"
       />
       <select
         value={unit}

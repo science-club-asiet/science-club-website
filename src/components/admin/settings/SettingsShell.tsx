@@ -12,10 +12,16 @@ export function SettingsShell({
   initialSettings,
   profiles = [],
   mediaAssets = [],
+  recentActivities = [],
+  dbLatency = 15,
+  envConfig = { resendConfigured: false, supabaseAuthConfigured: true, uploadThingConfigured: true },
 }: {
   initialSettings: Record<string, unknown>;
   profiles?: UserProfile[];
   mediaAssets?: StorageAsset[];
+  recentActivities?: { action: string; user: string; userRole?: string; category?: string; created_at: string }[];
+  dbLatency?: number;
+  envConfig?: { resendConfigured: boolean; supabaseAuthConfigured: boolean; uploadThingConfigured: boolean };
 }) {
   const [tab, setTab] = useState("general");
 
@@ -53,8 +59,8 @@ export function SettingsShell({
         {tab === "general" && <SettingsGeneral settings={initialSettings} />}
         {tab === "users" && <SettingsUsers profiles={profiles} />}
         {tab === "storage" && <SettingsStorage assets={mediaAssets} />}
-        {tab === "logs" && <SettingsLogs />}
-        {tab === "email" && <SettingsEmail />}
+        {tab === "logs" && <SettingsLogs activities={recentActivities} dbLatency={dbLatency} assetCount={mediaAssets.length} />}
+        {tab === "email" && <SettingsEmail envConfig={envConfig} />}
       </div>
     </div>
   );

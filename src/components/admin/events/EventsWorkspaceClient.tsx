@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Calendar, Plus, Search, Edit2, Trash2, Tag, Layers, CheckCircle2,
-  XCircle, ArrowUpRight, FolderPlus, LayoutGrid, List
+  XCircle, ArrowUpRight, FolderPlus, LayoutGrid, List, Sparkles
 } from "lucide-react";
 import { deleteEvent, saveEventCategory, deleteEventCategory, type EventCategoryItem } from "@/lib/admin/event-actions";
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
+import { TablePagination } from "@/components/ui/TablePagination";
 import { Tooltip } from "@/components/ui/Tooltip";
 
 export type AdminEvent = {
@@ -70,6 +71,9 @@ export function EventsWorkspaceClient({
       .replace(/-+/g, "-");
   }
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   // Filtered Events
   const filteredEvents = events.filter((e) => {
     if (selectedTerm !== "all" && (e.term || "2025-26") !== selectedTerm) return false;
@@ -82,6 +86,14 @@ export function EventsWorkspaceClient({
     }
     return true;
   });
+
+  const totalItems = filteredEvents.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+  const paginatedEvents = filteredEvents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDeleteEvent = (id: string, title: string) => {
     setConfirmConfig({
@@ -334,7 +346,7 @@ export function EventsWorkspaceClient({
                   No events found matching your criteria.
                 </div>
               ) : (
-                filteredEvents.map((evt) => (
+                paginatedEvents.map((evt) => (
                   <div key={evt.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group">
                     <div className="aspect-[16/9] relative overflow-hidden bg-gray-100">
                       {evt.cover_image_url ? (
@@ -399,9 +411,16 @@ export function EventsWorkspaceClient({
 
                         <div className="flex items-center gap-1">
                           <Link
+                            href={`/admin/pagebuilder/event/${evt.id}`}
+                            className="p-1.5 text-red/80 hover:text-red hover:bg-red/5 rounded-lg transition-colors"
+                            title="Design in Visual Builder"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                          </Link>
+                          <Link
                             href={`/admin/events/${evt.id}/edit`}
                             className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit Event"
+                            title="Edit Event Details"
                           >
                             <Edit2 className="w-4 h-4" />
                           </Link>
@@ -444,7 +463,7 @@ export function EventsWorkspaceClient({
                         </td>
                       </tr>
                     ) : (
-                      filteredEvents.map((evt) => (
+                      paginatedEvents.map((evt) => (
                         <tr key={evt.id} className="hover:bg-gray-50/80 transition-colors">
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
@@ -469,10 +488,8 @@ export function EventsWorkspaceClient({
                               {evt.term || "2025-26"}
                             </span>
                           </td>
-                          <td className="px-5 py-4">
-                            <span className="font-mono text-[11px] text-gray-600 uppercase font-semibold bg-gray-100 px-2 py-0.5 rounded">
-                              {evt.category}
-                            </span>
+                          <td className="px-5 py-4 font-medium text-navy/70">
+                            {evt.category}
                           </td>
                           <td className="px-5 py-4">
                             <div className="font-medium text-navy">
@@ -496,6 +513,13 @@ export function EventsWorkspaceClient({
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link
+                                href={`/admin/pagebuilder/event/${evt.id}`}
+                                className="p-1.5 text-red/80 hover:text-red hover:bg-red/5 rounded-lg transition-colors"
+                                title="Design in Visual Builder"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                              </Link>
+                              <Link
                                 href={`/admin/registrations/${evt.id}`}
                                 className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
                                 title="View Registrations"
@@ -505,7 +529,7 @@ export function EventsWorkspaceClient({
                               <Link
                                 href={`/admin/events/${evt.id}/edit`}
                                 className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Edit Event"
+                                title="Edit Event Details"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </Link>
@@ -525,6 +549,15 @@ export function EventsWorkspaceClient({
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
             </div>
           )}
         </div>

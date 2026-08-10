@@ -1,8 +1,12 @@
 "use client";
 
-import { Mail, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Mail, CheckCircle2, ShieldCheck, ShieldAlert } from "lucide-react";
 
-export function SettingsEmail() {
+export function SettingsEmail({
+  envConfig = { resendConfigured: false, supabaseAuthConfigured: true, uploadThingConfigured: true },
+}: {
+  envConfig?: { resendConfigured: boolean; supabaseAuthConfigured: boolean; uploadThingConfigured: boolean };
+}) {
   return (
     <div className="space-y-6 font-inter max-w-3xl">
       <div>
@@ -24,16 +28,28 @@ export function SettingsEmail() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between">
             <span className="text-white/80">Supabase Auth Confirmation</span>
-            <span className="bg-green-500/20 text-green-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-green-400" /> Active
-            </span>
+            {envConfig.supabaseAuthConfigured ? (
+              <span className="bg-green-500/20 text-green-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-green-400" /> Active
+              </span>
+            ) : (
+              <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldAlert className="w-3 h-3 text-amber-400" /> Unconfigured
+              </span>
+            )}
           </div>
 
           <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between">
             <span className="text-white/80">Resend / SMTP Gateway</span>
-            <span className="bg-green-500/20 text-green-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 text-green-400" /> Configured
-            </span>
+            {envConfig.resendConfigured ? (
+              <span className="bg-green-500/20 text-green-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-green-400" /> Configured
+              </span>
+            ) : (
+              <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldAlert className="w-3 h-3 text-amber-400" /> Env Key Missing
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -11,6 +11,7 @@ import { deletePost, savePostCategory, deletePostCategory, type PostCategoryItem
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
+import { TablePagination } from "@/components/ui/TablePagination";
 import { Tooltip } from "@/components/ui/Tooltip";
 
 export type AdminPost = {
@@ -64,6 +65,9 @@ export function PostsWorkspaceClient({
       .replace(/-+/g, "-");
   }
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   // Filtered Posts
   const filteredPosts = posts.filter((p) => {
     if (selectedTerm !== "all" && (p.term || "2025-26") !== selectedTerm) return false;
@@ -74,6 +78,14 @@ export function PostsWorkspaceClient({
     }
     return true;
   });
+
+  const totalItems = filteredPosts.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+  const paginatedPosts = filteredPosts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDeletePost = (id: string, title: string) => {
     setConfirmConfig({
@@ -313,7 +325,7 @@ export function PostsWorkspaceClient({
                   No posts found matching criteria.
                 </div>
               ) : (
-                filteredPosts.map((post) => (
+                paginatedPosts.map((post) => (
                   <div key={post.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group">
                     <div className="aspect-[16/9] relative overflow-hidden bg-gray-100">
                       {post.cover_image_url ? (
@@ -365,6 +377,14 @@ export function PostsWorkspaceClient({
                         </span>
 
                         <div className="flex items-center gap-1">
+                          <Tooltip tip="Design in Visual Builder">
+                            <Link
+                              href={`/admin/pagebuilder/post/${post.id}`}
+                              className="p-1.5 text-red/80 hover:text-red hover:bg-red/5 rounded-lg transition-colors"
+                            >
+                              <Sparkles className="w-4 h-4" />
+                            </Link>
+                          </Tooltip>
                           <Tooltip tip="Edit Post">
                             <Link
                               href={`/admin/posts/${post.id}/edit`}
@@ -412,7 +432,7 @@ export function PostsWorkspaceClient({
                         </td>
                       </tr>
                     ) : (
-                      filteredPosts.map((post) => (
+                      paginatedPosts.map((post) => (
                         <tr key={post.id} className="hover:bg-gray-50/80 transition-colors">
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
@@ -421,7 +441,7 @@ export function PostsWorkspaceClient({
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={post.cover_image_url} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400"><FileText className="w-4 h-4" /></div>
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-xs">POST</div>
                                 )}
                               </div>
                               <div className="min-w-0">
@@ -437,10 +457,8 @@ export function PostsWorkspaceClient({
                               {post.term || "2025-26"}
                             </span>
                           </td>
-                          <td className="px-5 py-4">
-                            <span className="font-mono text-[11px] text-gray-600 uppercase font-semibold bg-gray-100 px-2 py-0.5 rounded">
-                              {post.type}
-                            </span>
+                          <td className="px-5 py-4 font-medium text-navy/70">
+                            {post.type || "general"}
                           </td>
                           <td className="px-5 py-4">
                             <span className={cn(
@@ -451,12 +469,22 @@ export function PostsWorkspaceClient({
                               {post.status}
                             </span>
                           </td>
-                          <td className="px-5 py-4 font-mono text-[10px]">
-                            {post.is_featured && <span className="bg-red/10 text-red font-bold px-1.5 py-0.5 rounded mr-1">Featured</span>}
-                            {post.breaking && <span className="bg-navy text-white font-bold px-1.5 py-0.5 rounded">Breaking</span>}
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1">
+                              {post.is_featured && <span className="text-[10px] bg-red/10 text-red font-bold px-1.5 py-0.5 rounded">Featured</span>}
+                              {post.breaking && <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">Breaking</span>}
+                            </div>
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <Tooltip tip="Design in Visual Builder">
+                                <Link
+                                  href={`/admin/pagebuilder/post/${post.id}`}
+                                  className="p-1.5 text-red/80 hover:text-red hover:bg-red/5 rounded-lg transition-colors"
+                                >
+                                  <Sparkles className="w-4 h-4" />
+                                </Link>
+                              </Tooltip>
                               <Tooltip tip="Edit Post">
                                 <Link
                                   href={`/admin/posts/${post.id}/edit`}
@@ -482,6 +510,15 @@ export function PostsWorkspaceClient({
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
             </div>
           )}
         </div>

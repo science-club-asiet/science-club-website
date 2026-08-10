@@ -39,7 +39,7 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
   }, []);
 
   return (
-    <section className="relative w-full bg-[#FCFCFD] py-24 md:py-32 isolate">
+    <section id="news" className="relative w-full bg-[#FCFCFD] py-24 md:py-32 isolate">
       {/* ── Subtle Translucent Global Texture ── */}
       <div className="absolute inset-0 z-[-1] pointer-events-none overflow-hidden">
         <Image

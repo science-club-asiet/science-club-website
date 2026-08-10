@@ -35,6 +35,7 @@ export default async function CmsHome() {
               </div>
               <Link href={`/admin/cms/${c.slug}`} className={rowLinkCls}>Entries</Link>
               <Link href={`/admin/cms/${c.slug}/fields`} className={rowLinkCls}>Fields</Link>
+              <Link href={`/admin/pagebuilder/page/new`} className="text-xs font-semibold uppercase tracking-widest text-red/80 hover:text-red">Visual Builder</Link>
               <form action={deleteCollection.bind(null, c.id)}>
                 <button className="text-xs font-semibold uppercase tracking-widest text-gray-400 hover:text-red">Delete</button>
               </form>
