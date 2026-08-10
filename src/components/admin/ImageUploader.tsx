@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { UploadCloud, X, Image as ImageIcon, Eye } from "lucide-react";
+import { UploadCloud, X, Image as ImageIcon, Crop } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { cn } from "@/lib/utils";
 import { MediaPickerModal } from "./media/MediaPickerModal";
 import { toast } from "@/components/ui/Toast";
 import { compressImageFile, formatAltTextFromName } from "@/lib/admin/image-compression";
+import { ImageCropperModal } from "./ImageCropperModal";
 
 /**
  * Drag-and-drop image field. Renders a hidden input (so the value flows into the
  * form's FormData), a dropzone with live upload progress, a preview with remove,
- * auto browser compression, and alt text accessibility support.
+ * image cropper support, auto browser compression, and alt text accessibility support.
  */
 export function ImageUploader({ name, initial, initialAlt }: { name: string; initial?: string; initialAlt?: string }) {
   const [url, setUrl] = useState(initial ?? "");
@@ -20,6 +21,7 @@ export function ImageUploader({ name, initial, initialAlt }: { name: string; ini
   const [isCompressing, setIsCompressing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
@@ -66,14 +68,24 @@ export function ImageUploader({ name, initial, initialAlt }: { name: string; ini
           <div className="relative w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt={altText || "Uploaded preview"} className="w-full h-44 object-cover rounded-xl border border-gray-200 bg-gray-50" />
-            <button
-              type="button"
-              onClick={() => setUrl("")}
-              className="absolute top-2 right-2 bg-white/90 rounded-full p-1.5 shadow hover:bg-red hover:text-white transition-colors"
-              aria-label="Remove image"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="absolute top-2 right-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCropperOpen(true)}
+                className="bg-white/90 rounded-full p-1.5 shadow hover:bg-red hover:text-white transition-colors text-navy"
+                title="Crop / Round Crop Image"
+              >
+                <Crop className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setUrl("")}
+                className="bg-white/90 rounded-full p-1.5 shadow hover:bg-red hover:text-white transition-colors text-navy"
+                aria-label="Remove image"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div>
@@ -146,6 +158,15 @@ export function ImageUploader({ name, initial, initialAlt }: { name: string; ini
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onSelect={(newUrl) => setUrl(newUrl)}
+      />
+      <ImageCropperModal
+        isOpen={cropperOpen}
+        imageSrc={url}
+        onClose={() => setCropperOpen(false)}
+        onCropComplete={async (croppedFile) => {
+          toast("Uploading cropped image...");
+          await startUpload([croppedFile]);
+        }}
       />
     </div>
   );

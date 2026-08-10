@@ -9,7 +9,7 @@ const f = createUploadthing();
  * URL is what gets stored in the DB image columns.
  */
 export const ourFileRouter = {
-  imageUploader: f({ image: { maxFileSize: "8MB", maxFileCount: 1 } })
+  imageUploader: f({ image: { maxFileSize: "8MB", maxFileCount: 20 } })
     .middleware(async () => {
       const supabase = await createClient();
       const {

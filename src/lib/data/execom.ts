@@ -38,6 +38,9 @@ async function getCurrentTerm(): Promise<string> {
   return (data?.value as { term?: string } | null)?.term ?? "2025-26";
 }
 
+const DEFAULT_AVATAR =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 0 1 60 0' fill='%2394a3b8'/></svg>";
+
 /**
  * Teams with their current-term members, grouped for the home Execom carousel.
  */
@@ -72,7 +75,7 @@ export async function getTeamsWithMembers(): Promise<TeamWithMembers[]> {
         name: m.name,
         role: m.position,
         bio: m.bio ?? "",
-        img: m.photo_url ?? "",
+        img: m.photo_url && m.photo_url.trim() ? m.photo_url.trim() : DEFAULT_AVATAR,
       })),
   }));
 }
@@ -97,7 +100,7 @@ export async function getCurrentExecom(): Promise<ExecomMemberFull[]> {
     role: m.position,
     category: TEAM_CATEGORY[m.team_slug ?? ""] ?? "CORE LEADERSHIP",
     bio: m.bio ?? "",
-    img: m.photo_url ?? "",
+    img: m.photo_url && m.photo_url.trim() ? m.photo_url.trim() : DEFAULT_AVATAR,
     email: m.email ?? undefined,
     linkedin: m.linkedin ?? undefined,
   }));
@@ -123,7 +126,7 @@ export async function getPastExecom(): Promise<PastExecomMember[]> {
     role: m.position,
     year: m.term,
     category: m.team_slug === "core" ? "Core" : "Member",
-    img: m.photo_url ?? "",
+    img: m.photo_url && m.photo_url.trim() ? m.photo_url.trim() : DEFAULT_AVATAR,
   }));
 }
 

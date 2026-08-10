@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, UploadCloud, Check, Image as ImageIcon, Folder, Loader2, RotateCw } from "lucide-react";
+import { X, Search, UploadCloud, Check, Image as ImageIcon, Folder, Loader2, RotateCw, Edit2, Crop } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "@/components/ui/Toast";
-import { syncUploadThingAssets } from "@/lib/admin/media-actions";
+import { syncUploadThingAssets, updateMediaAsset } from "@/lib/admin/media-actions";
 import { getDynamicFolders, formatFolderLabel, isAssetInFolder } from "@/lib/admin/media-folder-utils";
 import { compressImageFile } from "@/lib/admin/image-compression";
+import { ImageCropperModal } from "@/components/admin/ImageCropperModal";
+import { PromptModal, type PromptConfig } from "@/components/ui/ModalDialog";
+import { cn } from "@/lib/utils";
 
 export type MediaAssetItem = {
   id: string;
@@ -22,10 +25,14 @@ export function MediaPickerModal({
   isOpen,
   onClose,
   onSelect,
+  onSelectMultiple,
+  allowMultiple = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
+  onSelectMultiple?: (urls: string[]) => void;
+  allowMultiple?: boolean;
 }) {
   const [assets, setAssets] = useState<MediaAssetItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +40,15 @@ export function MediaPickerModal({
   const [search, setSearch] = useState("");
   const [activeFolder, setActiveFolder] = useState("all");
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Multi-selection state inside picker
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(allowMultiple);
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+
+  // Cropper & Prompt state
+  const [cropperSrc, setCropperSrc] = useState<string | File | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [promptConfig, setPromptConfig] = useState<PromptConfig | null>(null);
 
   const fetchAssets = useCallback(async () => {
     setLoading(true);
@@ -108,6 +124,37 @@ export function MediaPickerModal({
     });
   }, [assets, activeFolder, search]);
 
+  const handleRenameAsset = (asset: MediaAssetItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPromptConfig({
+      title: `Rename Image`,
+      label: "Enter new image title/name:",
+      initialValue: asset.name,
+      submitText: "Save Name",
+      onCancel: () => setPromptConfig(null),
+      onSubmit: async (newName: string) => {
+        setPromptConfig(null);
+        const clean = newName.trim();
+        if (!clean || clean === asset.name) return;
+
+        setAssets((prev) => prev.map((a) => (a.id === asset.id ? { ...a, name: clean } : a)));
+        try {
+          await updateMediaAsset(asset.id, { name: clean });
+          toast("Asset renamed", "success");
+        } catch (err: unknown) {
+          toast("Failed to rename: " + (err as Error).message, "error");
+          void fetchAssets();
+        }
+      },
+    });
+  };
+
+  const handleCropAsset = (asset: MediaAssetItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCropperSrc(asset.url);
+    setIsCropperOpen(true);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -128,7 +175,7 @@ export function MediaPickerModal({
               </div>
               <div>
                 <h3 className="font-oswald text-lg font-bold uppercase text-navy leading-none">Media Library</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Select an asset or upload a new photo</p>
+                <p className="text-xs text-gray-400 mt-0.5">Select an asset or upload new photos (batch up to 20)</p>
               </div>
             </div>
 
@@ -147,7 +194,7 @@ export function MediaPickerModal({
               <label className="bg-red hover:bg-navy text-white px-4 py-2 rounded-full font-oswald text-xs uppercase tracking-widest font-bold transition-all cursor-pointer flex items-center gap-2 shadow-sm">
                 <UploadCloud className="w-4 h-4" />
                 {isUploading ? `Uploading ${uploadProgress}%` : "Upload New"}
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={isUploading} />
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} disabled={isUploading} />
               </label>
 
               <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-navy transition-colors rounded-lg cursor-pointer">
@@ -169,18 +216,33 @@ export function MediaPickerModal({
               />
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
-              {folderList.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setActiveFolder(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
-                    activeFolder === f ? "bg-navy text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {formatFolderLabel(f)}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMultiSelectMode(!isMultiSelectMode);
+                  if (isMultiSelectMode) setSelectedUrls(new Set());
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border shadow-sm ${
+                  isMultiSelectMode ? "bg-navy text-white border-navy" : "bg-gray-50 text-navy border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                {isMultiSelectMode ? "Done Multi-Select" : "Multi-Select"}
+              </button>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
+                {folderList.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setActiveFolder(f)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
+                      activeFolder === f ? "bg-navy text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {formatFolderLabel(f)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -199,41 +261,155 @@ export function MediaPickerModal({
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredAssets.map((asset) => (
-                  <div
-                    key={asset.id}
-                    onClick={() => {
-                      onSelect(asset.url);
-                      onClose();
-                    }}
-                    className="group relative bg-gray-50 border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:border-red hover:shadow-md transition-all duration-200"
-                  >
-                    <div className="aspect-square relative overflow-hidden bg-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={asset.url}
-                        alt={asset.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-navy/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-red text-white text-[10px] font-oswald uppercase tracking-widest font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow">
-                          <Check className="w-3 h-3" /> Select
-                        </span>
+                {filteredAssets.map((asset) => {
+                  const isSelected = selectedUrls.has(asset.url);
+
+                  return (
+                    <div
+                      key={asset.id}
+                      onClick={() => {
+                        if (isMultiSelectMode) {
+                          setSelectedUrls((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(asset.url)) next.delete(asset.url);
+                            else next.add(asset.url);
+                            return next;
+                          });
+                        } else {
+                          onSelect(asset.url);
+                          onClose();
+                        }
+                      }}
+                      className={cn(
+                        "group relative bg-gray-50 border rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 flex flex-col justify-between",
+                        isSelected ? "border-red ring-2 ring-red ring-offset-1" : "border-gray-200 hover:border-red"
+                      )}
+                    >
+                      <div className="aspect-square relative overflow-hidden bg-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={asset.url}
+                          alt={asset.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+
+                        {/* Multi-Select Checkbox overlay */}
+                        {isMultiSelectMode ? (
+                          <div
+                            className={cn(
+                              "absolute top-2 left-2 w-5 h-5 rounded-md border flex items-center justify-center transition-all z-10",
+                              isSelected ? "bg-red border-red text-white shadow-sm" : "bg-white/90 border-gray-300"
+                            )}
+                          >
+                            {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          </div>
+                        ) : (
+                          /* Quick Hover Actions Overlay */
+                          <div className="absolute inset-0 bg-navy/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2">
+                            <span className="bg-red text-white text-[10px] font-oswald uppercase tracking-widest font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow">
+                              <Check className="w-3 h-3" /> Select
+                            </span>
+                            
+                            <div className="flex items-center gap-1 mt-1">
+                              <button
+                                type="button"
+                                onClick={(e) => handleCropAsset(asset, e)}
+                                className="bg-white/90 text-navy hover:bg-white p-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow"
+                                title="Crop / Round Crop"
+                              >
+                                <Crop className="w-3 h-3 text-red" /> Crop
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleRenameAsset(asset, e)}
+                                className="bg-white/90 text-navy hover:bg-white p-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow"
+                                title="Rename Image"
+                              >
+                                <Edit2 className="w-3 h-3 text-navy" /> Rename
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-2.5 bg-white border-t border-gray-100 flex items-center justify-between gap-1">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-medium text-navy truncate" title={asset.name}>
+                            {asset.name}
+                          </p>
+                          <p className="text-[9px] text-gray-400 uppercase tracking-wider mt-0.5 truncate">{asset.folder || "general"}</p>
+                        </div>
+                        {!isMultiSelectMode && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleRenameAsset(asset, e)}
+                            className="text-gray-300 hover:text-navy p-1 transition-colors shrink-0"
+                            title="Rename Image"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
-
-                    <div className="p-2.5 bg-white border-t border-gray-100">
-                      <p className="text-[11px] font-medium text-navy truncate" title={asset.name}>
-                        {asset.name}
-                      </p>
-                      <p className="text-[9px] text-gray-400 uppercase tracking-wider mt-0.5 truncate">{asset.folder || "general"}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
+
+          {/* Footer Bar for Multi-Select Confirmation */}
+          {selectedUrls.size > 0 && (
+            <div className="px-6 py-3 bg-navy text-white flex items-center justify-between gap-4 border-t border-navy/20 shrink-0">
+              <div className="text-xs font-medium">
+                <span className="font-oswald uppercase tracking-wider font-bold text-red">
+                  {selectedUrls.size} Image(s) Selected
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedUrls(new Set())}
+                  className="px-3 py-1.5 rounded-lg text-xs text-gray-300 hover:text-white transition-colors"
+                >
+                  Clear Selection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const urlArr = Array.from(selectedUrls);
+                    if (onSelectMultiple) {
+                      onSelectMultiple(urlArr);
+                    } else if (urlArr.length > 0) {
+                      onSelect(urlArr[0]);
+                    }
+                    onClose();
+                  }}
+                  className="bg-red hover:bg-red/90 text-white px-5 py-1.5 rounded-lg text-xs font-oswald uppercase tracking-widest font-bold shadow transition-all cursor-pointer"
+                >
+                  Confirm Selection ({selectedUrls.size})
+                </button>
+              </div>
+            </div>
+          )}
         </motion.div>
+
+        {/* Dynamic Modals */}
+        <PromptModal isOpen={Boolean(promptConfig)} config={promptConfig} />
+        <ImageCropperModal
+          isOpen={isCropperOpen}
+          imageSrc={cropperSrc}
+          onClose={() => {
+            setIsCropperOpen(false);
+            setCropperSrc(null);
+          }}
+          onCropComplete={async (croppedFile, croppedUrl) => {
+            toast("Uploading cropped asset...");
+            await startUpload([croppedFile]);
+            onSelect(croppedUrl);
+            onClose();
+          }}
+        />
       </div>
     </AnimatePresence>
   );

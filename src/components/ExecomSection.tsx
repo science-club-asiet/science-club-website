@@ -37,9 +37,10 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
           style={{ clipPath: "url(#dossier-cutout)" }}
         >
           <Image
-            src={member.img}
+            src={member.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 0 1 60 0' fill='%2394a3b8'/></svg>"}
             alt={member.name}
             fill
+            unoptimized={!member.img || member.img.startsWith("data:") || member.img.endsWith(".svg")}
             sizes="(max-width: 1024px) 175px, 230px"
             className="object-cover transition-transform duration-[800ms] ease-[0.22,1,0.36,1] group-hover:scale-105"
           />

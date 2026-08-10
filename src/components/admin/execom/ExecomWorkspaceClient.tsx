@@ -11,13 +11,15 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User } from "lucide-react";
+import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User, Crop } from "lucide-react";
 import {
   duplicateTerm, publishTerm, reorderExecomMembers, saveExecomMember, deleteExecomMember,
   saveCategory, deleteCategory, saveTerm, deleteTerm,
 } from "@/lib/admin/execom-actions";
 import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
 import { MediaPickerModal } from "@/components/admin/media/MediaPickerModal";
+import { ImageCropperModal } from "@/components/admin/ImageCropperModal";
+import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "@/components/ui/Toast";
 
 type Member = {
@@ -159,6 +161,19 @@ export function ExecomWorkspaceClient({
   const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
   const [promptConfig, setPromptConfig] = useState<PromptConfig | null>(null);
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState<string | File | null>(null);
+
+  const { startUpload } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (res) => {
+      const url = res?.[0]?.url || res?.[0]?.ufsUrl;
+      if (url) {
+        setEditingMember((prev) => (prev ? { ...prev, photo_url: url } : null));
+        toast("Cropped photo uploaded!", "success");
+      }
+    },
+    onUploadError: (err) => toast("Photo upload failed: " + err.message, "error"),
+  });
 
   // Term Modal State
   const [newTermName, setNewTermName] = useState("");
@@ -668,13 +683,27 @@ export function ExecomWorkspaceClient({
                       className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-navy font-mono placeholder:text-gray-400 focus:outline-none focus:border-red"
                     />
                     
-                    <button
-                      type="button"
-                      onClick={() => setIsMediaPickerOpen(true)}
-                      className="bg-navy text-white text-[11px] font-oswald uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg hover:bg-red transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" /> Select from Media Library
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsMediaPickerOpen(true)}
+                        className="bg-navy text-white text-[11px] font-oswald uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg hover:bg-red transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" /> Media Library
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCropperSrc(editingMember.photo_url || "");
+                          setIsCropperOpen(true);
+                        }}
+                        className="bg-white border border-gray-200 text-navy hover:bg-gray-100 text-[11px] font-oswald uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        title="Crop photo into a 500x500 circle with transparent edges"
+                      >
+                        <Crop className="w-3.5 h-3.5 text-red" /> Crop Round Circle (500×500)
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -760,6 +789,22 @@ export function ExecomWorkspaceClient({
         isOpen={isMediaPickerOpen}
         onClose={() => setIsMediaPickerOpen(false)}
         onSelect={(url) => setEditingMember((prev) => (prev ? { ...prev, photo_url: url } : null))}
+      />
+
+      <ImageCropperModal
+        isOpen={isCropperOpen}
+        imageSrc={cropperSrc}
+        initialShape="circle"
+        initialResolution="500x500"
+        onClose={() => {
+          setIsCropperOpen(false);
+          setCropperSrc(null);
+        }}
+        onCropComplete={async (croppedFile, croppedUrl) => {
+          toast("Uploading circular member photo...");
+          await startUpload([croppedFile]);
+          setEditingMember((prev) => (prev ? { ...prev, photo_url: croppedUrl } : null));
+        }}
       />
     </div>
   );

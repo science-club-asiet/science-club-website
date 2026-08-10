@@ -17,10 +17,17 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "i.pravatar.cc" },
-      // UploadThing — where all admin-uploaded images live (per the SRS, to keep
-      // off Supabase's thin free-tier storage). New app-scoped host + legacy host.
-      { protocol: "https", hostname: "*.ufs.sh", pathname: "/f/**" },
-      { protocol: "https", hostname: "utfs.io", pathname: "/f/**" },
+      { protocol: "https", hostname: "cdn.simpleicons.org" },
+      { protocol: "https", hostname: "cdn.pixabay.com" },
+      { protocol: "https", hostname: "raw.githubusercontent.com" },
+      { protocol: "https", hostname: "github.com" },
+      { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+      // UploadThing — where all admin-uploaded images live
+      { protocol: "https", hostname: "*.ufs.sh" },
+      { protocol: "https", hostname: "utfs.io" },
+      { protocol: "https", hostname: "uploadthing.com" },
+      { protocol: "https", hostname: "*.uploadthing.com" },
     ],
   },
 };
