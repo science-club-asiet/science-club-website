@@ -11,7 +11,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User, Crop } from "lucide-react";
+import { GripVertical, Plus, Trash2, Edit2, CheckCircle2, FolderPlus, CalendarPlus, Users, Layers, Calendar, Image as ImageIcon, User, Crop, Save } from "lucide-react";
 import {
   duplicateTerm, publishTerm, reorderExecomMembers, saveExecomMember, deleteExecomMember,
   saveCategory, deleteCategory, saveTerm, deleteTerm,
@@ -214,6 +214,19 @@ export function ExecomWorkspaceClient({
   const facultyAdvisors = members.filter(m => m.role_type === "faculty_advisor");
   const studentMembers = members.filter(m => m.role_type === "student");
 
+  const handleQuickSaveExecom = () => {
+    startTransition(async () => {
+      try {
+        const updates = members.map((m, idx) => ({ id: m.id, order: idx }));
+        await reorderExecomMembers(updates);
+        toast(`Execom committee data for '${viewedTerm}' saved & updated successfully!`, "success");
+        router.refresh();
+      } catch (err: unknown) {
+        toast("Failed to update Execom: " + (err as Error).message, "error");
+      }
+    });
+  };
+
   function handleDuplicate() {
     setPromptConfig({
       title: "Duplicate Execom Term",
@@ -391,12 +404,22 @@ export function ExecomWorkspaceClient({
           <p className="text-sm text-gray-500 mt-1">Manage members, categories, and academic sessions.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={handleQuickSaveExecom}
+            disabled={isPending}
+            className="bg-navy hover:bg-red text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            {isPending ? "Saving..." : "Save / Update Execom"}
+          </button>
+
           {activeTerm !== viewedTerm ? (
             <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-red transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="bg-amber-600 hover:bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" /> Publish Committee ({viewedTerm})
             </button>
@@ -404,11 +427,28 @@ export function ExecomWorkspaceClient({
             <button
               onClick={handleDuplicate}
               disabled={isDuplicating}
-              className="bg-white border border-gray-200 text-navy px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="bg-white border border-gray-200 text-navy px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Start New Session
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() =>
+              setEditingMember({
+                name: "",
+                position: "",
+                role_type: "student",
+                team_slug: categories[0]?.slug || "core",
+                term: viewedTerm,
+                is_published: true,
+              })
+            }
+            className="bg-red hover:bg-navy text-white px-4 py-2 rounded-full font-oswald uppercase tracking-widest text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Add Member
+          </button>
         </div>
       </div>
 
@@ -510,7 +550,8 @@ export function ExecomWorkspaceClient({
                       {cat.label && cat.label !== cat.name && <span className="text-xs font-semibold text-navy/60">({cat.label})</span>}
                       <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">slug: {cat.slug}</span>
                     </div>
-                    {cat.tagline && <p className="text-xs text-gray-500 mt-1">{cat.tagline}</p>}
+                    {cat.tagline && <p className="text-xs font-semibold text-navy/70 mt-1">Tagline: {cat.tagline}</p>}
+                    {cat.description && <p className="text-xs text-gray-500 mt-0.5">{cat.description}</p>}
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => setEditingCategory(cat)} className="p-2 text-gray-400 hover:text-navy transition-colors">
@@ -767,6 +808,16 @@ export function ExecomWorkspaceClient({
                 <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Tagline</label>
                 <input name="tagline" defaultValue={editingCategory.tagline || ""} placeholder="e.g. Embedded systems & IoT" className="w-full border-gray-200 rounded-lg text-sm" />
               </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-navy/60 mb-1">Description (Text Below Tagline)</label>
+                <textarea
+                  name="description"
+                  defaultValue={editingCategory.description || ""}
+                  rows={3}
+                  placeholder="Detailed description text shown on the website under the tagline..."
+                  className="w-full border-gray-200 rounded-lg text-sm"
+                />
+              </div>
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
                 <button type="button" onClick={() => setEditingCategory(null)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
                   Cancel
@@ -806,6 +857,26 @@ export function ExecomWorkspaceClient({
           setEditingMember((prev) => (prev ? { ...prev, photo_url: croppedUrl } : null));
         }}
       />
+
+      {/* Floating Save Action Bar */}
+      {activeTab === "members" && (
+        <div className="fixed bottom-6 right-6 z-40 bg-navy text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-4 backdrop-blur-md">
+          <div className="text-xs">
+            <span className="font-oswald uppercase font-bold text-white block leading-none">Execom ({viewedTerm})</span>
+            <span className="text-[10px] text-gray-300 font-mono mt-0.5 block">{members.length} members loaded</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleQuickSaveExecom}
+            disabled={isPending}
+            className="bg-red hover:bg-white hover:text-navy text-white px-4 py-2 rounded-xl font-oswald uppercase tracking-widest text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            {isPending ? "Saving..." : "Save / Update Execom"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

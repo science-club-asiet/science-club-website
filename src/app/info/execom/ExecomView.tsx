@@ -68,13 +68,20 @@ interface CandidTrailCard {
   duration: number; // Dynamic fade duration based on mouse velocity
 }
 
-export function ExecomView({ members, pastExecom, candidPhotos, achievements }: {
+export function ExecomView({
+  members,
+  pastExecom,
+  candidPhotos,
+  achievements,
+  currentTerm = "2025-26",
+}: {
   members: ExecomMemberFull[];
   pastExecom: PastExecomMember[];
   candidPhotos: CandidPhoto[];
   achievements: Achievement[];
+  currentTerm?: string;
 }) {
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("ALL");
+  const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   
   // State for the interactive split screen hover
@@ -175,6 +182,14 @@ export function ExecomView({ members, pastExecom, candidPhotos, achievements }: 
     offset: ["start end", "end start"]
   });
   const ctaBgTextX = useTransform(ctaScrollY, [0, 1], ["0%", "-20%"]);
+
+  const categoryFilters = useMemo(() => {
+    const set = new Set<string>();
+    members.forEach((m) => {
+      if (m.category) set.add(m.category);
+    });
+    return ["ALL", ...Array.from(set)];
+  }, [members]);
 
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
@@ -318,7 +333,7 @@ export function ExecomView({ members, pastExecom, candidPhotos, achievements }: 
             </motion.h1>
 
             <p className="font-inter text-base sm:text-lg text-white/70 max-w-xl font-normal leading-relaxed mb-8 pointer-events-auto">
-              12 student officers and faculty advisors steering applied physical science research, cross-disciplinary engineering labs, and campus symposiums at ASIET.
+              {members.length > 0 ? members.length : 12} student officers and faculty advisors steering applied physical science research, cross-disciplinary engineering labs, and campus symposiums at ASIET.
             </p>
 
             {/* Interactive Prompt Capsule */}
@@ -337,17 +352,19 @@ export function ExecomView({ members, pastExecom, candidPhotos, achievements }: 
             </div>
             <div className="md:col-span-6 flex items-center md:justify-end gap-8 font-oswald text-sm sm:text-base uppercase tracking-widest text-white/60">
               <div>
-                <span className="text-white font-bold block text-xl sm:text-2xl leading-none">12</span>
+                <span className="text-white font-bold block text-xl sm:text-2xl leading-none">{members.length}</span>
                 <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">OFFICERS</span>
               </div>
               <div className="w-[1px] h-8 bg-white/10" />
               <div>
-                <span className="text-red font-bold block text-xl sm:text-2xl leading-none">04</span>
+                <span className="text-red font-bold block text-xl sm:text-2xl leading-none">
+                  {categoryFilters.filter((c) => c !== "ALL").length || 4}
+                </span>
                 <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">DIVISIONS</span>
               </div>
               <div className="w-[1px] h-8 bg-white/10" />
               <div>
-                <span className="text-white font-bold block text-xl sm:text-2xl leading-none">2024-25</span>
+                <span className="text-white font-bold block text-xl sm:text-2xl leading-none">{currentTerm}</span>
                 <span className="text-[10px] text-white/40 tracking-[0.2em] font-bold block mt-1">ACADEMIC YEAR</span>
               </div>
             </div>
@@ -365,7 +382,7 @@ export function ExecomView({ members, pastExecom, candidPhotos, achievements }: 
             
             {/* Category Track */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-              {(["ALL", "CORE LEADERSHIP", "TECHNICAL LABS", "MEDIA & CREATIVE", "OPERATIONS & EVENTS"] as CategoryFilter[]).map((cat) => (
+              {categoryFilters.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
@@ -374,7 +391,15 @@ export function ExecomView({ members, pastExecom, candidPhotos, achievements }: 
                     activeCategory === cat ? "bg-red text-white border-red shadow-md" : "bg-gray-100 text-navy/70 border-gray-200 hover:border-navy/30 hover:text-navy"
                   )}
                 >
-                  {cat === "CORE LEADERSHIP" ? "CORE" : cat === "TECHNICAL LABS" ? "TECH" : cat === "MEDIA & CREATIVE" ? "MEDIA" : cat === "OPERATIONS & EVENTS" ? "EVENTS" : "ALL"}
+                  {cat === "CORE LEADERSHIP"
+                    ? "CORE"
+                    : cat === "TECHNICAL LABS"
+                    ? "TECH"
+                    : cat === "MEDIA & CREATIVE"
+                    ? "MEDIA"
+                    : cat === "OPERATIONS & EVENTS"
+                    ? "EVENTS"
+                    : cat}
                 </button>
               ))}
             </div>

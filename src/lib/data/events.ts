@@ -15,6 +15,16 @@ function istParts(iso: string) {
   };
 }
 
+const DEFAULT_EVENT_IMAGE =
+  "https://images.unsplash.com/photo-1517976487492-5750f3195933?q=80&w=1200&auto=format&fit=crop";
+
+function sanitizeImageUrl(url: string | null | undefined): string {
+  if (!url || !url.trim() || url.trim().startsWith("blob:")) {
+    return DEFAULT_EVENT_IMAGE;
+  }
+  return url.trim();
+}
+
 /** DB row → the ScienceEvent shape the UI components already consume. */
 function mapRow(r: Record<string, unknown>): ScienceEvent {
   const iso = r.event_date as string | null;
@@ -40,7 +50,7 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
     dateYear: p?.year,
     type: String(r.category ?? "talk").toUpperCase() as EventType,
     status,
-    img: (r.cover_image_url as string) ?? "",
+    img: sanitizeImageUrl(r.cover_image_url as string),
     description: (r.description as string) ?? "",
     speaker: (r.speaker as string) ?? undefined,
     speakerRole: (r.speaker_role as string) ?? undefined,

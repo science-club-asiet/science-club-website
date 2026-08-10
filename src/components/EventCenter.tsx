@@ -270,7 +270,7 @@ export function EventCenter({ events }: { events: ScienceEvent[] }) {
                 {/* Full Bleed Background Image & Gradients */}
                 <div className="absolute inset-0 z-0 bg-navy/20">
                   <Image
-                    src={event.img}
+                    src={event.img && event.img.trim() && !event.img.startsWith("blob:") ? event.img.trim() : "https://images.unsplash.com/photo-1517976487492-5750f3195933?q=80&w=1200&auto=format&fit=crop"}
                     alt={event.title}
                     fill
                     sizes="(max-width: 640px) 78vw, (max-width: 1024px) 58vw, 440px"

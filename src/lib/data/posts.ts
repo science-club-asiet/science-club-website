@@ -22,6 +22,16 @@ function fmtDate(iso: string | null): string {
   return `${month} ${day}`;
 }
 
+const DEFAULT_POST_IMAGE =
+  "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop";
+
+function sanitizeImageUrl(url: string | null | undefined): string {
+  if (!url || !url.trim() || url.trim().startsWith("blob:")) {
+    return DEFAULT_POST_IMAGE;
+  }
+  return url.trim();
+}
+
 /** Published posts of type 'news' → the NewsSection accordion shape. */
 export async function getNews(): Promise<NewsItem[]> {
   const sb = createPublicClient();
@@ -43,7 +53,7 @@ export async function getNews(): Promise<NewsItem[]> {
     date: fmtDate(p.published_at as string | null),
     title: p.title as string,
     desc: (p.excerpt as string) ?? "",
-    img: (p.cover_image_url as string) ?? "",
+    img: sanitizeImageUrl(p.cover_image_url as string),
     breaking: (p.breaking as boolean) ?? false,
   }));
 }
@@ -65,7 +75,7 @@ function mapSummary(p: Record<string, unknown>): PostSummary {
     title: p.title as string,
     slug: (p.slug as string) ?? "",
     excerpt: (p.excerpt as string) ?? "",
-    cover: (p.cover_image_url as string) ?? "",
+    cover: sanitizeImageUrl(p.cover_image_url as string),
     tag: (p.tag as string) ?? "",
     date: fmtDate(p.published_at as string | null),
   };

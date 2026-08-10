@@ -4,7 +4,7 @@ import React, { useState, useCallback, useTransition, useMemo, useEffect } from 
 import { useRouter } from "next/navigation";
 import {
   UploadCloud, Folder, Image as ImageIcon, Search, Trash2, Link as LinkIcon, RotateCw,
-  FolderPlus, Edit2, Check, FolderOpen, ChevronDown, ChevronRight, FolderPlus as SubfolderIcon, Crop
+  FolderPlus, Edit2, Check, FolderOpen, ChevronDown, ChevronRight, FolderPlus as SubfolderIcon, Crop, Grid
 } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ import {
   updateMediaAsset, deleteMediaAsset, syncUploadThingAssets,
   renameMediaFolder, deleteMediaFolder
 } from "@/lib/admin/media-actions";
-import { getDynamicFolders, formatFolderLabel, isAssetInFolder } from "@/lib/admin/media-folder-utils";
+import { getDynamicFolders, formatFolderLabel, isAssetInFolder, getDirectSubfolders } from "@/lib/admin/media-folder-utils";
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, PromptModal, type ConfirmConfig, type PromptConfig } from "@/components/ui/ModalDialog";
 import { FolderAutocompleteInput } from "@/components/admin/media/FolderAutocompleteInput";
@@ -20,6 +20,7 @@ import { FolderCreateModal } from "@/components/admin/media/FolderCreateModal";
 import { FolderMoveModal } from "@/components/admin/media/FolderMoveModal";
 import { compressImageFile } from "@/lib/admin/image-compression";
 import { ImageCropperModal } from "@/components/admin/ImageCropperModal";
+import { MediaBreadcrumbPath } from "@/components/admin/media/MediaPickerModal";
 
 export type MediaAsset = {
   id: string;
@@ -53,6 +54,8 @@ export function MediaLibraryClient({
   const router = useRouter();
   const [assets, setAssets] = useState<MediaAsset[]>(initialAssets);
   const [activeFolder, setActiveFolder] = useState<string>("all");
+  const [includeSubfolders, setIncludeSubfolders] = useState<boolean>(false);
+  const [gridCols, setGridCols] = useState<number>(5);
   const [customFolders, setCustomFolders] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [folderSearchQuery, setFolderSearchQuery] = useState("");
@@ -198,14 +201,19 @@ export function MediaLibraryClient({
     [startUpload]
   );
 
+  const directSubfolders = useMemo(() => {
+    if (includeSubfolders) return [];
+    return getDirectSubfolders(folderList, activeFolder);
+  }, [folderList, activeFolder, includeSubfolders]);
+
   // Filtering assets
   const filteredAssets = useMemo(() => {
     return assets.filter((a) => {
-      if (!isAssetInFolder(a.folder, activeFolder)) return false;
+      if (!isAssetInFolder(a.folder, activeFolder, includeSubfolders)) return false;
       if (searchQuery && !a.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
     });
-  }, [assets, activeFolder, searchQuery]);
+  }, [assets, activeFolder, includeSubfolders, searchQuery]);
 
   // Asset Details Update Handler
   async function handleUpdateAsset(e: React.FormEvent<HTMLFormElement>) {
@@ -636,18 +644,53 @@ export function MediaLibraryClient({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         <div className="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white">
-          <div className="relative w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search assets by name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-navy focus:outline-none focus:border-red"
-            />
+          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+            <MediaBreadcrumbPath activeFolder={activeFolder} setActiveFolder={setActiveFolder} />
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search assets by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-navy focus:outline-none focus:border-red"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Grid Column Slider */}
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-1.5 text-xs text-navy shrink-0 shadow-xs">
+              <Grid className="w-3.5 h-3.5 text-navy/60 shrink-0" />
+              <span className="text-[10px] font-bold font-mono text-navy/70 shrink-0">
+                {gridCols} / row
+              </span>
+              <input
+                type="range"
+                min="2"
+                max="8"
+                value={gridCols}
+                onChange={(e) => setGridCols(Number(e.target.value))}
+                className="w-16 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-navy"
+                title="Adjust grid items per row"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIncludeSubfolders(!includeSubfolders)}
+              className={cn(
+                "px-3.5 py-1.5 rounded-full font-oswald text-xs uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 border shadow-sm cursor-pointer",
+                includeSubfolders
+                  ? "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
+                  : "bg-white text-navy border-gray-200 hover:border-navy"
+              )}
+              title={includeSubfolders ? "Currently showing all nested subfolder images recursively" : "Currently showing direct folder images + subfolder cards only"}
+            >
+              <Folder className="w-3.5 h-3.5 text-amber-500" />
+              {includeSubfolders ? "Subfolders: Recursive" : "Subfolders: Direct Only"}
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -722,8 +765,52 @@ export function MediaLibraryClient({
         )}
 
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 auto-rows-max">
-            {filteredAssets.map((asset) => {
+          {filteredAssets.length === 0 && directSubfolders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-2 text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl bg-white">
+              <Folder className="w-10 h-10 opacity-40 text-amber-500" />
+              <p className="text-sm font-medium text-gray-500">No media assets or subfolders found in this directory.</p>
+              <p className="text-xs text-gray-400">Upload new images or choose another folder from the tree.</p>
+            </div>
+          ) : (
+            <div
+              className="grid gap-4 auto-rows-max"
+              style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            >
+              {/* Render Direct Subfolder Cards */}
+              {!includeSubfolders && directSubfolders.map((subPath) => {
+                const folderName = subPath.split("/").pop() || subPath;
+                const childCount = assets.filter((a) => isAssetInFolder(a.folder, subPath, true)).length;
+
+                return (
+                  <div
+                    key={subPath}
+                    onClick={() => setActiveFolder(subPath)}
+                    className="group relative bg-amber-50/60 border border-amber-200/80 hover:border-amber-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-200 flex flex-col justify-between aspect-square"
+                  >
+                    <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
+                      <div className="w-12 h-12 rounded-xl bg-amber-100/80 text-amber-600 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-xs">
+                        <Folder className="w-6 h-6 fill-current" />
+                      </div>
+                      <div>
+                        <h5 className="font-oswald text-xs font-bold uppercase text-navy group-hover:text-red transition-colors truncate max-w-[130px]" title={folderName}>
+                          {folderName}
+                        </h5>
+                        <span className="text-[10px] text-gray-500 font-mono block mt-0.5">
+                          {childCount} asset{childCount === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between text-[9px] font-mono text-amber-700 font-bold uppercase">
+                      <span>Subfolder</span>
+                      <span className="group-hover:translate-x-1 transition-transform">Open ↗</span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Render Direct Assets */}
+              {filteredAssets.map((asset) => {
               const isSelected = selectedIds.has(asset.id);
               const isCurrentInspector = selectedAsset?.id === asset.id;
 
@@ -774,7 +861,8 @@ export function MediaLibraryClient({
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
       </div>
 
       {/* Inspector Sidebar */}
