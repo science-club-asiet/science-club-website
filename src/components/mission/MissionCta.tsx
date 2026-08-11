@@ -72,7 +72,7 @@ export function MissionCta() {
           className="mb-16"
         >
           <Link
-            href="/info/join"
+            href="/login?mode=signup"
             className="group relative w-52 h-52 md:w-64 md:h-64 bg-red rounded-full flex flex-col items-center justify-center overflow-hidden hover:scale-105 transition-transform duration-500 ease-out shadow-[0_20px_50px_rgba(218,41,28,0.4)] border-[8px] border-white/10"
           >
             {/* Sweeping background on hover */}

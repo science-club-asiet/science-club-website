@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Atom, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Plus, Atom, X, PanelLeftClose, PanelLeftOpen, ArrowLeft } from "lucide-react";
 import { NAV_SECTIONS } from "./navConfig";
 import { SignOutButton } from "./SignOutButton";
 import { cn } from "@/lib/utils";
@@ -124,17 +124,33 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      <div className={cn("px-4 py-4 border-t border-gray-100 shrink-0 bg-white", isCollapsed && "lg:px-2 lg:py-3")}>
+      <div className={cn("px-4 py-4 border-t border-gray-100 shrink-0 bg-white space-y-3", isCollapsed && "lg:px-2 lg:py-3")}>
         {!isCollapsed ? (
           <>
-            <p className="text-xs font-medium truncate text-navy">{email}</p>
-            <div className="flex items-center justify-between mt-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">{role}</span>
-              <SignOutButton />
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-xs font-oswald uppercase font-bold text-navy hover:text-red transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-xl"
+            >
+              <ArrowLeft className="w-4 h-4 text-red" />
+              <span>Exit Admin to Website</span>
+            </Link>
+            <div>
+              <p className="text-xs font-medium truncate text-navy">{email}</p>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">{role}</span>
+                <SignOutButton />
+              </div>
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <Link
+              href="/"
+              className="p-2 text-navy hover:text-red hover:bg-gray-100 rounded-lg transition-colors"
+              title="Exit Admin to Website"
+            >
+              <ArrowLeft className="w-4 h-4 text-red" />
+            </Link>
             <SignOutButton />
           </div>
         )}

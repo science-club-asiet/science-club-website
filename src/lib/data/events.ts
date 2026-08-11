@@ -42,6 +42,9 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
   const requiresRegistration = r.requires_registration !== false;
   const customMetadata = typeof r.custom_metadata === "object" && r.custom_metadata ? (r.custom_metadata as Record<string, string>) : undefined;
 
+  const allowedDepartments = Array.isArray(r.allowed_departments) ? (r.allowed_departments as string[]) : [];
+  const allowedYears = Array.isArray(r.allowed_years) ? (r.allowed_years as string[]) : [];
+
   return {
     id: r.id as string,
     title: r.title as string,
@@ -68,6 +71,8 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
     winners,
     requiresRegistration,
     customMetadata,
+    allowedDepartments,
+    allowedYears,
   };
 }
 

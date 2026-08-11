@@ -1,9 +1,5 @@
-import { JoinView } from "./JoinView";
-import { getPerks, getFaqs } from "@/lib/data/content";
+import { redirect } from "next/navigation";
 
-export const revalidate = 300;
-
-export default async function JoinPage() {
-  const [perks, faqs] = await Promise.all([getPerks(), getFaqs()]);
-  return <JoinView perks={perks} faqs={faqs} />;
+export default function JoinPage() {
+  redirect("/login?mode=signup");
 }

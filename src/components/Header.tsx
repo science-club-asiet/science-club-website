@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent, MotionValue } from "framer-motion";
-import { Atom, Search, User, ChevronDown, ArrowRight, ArrowUpRight } from "lucide-react";
+import { Atom, Search, User, ChevronDown, ArrowRight, ArrowUpRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const NAV_LINKS = [
   { 
@@ -25,7 +26,7 @@ const NAV_LINKS = [
       { name: "About Science Club", href: "/info/about" },
       { name: "Execom", href: "/info/execom" },
       { name: "Our Mission", href: "/info/mission" },
-      { name: "Join Us", href: "/info/join" }
+      { name: "Join Us", href: "/login?mode=signup" }
     ]
   },
   { 
@@ -91,7 +92,7 @@ const FULL_STAGE_ITEMS: NavigationCategory[] = [
       { name: "About Science Club", href: "/info/about" },
       { name: "Execom Leaderboard", href: "/info/execom" },
       { name: "Our Mission", href: "/info/mission" },
-      { name: "Join Us", href: "/info/join" }
+      { name: "Join Us", href: "/login?mode=signup" }
     ]
   },
   {
@@ -205,6 +206,31 @@ export function Header() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
+
+  // Auth State Detection for Header Account Button
+  const [currentUser, setCurrentUser] = useState<{ email: string; name: string; isStaff: boolean } | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name, role")
+          .eq("id", user.id)
+          .single();
+        const isStaff = prof ? ["admin", "owner"].includes(prof.role) : false;
+        setCurrentUser({
+          email: user.email || "",
+          name: prof?.full_name || user.email || "Member",
+          isStaff,
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+  }, [pathname]);
 
   // Lock background Lenis scroll when mobile menu is open
   useEffect(() => {
@@ -390,25 +416,83 @@ export function Header() {
                 </motion.span>
               </motion.button>
 
-              {/* Account — redirects to /admin or /login */}
-              <MotionLink
-                href="/admin"
-                aria-label="My account / Admin panel"
-                style={{ color: iconColor, backgroundColor: isHomePage || isScrolled ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)" }}
-                className="transition-colors hidden sm:flex items-center justify-center p-2 w-10 h-10 rounded-full cursor-pointer"
-              >
-                <User className="w-5 h-5 hover:text-red transition-colors" />
-              </MotionLink>
+              {/* Logged Out Actions: LOG IN link + JOIN US CTA */}
+              {currentUser ? (
+                <div className="relative hidden sm:block">
+                  <motion.button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    aria-label="My account menu"
+                    style={{ color: iconColor, backgroundColor: isHomePage || isScrolled ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }}
+                    className="transition-colors flex items-center justify-center p-2 rounded-full cursor-pointer hover:border-red border border-transparent font-oswald text-xs font-bold uppercase tracking-wider px-4 py-2 gap-2 shadow-sm"
+                  >
+                    <User className="w-4 h-4 text-red" />
+                    <span className="truncate max-w-[120px]">{currentUser.name.split(" ")[0]}</span>
+                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                  </motion.button>
 
-              {/* Join Us Red Pill CTA */}
-              <Link
-                href="/info/join"
-                className="hidden md:flex items-center gap-2 bg-red text-white px-8 py-2.5 uppercase text-[17px] font-bold tracking-wide rounded-full overflow-hidden relative group"
-              >
-                {/* Shimmer sweep on hover */}
-                <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                <span className="relative z-10">JOIN US</span>
-              </Link>
+                  <AnimatePresence>
+                    {userMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 font-inter text-navy z-50 text-xs"
+                      >
+                        <div className="p-3 border-b border-gray-100">
+                          <p className="font-bold text-navy truncate">{currentUser.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{currentUser.email}</p>
+                        </div>
+                        <Link
+                          href="/account"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gray-50 font-medium text-navy transition-colors"
+                        >
+                          <User className="w-4 h-4 text-red" /> Member Dashboard
+                        </Link>
+                        {currentUser.isStaff && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gold/10 font-bold text-navy transition-colors"
+                          >
+                            <Sparkles className="w-4 h-4 text-gold" /> Admin Panel
+                          </Link>
+                        )}
+                        <button
+                          onClick={async () => {
+                            const supabase = createClient();
+                            await supabase.auth.signOut();
+                            setUserMenuOpen(false);
+                            window.location.href = "/login";
+                          }}
+                          className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-red/10 text-red font-medium transition-colors cursor-pointer border-t border-gray-100 mt-1"
+                        >
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/login"
+                    className="hidden sm:inline-flex items-center gap-1.5 font-oswald text-xs font-bold uppercase tracking-widest text-navy hover:text-red transition-colors px-3 py-2"
+                  >
+                    <span>LOG IN</span>
+                  </Link>
+
+                  <Link
+                    href="/login?mode=signup"
+                    className="hidden md:flex items-center gap-2 bg-red text-white px-8 py-2.5 uppercase text-[17px] font-bold tracking-wide rounded-full overflow-hidden relative group"
+                  >
+                    {/* Shimmer sweep on hover */}
+                    <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                    <span className="relative z-10">JOIN US</span>
+                  </Link>
+                </div>
+              )}
             </div>
             
           </div>
@@ -461,11 +545,11 @@ export function Header() {
               {/* Action Pill & Close Button */}
               <div className="flex items-center gap-4">
                 <Link
-                  href="/info/join"
+                  href={currentUser ? "/account" : "/info/join"}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="hidden sm:flex items-center gap-2 bg-red hover:bg-white hover:text-navy text-white text-xs font-oswald font-bold uppercase tracking-widest px-6 py-2.5 rounded-full transition-all shadow-lg hover:scale-105"
                 >
-                  <span>JOIN US</span>
+                  <span>{currentUser ? "MY DASHBOARD" : "JOIN US"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 

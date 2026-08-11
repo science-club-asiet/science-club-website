@@ -746,7 +746,7 @@ export function ExecomView({
             transition={{ duration: 0.7, delay: 0.2, type: "spring", bounce: 0.5 }}
           >
             <Link 
-              href="/info/join"
+              href="/login?mode=signup"
               className="group relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 bg-navy rounded-full flex flex-col items-center justify-center overflow-hidden hover:scale-105 transition-transform duration-500 ease-out shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-[8px] border-transparent hover:border-white/20 cursor-pointer"
             >
               {/* Sweeping background on hover */}

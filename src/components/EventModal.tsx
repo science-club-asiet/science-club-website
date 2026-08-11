@@ -527,6 +527,11 @@ export function EventModal({ event, onClose }: EventModalProps) {
                 {/* Register CTA — real registration via /api/events/[id]/register or linked form */}
                 <RegisterButton
                   eventId={event.id}
+                  eventTitle={event.title}
+                  memberPrice={event.memberPrice}
+                  nonMemberPrice={event.nonMemberPrice}
+                  allowedDepartments={event.allowedDepartments}
+                  allowedYears={event.allowedYears}
                   opStatus={event.opStatus || (event.status === "COMPLETED" ? "finished" : "open")}
                   formSlug={event.formSlug}
                   formId={event.registrationFormId}

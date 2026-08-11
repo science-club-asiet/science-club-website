@@ -43,7 +43,14 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <div id="register" className="pt-4 flex items-center gap-4">
             {event.status === "UPCOMING" ? (
               <>
-                <RegisterButton eventId={event.id} />
+                <RegisterButton
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  memberPrice={event.memberPrice}
+                  nonMemberPrice={event.nonMemberPrice}
+                  allowedDepartments={event.allowedDepartments}
+                  allowedYears={event.allowedYears}
+                />
                 {(event.memberPrice || event.nonMemberPrice) ? (
                   <span className="text-sm text-navy/60">Members ₹{event.memberPrice ?? 0} · Others ₹{event.nonMemberPrice ?? 0}</span>
                 ) : null}

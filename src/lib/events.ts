@@ -45,4 +45,6 @@ export interface ScienceEvent {
   winners?: EventWinner[];
   requiresRegistration?: boolean;
   customMetadata?: Record<string, string>;
+  allowedDepartments?: string[];
+  allowedYears?: string[];
 }

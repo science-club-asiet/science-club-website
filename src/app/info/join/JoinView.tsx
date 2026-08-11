@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, ArrowLeft, UserCheck } from "lucide-react";
 import Image from "next/image";
 import type { Faq } from "@/lib/data/content";
 import { createClient } from "@/lib/supabase/client";
+import { DEPARTMENTS, YEARS, getSemesterFromYear } from "@/lib/constants";
 
 // perks (string list) + faqs are fetched from Supabase and passed in as props.
 
@@ -48,7 +50,24 @@ export function JoinView({ perks, faqs }: { perks: string[]; faqs: Faq[] }) {
         </div>
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <span className="inline-flex items-center gap-2 text-red font-oswald uppercase tracking-[0.3em] text-sm font-bold mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <button
+                onClick={() => window.history.back()}
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white font-oswald uppercase tracking-widest text-xs font-bold transition-all cursor-pointer bg-white/10 hover:bg-red border border-white/15 px-4 py-2 rounded-full shadow-sm"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back
+              </button>
+
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 text-gold hover:text-white font-oswald uppercase tracking-widest text-xs font-bold transition-all bg-gold/15 hover:bg-gold/30 border border-gold/30 px-5 py-2 rounded-full shadow-sm"
+              >
+                <UserCheck className="w-4 h-4 text-gold" />
+                <span>Already Registered? Sign In →</span>
+              </Link>
+            </div>
+
+            <span className="flex items-center gap-2 text-red font-oswald uppercase tracking-[0.3em] text-sm font-bold mb-6">
               <span className="w-8 h-[2px] bg-red" /> Info
             </span>
             <h1 className="font-oswald text-6xl md:text-8xl lg:text-[9rem] font-bold uppercase leading-[0.9] tracking-tight mb-8">
@@ -96,25 +115,72 @@ export function JoinView({ perks, faqs }: { perks: string[]; faqs: Faq[] }) {
                   <span className="w-6 h-[2px] bg-red" /> Application Form
                 </span>
 
-                {[
-                  { id: "name",  label: "Full Name",               type: "text",  placeholder: "e.g. Arjun Menon" },
-                  { id: "email", label: "College Email",            type: "email", placeholder: "you@asiet.ac.in" },
-                  { id: "dept",  label: "Department",               type: "text",  placeholder: "e.g. Computer Science" },
-                  { id: "year",  label: "Year of Study",            type: "text",  placeholder: "e.g. 2nd Year" },
-                ].map((field) => (
-                  <div key={field.id} className="flex flex-col gap-1.5">
-                    <label htmlFor={field.id} className="text-xs font-semibold uppercase tracking-widest text-gray-400">{field.label}</label>
-                    <input
-                      id={field.id}
-                      type={field.type}
-                      required
-                      placeholder={field.placeholder}
-                      value={form[field.id as keyof typeof form]}
-                      onChange={(e) => setForm(f => ({ ...f, [field.id]: e.target.value }))}
-                      className="border border-gray-200 rounded-xl px-4 py-3 text-navy text-sm focus:outline-none focus:border-red transition-colors placeholder:text-gray-300"
-                    />
-                  </div>
-                ))}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="name" className="text-xs font-semibold uppercase tracking-widest text-gray-400">Full Name</label>
+                  <input
+                    id="name"
+                    type="text"
+                    required
+                    placeholder="e.g. Arjun Menon"
+                    value={form.name}
+                    onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                    className="border border-gray-200 rounded-xl px-4 py-3 text-navy text-sm focus:outline-none focus:border-red transition-colors placeholder:text-gray-300"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="email" className="text-xs font-semibold uppercase tracking-widest text-gray-400">College Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder="you@asiet.ac.in"
+                    value={form.email}
+                    onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                    className="border border-gray-200 rounded-xl px-4 py-3 text-navy text-sm focus:outline-none focus:border-red transition-colors placeholder:text-gray-300"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="dept" className="text-xs font-semibold uppercase tracking-widest text-gray-400">Department</label>
+                  <select
+                    id="dept"
+                    required
+                    value={form.dept}
+                    onChange={(e) => setForm(f => ({ ...f, dept: e.target.value }))}
+                    className="border border-gray-200 rounded-xl px-4 py-3 text-navy text-sm focus:outline-none focus:border-red transition-colors bg-white cursor-pointer"
+                  >
+                    <option value="">Select Department...</option>
+                    {DEPARTMENTS.map((d) => (
+                      <option key={d.code} value={d.name}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="year" className="text-xs font-semibold uppercase tracking-widest text-gray-400">Year of Study</label>
+                  <select
+                    id="year"
+                    required
+                    value={form.year}
+                    onChange={(e) => setForm(f => ({ ...f, year: e.target.value }))}
+                    className="border border-gray-200 rounded-xl px-4 py-3 text-navy text-sm focus:outline-none focus:border-red transition-colors bg-white cursor-pointer"
+                  >
+                    <option value="">Select Year...</option>
+                    {YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                  {form.year && getSemesterFromYear(form.year) && (
+                    <p className="text-xs font-semibold text-red">
+                      Current Semester: {getSemesterFromYear(form.year)}
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="why" className="text-xs font-semibold uppercase tracking-widest text-gray-400">Why do you want to join?</label>

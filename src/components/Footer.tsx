@@ -10,14 +10,14 @@ const LINK_MAP: Record<string, string> = {
   "News": "/news",
   "First Team": "/info/execom",
   "Club History": "/info/about",
-  "Join The Board": "/info/join",
+  "Join The Board": "/login?mode=signup",
   "My Account": "/admin",
   "Events & Experiences": "/events",
   "Resources": "/info/mission",
   "Campus Tour": "/info/about",
   "Legal Notice": "/info/about",
   "Privacy Policy": "/info/about",
-  "Help Center": "/info/join",
+  "Help Center": "/login?mode=signup",
   "Cookie Preferences": "/info/about",
 };
 

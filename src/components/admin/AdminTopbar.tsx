@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Bell, ChevronDown, Check, Loader2, Globe, Menu } from "lucide-react";
+import Link from "next/link";
+import { Search, Bell, ChevronDown, Check, Loader2, Globe, Menu, ArrowLeft } from "lucide-react";
 import { setAdminTermCookie, setSiteCurrentTerm } from "@/lib/admin/session-actions";
 import { toast } from "@/components/ui/Toast";
 
@@ -122,6 +123,24 @@ export function AdminTopbar({
             </div>
           )}
         </div>
+
+        {/* Shortcuts back to Main Website & Member Portal */}
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-xs font-oswald font-bold uppercase text-navy hover:text-red bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-all cursor-pointer shrink-0"
+          title="Return to Main Website"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 text-red" />
+          <span className="hidden sm:inline">Main Site</span>
+        </Link>
+
+        <Link
+          href="/account"
+          className="hidden md:flex items-center gap-1.5 text-xs font-oswald font-bold uppercase text-navy hover:text-red bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-all cursor-pointer shrink-0"
+          title="Go to Member Portal Dashboard"
+        >
+          <span>Member Portal</span>
+        </Link>
       </div>
 
       {/* Right Side: Command Search & Notifications */}
