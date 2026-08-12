@@ -31,7 +31,7 @@ export default async function Home() {
       <Header />
 
       {/* Front Layer: Content that scrolls UP past the footer on desktop */}
-      <main className="relative z-10 bg-white shadow-[0_15px_40px_rgba(0,0,0,0.12)] border-b border-gray-200/50 rounded-b-3xl">
+      <main className="relative z-10 bg-white">
         <Hero badge={site.hero?.badge} title={site.hero?.title} />
         <EventCenter events={events} />
         <Marquee text={site.marquee?.text} />
@@ -43,10 +43,7 @@ export default async function Home() {
         <ContactSection contact={site.contact} />
       </main>
 
-      {/* Footer: sticky reveal on desktop, normal flow on mobile */}
-      <div className="md:sticky md:bottom-0 md:z-0 z-10 relative">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
 }

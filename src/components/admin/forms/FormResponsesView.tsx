@@ -100,6 +100,26 @@ export function FormResponsesView({
       str.startsWith("/uploads/") ||
       /\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i.test(str);
 
+    if (val && typeof val === "object" && !Array.isArray(val) && ("utr" in (val as Record<string, unknown>) || "proof_url" in (val as Record<string, unknown>))) {
+      const pay = val as { utr?: string; proof_url?: string };
+      return (
+        <div className="space-y-1.5 p-3 bg-gray-50 border border-gray-200 rounded-xl max-w-md">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">UTR / Ref:</span>
+            <code className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-gray-200 text-navy font-bold">{pay.utr || "N/A"}</code>
+          </div>
+          {pay.proof_url && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-500 font-bold uppercase tracking-wider">Proof:</span>
+              <a href={pay.proof_url} target="_blank" rel="noreferrer" className="text-red font-semibold hover:underline flex items-center gap-1">
+                <ExternalLink className="w-3.5 h-3.5" /> View Payment Screenshot
+              </a>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (isImage) {
       return (
         <div className="flex items-center gap-3 py-1">

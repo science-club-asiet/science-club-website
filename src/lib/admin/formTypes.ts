@@ -65,6 +65,8 @@ export const FIELD_TYPES = [
   "grid_radio",
   "grid_checkbox",
   "section",
+  "payment",
+  "student_id",
 ] as const;
 
 export const FIELDS_WITH_OPTIONS = new Set(["select", "multiselect", "radio"]);

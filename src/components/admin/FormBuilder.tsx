@@ -53,6 +53,8 @@ import {
   UserCheck,
   Check,
   AlertTriangle,
+  IndianRupee,
+  QrCode,
 } from "lucide-react";
 import {
   addFieldAction,
@@ -98,6 +100,8 @@ const typeInfoMap: Record<
   time: { label: "Time", icon: Clock, color: "text-teal-600", bg: "bg-teal-50" },
   checkbox: { label: "Single Checkbox", icon: CheckSquare, color: "text-emerald-600", bg: "bg-emerald-50" },
   section: { label: "Section Header", icon: LayoutList, color: "text-red", bg: "bg-red/10" },
+  payment: { label: "UPI Payment (QR & UTR)", icon: IndianRupee, color: "text-emerald-600", bg: "bg-emerald-50" },
+  student_id: { label: "Student / Member ID (Auto-fill)", icon: UserCheck, color: "text-blue-600", bg: "bg-blue-50" },
 };
 
 function FolderDestinationPicker({
@@ -701,6 +705,80 @@ function FieldCard({
           </div>
         )}
 
+        {field.field_type === "payment" && (
+          <div className="space-y-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-navy/60 block">
+                  UPI ID / VPA *
+                </label>
+                <input
+                  defaultValue={field.options?.[0] || ""}
+                  onBlur={(e) => {
+                    const upi = e.target.value.trim();
+                    const mem = field.options?.[1] || "0";
+                    const nonMem = field.options?.[2] || "0";
+                    save({ options: [upi, mem, nonMem] });
+                  }}
+                  placeholder="e.g. scienceclub@upi"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono text-navy focus:outline-none focus:border-red"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-navy/60 block">
+                  Member Fee (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    defaultValue={field.options?.[1] ?? "0"}
+                    onBlur={(e) => {
+                      const upi = field.options?.[0] || "";
+                      const mem = e.target.value.trim() || "0";
+                      const nonMem = field.options?.[2] || "0";
+                      save({ options: [upi, mem, nonMem] });
+                    }}
+                    placeholder="0 (0 = Free)"
+                    className="w-full bg-white border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-xs font-bold text-navy focus:outline-none focus:border-red"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-navy/60 block">
+                  Non-Member Fee (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    defaultValue={field.options?.[2] ?? "0"}
+                    onBlur={(e) => {
+                      const upi = field.options?.[0] || "";
+                      const mem = field.options?.[1] || "0";
+                      const nonMem = e.target.value.trim() || "0";
+                      save({ options: [upi, mem, nonMem] });
+                    }}
+                    placeholder="100"
+                    className="w-full bg-white border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-xs font-bold text-navy focus:outline-none focus:border-red"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-md">
+              <FolderDestinationPicker
+                value={field.upload_folder}
+                onChange={(path) => save({ upload_folder: path })}
+              />
+            </div>
+          </div>
+        )}
+
         {(field.field_type === "text" || field.field_type === "textarea") && (
           <div className="max-w-md">
             <input
@@ -877,6 +955,152 @@ function FieldCard({
         onClose={() => setMediaPickerOpen(false)}
         onSelect={(url) => save({ image_url: url })}
       />
+    </div>
+  );
+}
+
+function PaymentPreviewField({ f }: { f: BuilderField }) {
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [imgErr, setImgErr] = useState(false);
+
+  const upiId = (f.options?.[0] || "").trim() || "scienceclub@upi";
+  const memberFee = parseFloat(f.options?.[1] || "0") || 0;
+  const nonMemberFee = parseFloat(f.options?.[2] || "0") || 0;
+
+  const upiPayload = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=Science%20Club%20ASIET${nonMemberFee > 0 ? `&am=${nonMemberFee}` : ""}&cu=INR&tn=${encodeURIComponent(f.label || "Registration Fee")}`;
+  const qrCodeUrl = imgErr
+    ? `https://quickchart.io/qr?text=${encodeURIComponent(upiPayload)}&size=240`
+    : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiPayload)}`;
+
+  const handleCopyUpi = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2000);
+    }
+  };
+
+  return (
+    <div className="bg-white text-navy rounded-3xl p-5 sm:p-6 space-y-5 shadow-sm border border-gray-200 my-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-red/10 text-red flex items-center justify-center font-bold">
+            <IndianRupee className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="font-oswald text-[10px] font-bold uppercase tracking-wider text-navy/50 block">
+              UPI Payment Portal
+            </span>
+            <h4 className="font-oswald text-base font-bold uppercase text-navy leading-tight">
+              {f.label || "Registration Fee Payment"}
+            </h4>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 font-oswald text-[11px] font-bold tracking-wider uppercase">
+          <span className="bg-navy/5 text-navy px-2.5 py-1 rounded-full border border-navy/10">
+            Member: {memberFee === 0 ? "Free" : `₹${memberFee}`}
+          </span>
+          <span className="bg-red text-white px-2.5 py-1 rounded-full border border-red">
+            Non-Member: {nonMemberFee === 0 ? "Free" : `₹${nonMemberFee}`}
+          </span>
+        </div>
+      </div>
+
+      {f.help_text && <p className="text-xs text-gray-500 leading-relaxed font-medium">{f.help_text}</p>}
+
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-5">
+        <div className="bg-white p-2 rounded-2xl shrink-0 shadow-sm border border-gray-200">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qrCodeUrl}
+            alt="UPI QR Code"
+            onError={() => setImgErr(true)}
+            className="w-32 h-32 object-contain rounded-xl"
+          />
+        </div>
+
+        <div className="space-y-2.5 min-w-0 flex-1 text-center sm:text-left">
+          <div>
+            <span className="text-[9px] font-oswald uppercase tracking-widest text-navy/40 block">Payee Name</span>
+            <span className="font-oswald text-sm font-bold uppercase text-navy truncate block">Science Club ASIET</span>
+          </div>
+
+          <div>
+            <span className="text-[9px] font-oswald uppercase tracking-widest text-navy/40 block">UPI ID</span>
+            <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+              <code className="font-mono text-xs bg-white px-2.5 py-1 rounded-lg text-navy border border-gray-200 font-bold tracking-wider">{upiId}</code>
+              <button
+                type="button"
+                onClick={handleCopyUpi}
+                className="p-1.5 bg-white hover:bg-gray-100 border border-gray-200 text-navy rounded-lg transition-colors cursor-pointer"
+                title="Copy UPI ID"
+              >
+                {copiedUpi ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          <span className="text-[10px] text-gray-400 block">Scan QR code using Google Pay, PhonePe, Paytm, or BHIM.</span>
+        </div>
+      </div>
+
+      <div className="space-y-3 pt-1 border-t border-gray-100">
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-navy mb-1">
+            UPI Transaction / UTR Number *
+          </label>
+          <input
+            type="text"
+            disabled
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-navy text-xs font-mono placeholder-gray-400"
+            placeholder="Enter 12-digit UTR or Ref No."
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-navy mb-1">
+            Payment Screenshot Proof (Optional)
+          </label>
+          <div className="border border-dashed border-gray-300 rounded-xl p-3 text-center bg-gray-50 text-xs text-gray-500">
+            Click or drag file to upload payment proof screenshot
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudentIdPreviewField({ f }: { f: BuilderField }) {
+  return (
+    <div className="space-y-3 bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-xs">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-bold uppercase tracking-wider text-navy">
+          {f.label || "Student / Member ID"}{" "}
+          {f.required && <span className="text-red font-bold">*</span>}
+        </label>
+        <span className="text-[10px] font-oswald uppercase tracking-widest text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+          <Check className="w-3 h-3" /> Auto-fill Enabled
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          disabled
+          placeholder={f.placeholder || "Enter Student ID (e.g. SC-2026-48206)"}
+          className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-navy font-mono"
+        />
+        <button
+          type="button"
+          disabled
+          className="bg-navy text-white text-xs font-oswald uppercase font-bold tracking-wider px-4 py-2.5 rounded-xl flex items-center gap-1.5 opacity-80"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-red" /> Verify & Auto-fill
+        </button>
+      </div>
+
+      {f.help_text && <p className="text-[11px] text-gray-400">{f.help_text}</p>}
     </div>
   );
 }
@@ -1800,6 +2024,10 @@ export function FormBuilder({
                           ))}
                         </div>
                       </div>
+                    ) : f.field_type === "payment" ? (
+                      <PaymentPreviewField f={f} />
+                    ) : f.field_type === "student_id" ? (
+                      <StudentIdPreviewField f={f} />
                     ) : f.field_type === "file" ? (
                       <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center bg-gray-50">
                         <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
@@ -1956,3 +2184,5 @@ export function FormBuilder({
     </div>
   );
 }
+
+export const FormBuilderClient = FormBuilder;

@@ -511,6 +511,10 @@ export async function submitFormAction(
       data[f.field_key] = formData.getAll(f.field_key).map(String);
     } else if (f.field_type === "checkbox") {
       data[f.field_key] = formData.get(f.field_key) === "on";
+    } else if (f.field_type === "payment") {
+      const utr = String(formData.get(`${f.field_key}_utr`) ?? formData.get(f.field_key) ?? "");
+      const proof = String(formData.get(`${f.field_key}_proof`) ?? "");
+      data[f.field_key] = { utr, proof_url: proof };
     } else {
       data[f.field_key] = String(formData.get(f.field_key) ?? "");
     }

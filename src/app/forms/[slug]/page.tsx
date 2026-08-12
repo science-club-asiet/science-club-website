@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { FormRenderer } from "@/components/FormRenderer";
 import { NexusFormRender } from "@/packages/nexus-builder/NexusFormRender";
 import { getFormBySlug } from "@/lib/data/forms";
@@ -32,7 +31,7 @@ export default async function PublicFormPage({
   return (
     <div className="bg-white text-navy selection:bg-red selection:text-white min-h-screen flex flex-col relative w-full font-inter">
       <Header />
-      <main className="relative z-10 bg-white shadow-[0_15px_40px_rgba(0,0,0,0.12)] border-b border-gray-200/50 rounded-b-3xl pt-32 pb-24">
+      <main className="relative z-10 bg-white pt-32 pb-24">
         <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
           <h1 className="font-oswald text-4xl md:text-6xl font-bold uppercase text-navy leading-tight tracking-tight mb-3">
             {form.title}
@@ -58,9 +57,6 @@ export default async function PublicFormPage({
           )}
         </div>
       </main>
-      <div className="md:sticky md:bottom-0 md:z-0 z-10 relative">
-        <Footer />
-      </div>
     </div>
   );
 }

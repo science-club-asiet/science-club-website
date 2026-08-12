@@ -35,6 +35,8 @@ import {
   Image as ImageIcon,
   Grid,
   Sliders,
+  IndianRupee,
+  UserCheck,
 } from "lucide-react";
 import {
   createForm,
@@ -100,6 +102,8 @@ const FIELD_TYPES = [
   { value: "image", label: "Image / Display Card", icon: ImageIcon },
   { value: "grid_radio", label: "Single-Choice Grid", icon: Grid },
   { value: "grid_checkbox", label: "Multiple-Choice Grid", icon: Grid },
+  { value: "payment", label: "UPI Payment (QR & UTR)", icon: IndianRupee },
+  { value: "student_id", label: "Student / Member ID (Auto-fill)", icon: UserCheck },
 ];
 
 const INITIAL_BLOCK_PRESETS: BlockPreset[] = [

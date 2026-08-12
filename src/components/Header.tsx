@@ -501,12 +501,13 @@ export function Header() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <Link
+                  <MotionLink
                     href="/login"
-                    className="hidden sm:inline-flex items-center gap-1.5 font-oswald text-xs font-bold uppercase tracking-widest text-navy hover:text-red transition-colors px-3 py-2"
+                    style={{ color: textColor }}
+                    className="hidden sm:inline-flex items-center gap-1.5 font-oswald text-xs font-bold uppercase tracking-widest hover:text-red transition-colors px-4 py-2 border border-current/25 hover:border-red rounded-full"
                   >
                     <span>LOG IN</span>
-                  </Link>
+                  </MotionLink>
 
                   <Link
                     href="/login?mode=signup"

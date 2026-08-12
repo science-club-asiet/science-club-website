@@ -3,7 +3,7 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { submitFormAction } from "@/lib/admin/formActions";
 import type { PublicForm, PublicFormField } from "@/lib/data/forms";
-import { Upload, CheckCircle2, ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Loader2, FileCheck, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle2, ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Loader2, FileCheck, AlertCircle, Copy, Check, IndianRupee, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import { SelectField } from "@/components/ui/SelectField";
@@ -150,14 +150,285 @@ function FileUploadField({
   );
 }
 
+function PaymentField({
+  f,
+  onAnswerChange,
+}: {
+  f: PublicFormField;
+  onAnswerChange: (key: string, val: unknown) => void;
+}) {
+  const [utr, setUtr] = useState("");
+  const [proofUrl, setProofUrl] = useState("");
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [imgErr, setImgErr] = useState(false);
+
+  const upiId = (f.options?.[0] || "").trim() || "scienceclub@upi";
+  const memberFee = parseFloat(f.options?.[1] || "0") || 0;
+  const nonMemberFee = parseFloat(f.options?.[2] || "0") || 0;
+
+  const upiPayload = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=Science%20Club%20ASIET${nonMemberFee > 0 ? `&am=${nonMemberFee}` : ""}&cu=INR&tn=${encodeURIComponent(f.label || "Registration Fee")}`;
+  const qrCodeUrl = imgErr
+    ? `https://quickchart.io/qr?text=${encodeURIComponent(upiPayload)}&size=240`
+    : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiPayload)}`;
+
+  const handleCopyUpi = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2000);
+    }
+  };
+
+  const handleUtrChange = (val: string) => {
+    setUtr(val);
+    onAnswerChange(f.fieldKey, { utr: val, proof_url: proofUrl });
+  };
+
+  const handleProofChange = (url: string) => {
+    setProofUrl(url);
+    onAnswerChange(f.fieldKey, { utr, proof_url: url });
+  };
+
+  return (
+    <div className="bg-white text-navy border border-gray-200 rounded-3xl p-6 sm:p-7 space-y-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-red/10 text-red flex items-center justify-center font-bold">
+            <IndianRupee className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-oswald text-xs font-bold uppercase tracking-wider text-navy/50 block">
+              UPI Payment Portal
+            </span>
+            <h4 className="font-oswald text-lg font-bold uppercase text-navy leading-tight">
+              {f.label || "Registration Fee Payment"}
+            </h4>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 font-oswald text-xs font-bold tracking-wider uppercase">
+          <span className="bg-navy/5 text-navy px-3 py-1 rounded-full border border-navy/10">
+            Member: {memberFee === 0 ? "Free" : `₹${memberFee}`}
+          </span>
+          <span className="bg-red text-white px-3 py-1 rounded-full border border-red">
+            Non-Member: {nonMemberFee === 0 ? "Free" : `₹${nonMemberFee}`}
+          </span>
+        </div>
+      </div>
+
+      {f.helpText && <p className="text-xs text-gray-500 leading-relaxed font-medium">{f.helpText}</p>}
+
+      {/* QR Code & Payee Box */}
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-6">
+        <div className="bg-white p-2.5 rounded-2xl shrink-0 shadow-sm border border-gray-200">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qrCodeUrl}
+            alt="UPI QR Code"
+            onError={() => setImgErr(true)}
+            className="w-36 h-36 object-contain rounded-xl"
+          />
+        </div>
+
+        <div className="space-y-3 min-w-0 flex-1 text-center sm:text-left">
+          <div>
+            <span className="text-[10px] font-oswald uppercase tracking-widest text-navy/40 block">Payee Name</span>
+            <span className="font-oswald text-base font-bold uppercase text-navy truncate block">Science Club ASIET</span>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-oswald uppercase tracking-widest text-navy/40 block">UPI ID</span>
+            <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+              <code className="font-mono text-xs bg-white px-3 py-1.5 rounded-lg text-navy border border-gray-200 font-bold tracking-wider">{upiId}</code>
+              <button
+                type="button"
+                onClick={handleCopyUpi}
+                className="p-1.5 bg-white hover:bg-gray-100 border border-gray-200 text-navy rounded-lg transition-colors cursor-pointer"
+                title="Copy UPI ID"
+              >
+                {copiedUpi ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <span className="text-[10px] text-gray-400 block">Scan QR code using Google Pay, PhonePe, Paytm, or BHIM.</span>
+        </div>
+      </div>
+
+      {/* Inputs: UTR Number & Payment Screenshot */}
+      <div className="space-y-4 pt-2 border-t border-gray-100">
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-navy mb-1.5">
+            UPI Transaction / UTR Number *
+          </label>
+          <input
+            type="text"
+            required={f.required}
+            value={utr}
+            onChange={(e) => handleUtrChange(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-navy text-xs font-mono placeholder-gray-400 focus:outline-none focus:border-red"
+            placeholder="Enter 12-digit UTR or Ref No."
+          />
+          <input type="hidden" name={`${f.fieldKey}_utr`} value={utr} />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-navy mb-1.5">
+            Payment Screenshot Proof (Optional)
+          </label>
+          <div className="text-navy">
+            <FileUploadField
+              f={{ ...f, fieldKey: `${f.fieldKey}_proof`, label: "Payment Proof Screenshot", required: false, uploadFolder: f.uploadFolder }}
+              onAnswerChange={(_, url) => handleProofChange(String(url || ""))}
+            />
+          </div>
+          <input type="hidden" name={`${f.fieldKey}_proof`} value={proofUrl} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudentIdField({
+  f,
+  onAnswerChange,
+  onAutoFill,
+}: {
+  f: PublicFormField;
+  onAnswerChange: (key: string, val: unknown) => void;
+  onAutoFill?: (profile: { fullName: string; email: string; department: string; yearOfStudy: string; memberId: string; isMember: boolean }) => void;
+}) {
+  const [studentId, setStudentId] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedUser, setVerifiedUser] = useState<{
+    fullName: string;
+    email: string;
+    department: string;
+    yearOfStudy: string;
+    memberId: string;
+    isMember: boolean;
+  } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Live Instant Verification Effect on typing
+  useEffect(() => {
+    const query = studentId.trim();
+    if (!query || query.length < 3) {
+      setVerifiedUser(null);
+      setErrorMsg(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setVerifying(true);
+      setErrorMsg(null);
+
+      try {
+        const res = await fetch(`/api/members/validate?id=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        if (data.success && data.user) {
+          setVerifiedUser(data.user);
+          setErrorMsg(null);
+          onAnswerChange(f.fieldKey, data.user.memberId || query);
+          if (onAutoFill) {
+            onAutoFill(data.user);
+          }
+        } else {
+          setVerifiedUser(null);
+          setErrorMsg("No matching student profile found for this ID.");
+        }
+      } catch {
+        setVerifiedUser(null);
+      } finally {
+        setVerifying(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [studentId, f.fieldKey]);
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <input
+          type="text"
+          name={f.fieldKey}
+          required={f.required}
+          value={studentId}
+          onChange={(e) => {
+            setStudentId(e.target.value);
+            onAnswerChange(f.fieldKey, e.target.value);
+          }}
+          placeholder={f.placeholder || "Enter Student ID / Member ID (e.g. SC-2026-48206 or Email)"}
+          className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-xs font-mono text-navy focus:outline-none focus:border-red focus:ring-2 focus:ring-red/10 transition-all pr-10"
+        />
+
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+          {verifying ? (
+            <Loader2 className="w-4 h-4 text-navy/40 animate-spin" />
+          ) : verifiedUser ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          ) : (
+            <Sparkles className="w-4 h-4 text-navy/30" />
+          )}
+        </div>
+      </div>
+
+      {errorMsg && (
+        <p className="text-[11px] text-red font-medium pl-1">{errorMsg}</p>
+      )}
+
+      {verifiedUser && (
+        <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2.5">
+            <span className="text-xs font-oswald uppercase font-bold text-emerald-800 tracking-wider flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Student Profile Verified
+            </span>
+            <span className={`text-[10px] font-oswald uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full border ${verifiedUser.isMember ? "bg-red text-white border-red" : "bg-emerald-100 text-emerald-800 border-emerald-300"
+              }`}>
+              {verifiedUser.isMember ? "Paid Member" : "Standard Account"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-[10px] font-oswald uppercase text-emerald-700/70 font-semibold block">Full Name</span>
+              <p className="font-bold text-navy text-sm">{verifiedUser.fullName}</p>
+            </div>
+            <div>
+              <span className="text-[10px] font-oswald uppercase text-emerald-700/70 font-semibold block">Email Address</span>
+              <p className="font-semibold text-navy truncate">{verifiedUser.email}</p>
+            </div>
+            {verifiedUser.department && (
+              <div>
+                <span className="text-[10px] font-oswald uppercase text-emerald-700/70 font-semibold block">Department</span>
+                <p className="font-semibold text-navy">{verifiedUser.department}</p>
+              </div>
+            )}
+            {verifiedUser.yearOfStudy && (
+              <div>
+                <span className="text-[10px] font-oswald uppercase text-emerald-700/70 font-semibold block">Year / Semester</span>
+                <p className="font-semibold text-navy">{verifiedUser.yearOfStudy}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Field({
   f,
   answers,
   onAnswerChange,
+  onAutoFill,
 }: {
   f: PublicFormField;
   answers: Record<string, unknown>;
   onAnswerChange: (key: string, val: unknown) => void;
+  onAutoFill?: (profile: { fullName: string; email: string; department: string; yearOfStudy: string; memberId: string; isMember: boolean }) => void;
 }) {
   const rawVal = answers[f.fieldKey];
   const strVal = rawVal !== undefined && rawVal !== null ? String(rawVal) : "";
@@ -339,6 +610,12 @@ function Field({
         />
       );
 
+    case "payment":
+      return <PaymentField f={f} onAnswerChange={onAnswerChange} />;
+
+    case "student_id":
+      return <StudentIdField f={f} onAnswerChange={onAnswerChange} onAutoFill={onAutoFill} />;
+
     default:
       return <input {...common} type="text" className={base} />;
   }
@@ -361,6 +638,34 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
   const handleAnswerChange = (key: string, val: unknown) => {
     console.log("[FormRenderer] Answer changed:", key, "=", val);
     setAnswers((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const handleAutoFillProfile = (user: {
+    fullName: string;
+    email: string;
+    department: string;
+    yearOfStudy: string;
+    memberId: string;
+    isMember: boolean;
+  }) => {
+    setAnswers((prev) => {
+      const updated = { ...prev };
+      for (const field of form.fields) {
+        const key = field.fieldKey.toLowerCase();
+        if (key.includes("full_name") || key.includes("name") || key === "applicant_name" || key === "student_name") {
+          if (user.fullName) updated[field.fieldKey] = user.fullName;
+        } else if (key.includes("email")) {
+          if (user.email) updated[field.fieldKey] = user.email;
+        } else if (key.includes("department") || key.includes("branch")) {
+          if (user.department) updated[field.fieldKey] = user.department;
+        } else if (key.includes("year") || key.includes("semester")) {
+          if (user.yearOfStudy) updated[field.fieldKey] = user.yearOfStudy;
+        } else if (key.includes("member_id") || key.includes("student_id")) {
+          if (user.memberId) updated[field.fieldKey] = user.memberId;
+        }
+      }
+      return updated;
+    });
   };
 
   // Robust Section Step Grouping Algorithm
@@ -612,7 +917,7 @@ export function FormRenderer({ form, eventId }: { form: PublicForm; eventId?: st
                 <img src={f.imageUrl} alt="" className="max-h-56 rounded-xl border border-gray-200 object-cover my-2" />
               )}
 
-              <Field f={f} answers={answers} onAnswerChange={handleAnswerChange} />
+              <Field f={f} answers={answers} onAnswerChange={handleAnswerChange} onAutoFill={handleAutoFillProfile} />
             </div>
           );
         })}

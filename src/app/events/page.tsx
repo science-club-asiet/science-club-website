@@ -13,14 +13,11 @@ export default async function EventsPage() {
       <Header />
 
       {/* Front Layer: Content that scrolls UP past the footer on desktop */}
-      <main className="relative z-10 bg-white shadow-[0_15px_40px_rgba(0,0,0,0.12)] border-b border-gray-200/50 rounded-b-3xl pb-16">
+      <main className="relative z-10 bg-white pb-16">
         <EventsView events={events} />
       </main>
 
-      {/* Sticky Footer Reveal Shell */}
-      <div className="md:sticky md:bottom-0 md:z-0 z-10 relative">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
 }

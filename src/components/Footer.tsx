@@ -1,9 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Atom, MapPin, Mail, Clock, Globe, MessageCircle, Share2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import gsap from "gsap";
+import { Globe, MessageCircle, Share2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const LINK_MAP: Record<string, string> = {
@@ -17,19 +17,13 @@ const LINK_MAP: Record<string, string> = {
   "Contact Us": "/#contact",
 };
 
-const footerLinks = [
-  {
-    heading: "Science Club",
-    links: ["News", "First Team", "Club History", "Join The Board"],
-  },
-  {
-    heading: "Explore",
-    links: ["My Account", "Events & Experiences", "Resources", "Contact Us"],
-  },
-];
-
 export function Footer() {
   const [firstTeamLink, setFirstTeamLink] = useState("/info/execom");
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const footerRef = useRef<HTMLElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -45,160 +39,174 @@ export function Footer() {
       });
   }, []);
 
+  // The footer never contributes document height. A downward wheel gesture at
+  // the true scroll limit reveals it; an upward gesture hides it again.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!cardRef.current) return;
+
+    const card = cardRef.current;
+    let isOpen = false;
+    gsap.set(card, { x: 0, xPercent: 100 });
+
+    const isAtPageEnd = () =>
+      window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+
+    const onWheel = (event: WheelEvent) => {
+      if (event.deltaY > 0 && !isOpen && isAtPageEnd()) {
+        event.preventDefault();
+        isOpen = true;
+        gsap.to(card, { x: 0, xPercent: 0, duration: 1.1, ease: "power3.out", overwrite: true });
+      }
+
+      if (event.deltaY < 0 && isOpen) {
+        event.preventDefault();
+        isOpen = false;
+        gsap.to(card, { x: 0, xPercent: 100, duration: 0.9, ease: "power3.inOut", overwrite: true });
+      }
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      gsap.killTweensOf(card);
+    };
+  }, []);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setTimeout(() => setSubscribed(false), 4000);
+      setEmail("");
+    }
+  };
+
   return (
-    <footer className="bg-navy pt-20 pb-12 font-inter text-white border-t border-white/10 overflow-hidden">
-      <div className="container mx-auto px-4 lg:px-8">
-
-        {/* Main 4-Column Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-16 items-start">
+    <footer 
+      ref={footerRef} 
+      className="relative z-50 h-0 w-full overflow-visible pointer-events-none p-0 m-0 border-none bg-transparent"
+    >
+      {/* 100% Opaque Watts Arched / Pill Card Container - Spans w-screen with 0px left margin */}
+      <div
+        ref={cardRef}
+        className="fixed bottom-0 left-0 bg-[#DA291C] text-white opacity-100 rounded-t-[50px] sm:rounded-t-[70px] lg:rounded-l-[220px] lg:rounded-r-none p-6 sm:p-10 lg:pl-20 lg:pr-12 lg:py-12 overflow-hidden shadow-[0_-25px_60px_rgba(0,0,0,0.6)] w-screen min-w-full ml-0 mr-0 flex flex-col justify-between gap-8 z-[100] pointer-events-auto"
+      >
+        {/* Top & Middle Section: 4-column Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8 items-start relative z-10">
           
-          {/* Brand & Mission Column (4/12) */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-4 flex flex-col justify-between"
-          >
-            <div>
-              <Link href="/" className="flex items-center gap-4 group mb-6 w-fit">
-                <Atom className="w-12 h-12 text-red transition-transform duration-700 group-hover:rotate-180" />
-                <span className="font-oswald text-3xl sm:text-4xl uppercase font-bold tracking-wide group-hover:text-red transition-colors duration-300">
-                  Science Club
-                </span>
-              </Link>
-              <p className="text-white/70 text-sm leading-relaxed max-w-sm font-medium mb-6">
-                Empowering student innovators, scientific researchers, and technology pioneers through hands-on labs, guest lectures, and interdisciplinary engineering challenges at ASIET.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 font-oswald uppercase tracking-widest w-fit">
-                <span className="w-2 h-2 rounded-full bg-red animate-pulse" />
-                EST. 2018 • ASIET KALADY
-              </div>
+          {/* Tagline & Copyright (4 cols on lg) */}
+          <div className="lg:col-span-4 space-y-3">
+            <h3 className="font-sans font-extrabold text-xl sm:text-2xl lg:text-3xl leading-snug tracking-tight text-white max-w-sm">
+              Fueling curious minds, scientific pioneers. One lab at a time!
+            </h3>
+            <p className="text-white/90 text-xs sm:text-sm font-medium pt-1">
+              © {new Date().getFullYear()} Science Club ASIET / Site & Brand by Science Club
+            </p>
+          </div>
 
-              <div className="flex items-center gap-2">
-                {[Globe, MessageCircle, Share2].map((Icon, i) => (
-                  <motion.a
-                    key={i}
-                    href="#"
-                    aria-label="Social Link"
-                    className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:bg-white hover:text-navy transition-colors duration-300"
-                    whileHover={{ scale: 1.15, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 18 }}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                  </motion.a>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Science Club Links (2/12) */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-2"
-          >
-            <h4 className="font-oswald text-xl uppercase font-bold mb-6 tracking-wider text-white/50">
-              Science Club
+          {/* Navigation Links (2 cols) */}
+          <div className="lg:col-span-2">
+            <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-white/90 mb-3">
+              NAVIGATION
             </h4>
-            <ul className="space-y-4">
-              {footerLinks[0].links.map((label) => {
+            <ul className="space-y-2 text-xs sm:text-sm font-medium text-white/90">
+              {["News", "First Team", "Club History", "Join The Board"].map((label) => {
                 const href = label === "First Team" ? firstTeamLink : LINK_MAP[label] || "/";
                 return (
                   <li key={label}>
-                    <Link
-                      href={href}
-                      className="group flex items-center gap-2 text-white/70 hover:text-white font-medium text-sm transition-all duration-200 hover:text-red"
-                    >
-                      <span className="w-0 h-[1px] bg-red group-hover:w-4 transition-all duration-300 ease-out" />
-                      <span className="transform group-hover:translate-x-1 transition-transform duration-200">{label}</span>
+                    <Link href={href} className="hover:text-white hover:underline transition-all block">
+                      {label}
                     </Link>
                   </li>
                 );
               })}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Explore Links (2/12) */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-2"
-          >
-            <h4 className="font-oswald text-xl uppercase font-bold mb-6 tracking-wider text-white/50">
-              Explore
+          {/* Support / Explore Links (2 cols) */}
+          <div className="lg:col-span-2">
+            <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-white/90 mb-3">
+              SUPPORT
             </h4>
-            <ul className="space-y-4">
-              {footerLinks[1].links.map((label) => {
+            <ul className="space-y-2 text-xs sm:text-sm font-medium text-white/90">
+              {["My Account", "Events & Experiences", "Resources", "Contact Us"].map((label) => {
                 const href = LINK_MAP[label] || "/";
                 return (
                   <li key={label}>
-                    <Link
-                      href={href}
-                      className="group flex items-center gap-2 text-white/70 hover:text-white font-medium text-sm transition-all duration-200 hover:text-red"
-                    >
-                      <span className="w-0 h-[1px] bg-red group-hover:w-4 transition-all duration-300 ease-out" />
-                      <span className="transform group-hover:translate-x-1 transition-transform duration-200">{label}</span>
+                    <Link href={href} className="hover:text-white hover:underline transition-all block">
+                      {label}
                     </Link>
                   </li>
                 );
               })}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Headquarters & Contact Summary Card (4/12) */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-4 bg-white/5 border border-white/10 p-6 sm:p-7 rounded-2xl flex flex-col gap-4 shadow-xl hover:border-white/20 transition-colors"
-          >
-            <h4 className="font-oswald text-lg uppercase font-bold tracking-wider text-white flex items-center gap-2 border-b border-white/10 pb-3">
-              <MapPin className="w-4 h-4 text-red" />
-              Headquarters
-            </h4>
-            
-            <div className="space-y-3.5 text-xs text-white/70 font-medium">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-white/40 shrink-0 mt-0.5" />
-                <span>Adi Shankara Institute of Engineering and Technology, Kalady, Kerala - 683574</span>
+          {/* Newsletter Subscribe & Socials (4 cols) */}
+          <div className="lg:col-span-4 space-y-4">
+            <div>
+              <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-white/90 mb-2">
+                GET THE LATEST FROM SCIENCE CLUB.
+              </h4>
+              
+              <form onSubmit={handleSubscribe} className="relative flex items-center max-w-md">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email Address"
+                  required
+                  className="w-full bg-transparent border border-white/50 rounded-full px-4 py-2.5 text-xs sm:text-sm text-white placeholder-white/70 focus:outline-none focus:border-white transition-colors pr-28"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-1 bg-white text-[#DA291C] font-bold text-xs px-4 py-2 rounded-full hover:bg-white/90 transition-all duration-200 active:scale-95 shadow-sm"
+                >
+                  {subscribed ? "Subscribed!" : "Subscribe"}
+                </button>
+              </form>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <h4 className="font-sans font-bold text-[10px] uppercase tracking-wider text-white/90 mb-1.5">
+                  FOLLOW US
+                </h4>
+                <div className="flex items-center gap-2">
+                  {[
+                    { Icon: Globe, href: "#", label: "Website" },
+                    { Icon: MessageCircle, href: "#", label: "Chat" },
+                    { Icon: Share2, href: "#", label: "Share" },
+                  ].map(({ Icon, href, label }, i) => (
+                    <a
+                      key={i}
+                      href={href}
+                      aria-label={label}
+                      className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-[#DA291C] transition-all duration-300 hover:scale-110 active:scale-95"
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                    </a>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-white/40 shrink-0" />
-                <a href="mailto:scienceclub@adishankara.ac.in" className="hover:text-red transition-colors">
-                  scienceclub@adishankara.ac.in
-                </a>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="w-4 h-4 text-white/40 shrink-0" />
-                <span>Mon - Fri • 9:00 AM - 4:00 PM</span>
+
+              {/* Headquarters summary inline */}
+              <div className="text-xs text-white/90 text-right">
+                <p className="font-bold text-white uppercase text-[10px] tracking-wider">HEADQUARTERS</p>
+                <p className="text-white/80">ASIET, Kalady, Kerala</p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
         </div>
 
-        {/* Copyright */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-          className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/10 gap-4 text-xs opacity-50"
-        >
-          <p>&copy; {new Date().getFullYear()} Science Club ASIET. All rights reserved.</p>
-          <p className="font-oswald uppercase tracking-widest text-[11px]">Driven by Curiosity & Technical Excellence</p>
-        </motion.div>
-
+        {/* Bottom Section: Sleek "science club" Banner Typography */}
+        <div className="pt-2 flex justify-end items-end w-full overflow-hidden border-t border-white/20">
+          <h1 className="font-sans font-black text-[9vw] sm:text-[7.5vw] lg:text-[6.5vw] leading-[0.8] tracking-tighter text-white select-none whitespace-nowrap opacity-95 hover:opacity-100 transition-opacity">
+            science club
+          </h1>
+        </div>
       </div>
     </footer>
   );

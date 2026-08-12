@@ -15,16 +15,27 @@ export async function GET(req: Request) {
   }
 
   const admin = createAdminClient();
-  const normalizedId = rawId.toUpperCase();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId);
 
-  // Search by member_id or profile UUID
-  const { data: profile, error } = await admin
+  // 1. Search by member_id or email
+  let { data: profile } = await admin
     .from("profiles")
     .select("id, full_name, email, department, year_of_study, is_member, member_id")
-    .or(`member_id.ilike.${normalizedId},id.eq.${rawId}`)
+    .or(`member_id.ilike.${rawId},email.ilike.${rawId}`)
+    .limit(1)
     .maybeSingle();
 
-  if (error || !profile) {
+  // 2. Fallback: If UUID format, search by profile id
+  if (!profile && isUuid) {
+    const { data: uuidProfile } = await admin
+      .from("profiles")
+      .select("id, full_name, email, department, year_of_study, is_member, member_id")
+      .eq("id", rawId)
+      .maybeSingle();
+    profile = uuidProfile;
+  }
+
+  if (!profile) {
     return NextResponse.json({ success: false, error: "not_found" }, { status: 404 });
   }
 
@@ -32,7 +43,7 @@ export async function GET(req: Request) {
     success: true,
     user: {
       id: profile.id,
-      memberId: profile.member_id || normalizedId,
+      memberId: profile.member_id || rawId,
       fullName: profile.full_name || "",
       email: profile.email || "",
       department: profile.department || "",
