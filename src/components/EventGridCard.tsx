@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ScienceEvent } from "@/lib/events";
+import { ScienceEvent, formatCategoryDisplayName } from "@/lib/events";
 
 interface EventGridCardProps {
   event: ScienceEvent;
@@ -53,10 +53,10 @@ export function EventGridCard({ event, onClick }: EventGridCardProps) {
             ? "bg-red/90 group-hover:bg-red"
             : "bg-black/60"
         )}>
-          {event.requiresRegistration === false ? "EXECOOM LOG" : event.status}
+          {event.requiresRegistration === false ? "EXECOM LOG" : event.status}
         </motion.span>
         <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] uppercase font-bold text-white tracking-widest border border-white/10">
-          {event.type}
+          {formatCategoryDisplayName(event.type)}
         </span>
       </div>
 

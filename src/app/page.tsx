@@ -37,8 +37,8 @@ export default async function Home() {
         <Marquee text={site.marquee?.text} />
         <NewsSection items={news} />
         <AboutSection stats={site.about_stats?.stats} />
-        <ExecomSection teams={teams} />
         <CtaSection />
+        <ExecomSection teams={teams} />
         <MapSection location={site.location} />
         <ContactSection contact={site.contact} />
       </main>

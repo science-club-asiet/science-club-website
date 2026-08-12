@@ -465,10 +465,8 @@ export function AccountClient({
               <p className="text-xs text-gray-500 mt-1">Keep your information updated for certificates and event registrations.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Form Column */}
-              <form onSubmit={saveProfile} className="space-y-4 lg:col-span-7">
+            <div className="max-w-xl">
+              <form onSubmit={saveProfile} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Full Name</label>
                   <input
@@ -532,53 +530,6 @@ export function AccountClient({
                   {savingProfile ? "Saving..." : "Save Profile Changes"}
                 </button>
               </form>
-
-              {/* Live Member Card Preview Column */}
-              <div className="lg:col-span-5 space-y-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 block">
-                  Live Member Card Preview
-                </span>
-
-                <div className="bg-navy text-white rounded-3xl p-6 relative overflow-hidden shadow-md space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <span className="font-oswald text-xs font-bold uppercase tracking-widest text-white/90">
-                      Science Club ASIET
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-gold bg-gold/10 px-2 py-0.5 rounded-full">
-                      {profile?.is_member ? "MEMBER" : "STANDARD"}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-[9px] font-oswald uppercase tracking-widest text-white/40 block">Member Name</span>
-                    <h4 className="font-oswald text-xl font-bold uppercase text-white truncate">
-                      {fullName || "Your Name"}
-                    </h4>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs border-t border-b border-white/10 py-3">
-                    <div>
-                      <span className="text-[9px] font-oswald uppercase tracking-widest text-white/40 block">Department</span>
-                      <p className="font-medium text-white truncate">{department || "Not Selected"}</p>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-oswald uppercase tracking-widest text-white/40 block">Semester</span>
-                      <p className="font-medium text-gold truncate">
-                        {yearOfStudy ? (currentSemester || yearOfStudy) : "Not Selected"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <span className="text-[9px] font-oswald uppercase tracking-widest text-white/40 block">Member ID</span>
-                      <span className="font-mono text-xs font-bold text-white tracking-wider">{copiedMemberId}</span>
-                    </div>
-                    <span className="text-[9px] text-green-400 font-semibold">✓ VERIFIED</span>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         )}

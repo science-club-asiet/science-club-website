@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ScienceEvent } from "@/lib/events";
+import { formatCategoryDisplayName } from "@/lib/events";
 import { EventGridCard } from "./EventGridCard";
 import { EventModal } from "./EventModal";
 import { FeaturedEventFixture } from "./events/FeaturedEventFixture";
@@ -27,17 +28,43 @@ export function EventGrid({ events, searchQuery = "" }: EventGridProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("GRID");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedEvent, setSelectedEvent] = useState<ScienceEvent | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [selectedTerm, setSelectedTerm] = useState<string>("ALL");
+
+  // Available categories that actually have events
+  const availableCategories = useMemo(() => {
+    const set = new Set<string>();
+    events.forEach((e) => {
+      if (e.type) set.add(e.type);
+    });
+    return Array.from(set);
+  }, [events]);
+
+  // Available terms/years
+  const availableTerms = useMemo(() => {
+    const set = new Set<string>();
+    events.forEach((e) => {
+      if (e.dateYear) set.add(e.dateYear);
+    });
+    return Array.from(set).sort().reverse();
+  }, [events]);
 
   // Featured event (nearest upcoming event)
   const featuredEvent = useMemo(() => {
-    return events.find((e) => e.status === "UPCOMING") || events[0];
+    return events.find((e) => e.status === "UPCOMING") || null;
   }, [events]);
 
-  // Filtered dataset combining Category Tab and Search Query
+  // Filtered dataset combining Status Tab, Category, Term and Search Query
   const filteredEvents = useMemo(() => {
     let result = events;
     if (activeTab !== "ALL") {
       result = result.filter((event) => event.status === activeTab);
+    }
+    if (selectedCategory !== "ALL") {
+      result = result.filter((event) => event.type === selectedCategory);
+    }
+    if (selectedTerm !== "ALL") {
+      result = result.filter((event) => event.dateYear === selectedTerm);
     }
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
@@ -50,7 +77,7 @@ export function EventGrid({ events, searchQuery = "" }: EventGridProps) {
       );
     }
     return result;
-  }, [events, activeTab, searchQuery]);
+  }, [events, activeTab, selectedCategory, selectedTerm, searchQuery]);
 
   // Total pages
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE) || 1;
@@ -90,30 +117,70 @@ export function EventGrid({ events, searchQuery = "" }: EventGridProps) {
           </div>
         )}
 
-        {/* ─── DOCK CONTROLS (Filter Tabs + View Switcher) ─── */}
+        {/* ─── DOCK CONTROLS (Filter Tabs + Category & Term Selectors + View Switcher) ─── */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 pb-8 border-b border-gray-100">
           
-          {/* Category Tabs */}
-          <div className="inline-flex bg-gray-100 p-1.5 rounded-full relative shadow-inner">
-            {(["ALL", "UPCOMING", "COMPLETED"] as FilterTab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={cn(
-                  "relative px-7 py-3 text-xs sm:text-sm font-oswald uppercase font-bold tracking-widest rounded-full transition-colors z-10 cursor-pointer",
-                  activeTab === tab ? "text-white" : "text-navy/50 hover:text-navy"
-                )}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Status Filter Tabs */}
+            <div className="inline-flex bg-gray-100 p-1.5 rounded-full relative shadow-inner">
+              {(["ALL", "UPCOMING", "COMPLETED"] as FilterTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={cn(
+                    "relative px-5 py-2.5 text-xs font-oswald uppercase font-bold tracking-widest rounded-full transition-colors z-10 cursor-pointer",
+                    activeTab === tab ? "text-white" : "text-navy/50 hover:text-navy"
+                  )}
+                >
+                  {activeTab === tab && (
+                    <motion.div
+                      layoutId="active-tab"
+                      className="absolute inset-0 bg-red rounded-full -z-10 shadow-md"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Dynamic Category Filter */}
+            {availableCategories.length > 0 && (
+              <select
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-gray-100 border border-gray-200 text-navy text-xs font-oswald uppercase font-bold tracking-wider px-4 py-2.5 rounded-full focus:outline-none focus:border-red cursor-pointer"
               >
-                {activeTab === tab && (
-                  <motion.div
-                    layoutId="active-tab"
-                    className="absolute inset-0 bg-red rounded-full -z-10 shadow-md"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
-                {tab}
-              </button>
-            ))}
+                <option value="ALL">ALL CATEGORIES</option>
+                {availableCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {formatCategoryDisplayName(cat).toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Term / Year Filter */}
+            {availableTerms.length > 0 && (
+              <select
+                value={selectedTerm}
+                onChange={(e) => {
+                  setSelectedTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-gray-100 border border-gray-200 text-navy text-xs font-oswald uppercase font-bold tracking-wider px-4 py-2.5 rounded-full focus:outline-none focus:border-red cursor-pointer"
+              >
+                <option value="ALL">ALL YEARS</option>
+                {availableTerms.map((term) => (
+                  <option key={term} value={term}>
+                    {term}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* View Mode Switcher (Grid vs Directory List) */}

@@ -73,15 +73,8 @@ export default async function SettingsPage() {
   // Build profile lookup map by ID
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-  // Find primary named owner/admin profile from database profiles table
-  const primaryAdmin = (profiles ?? []).find(
-    (p) => (p.role === "owner" || p.role === "admin") && p.full_name && p.full_name.trim().length > 0
-  );
-  const fallbackAdminName = getDisplayName(
-    primaryAdmin?.full_name,
-    primaryAdmin?.email || user?.email,
-    currentAdminName
-  );
+  // Use the active logged-in admin for untracked system action fallbacks
+  const fallbackAdminName = currentAdminName || "System Admin";
 
   function resolveActor(
     relProfile: unknown,

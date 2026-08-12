@@ -45,6 +45,8 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
   const allowedDepartments = Array.isArray(r.allowed_departments) ? (r.allowed_departments as string[]) : [];
   const allowedYears = Array.isArray(r.allowed_years) ? (r.allowed_years as string[]) : [];
 
+  const hasPricing = r.has_pricing !== false && r.member_price !== null && r.member_price !== undefined;
+
   return {
     id: r.id as string,
     title: r.title as string,
@@ -59,8 +61,9 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
     speakerRole: (r.speaker_role as string) ?? undefined,
     location: (r.location as string) ?? undefined,
     time: p?.time,
-    memberPrice: Number(r.member_price ?? 0),
-    nonMemberPrice: Number(r.non_member_price ?? 0),
+    memberPrice: r.member_price !== null && r.member_price !== undefined ? Number(r.member_price) : undefined,
+    nonMemberPrice: r.non_member_price !== null && r.non_member_price !== undefined ? Number(r.non_member_price) : undefined,
+    hasPricing,
     seatsRemaining: (r.seats_remaining as number) ?? undefined,
     agenda: Array.isArray(agenda) && agenda.length ? agenda : undefined,
     prerequisites: Array.isArray(prereqs) && prereqs.length ? prereqs : undefined,
@@ -82,14 +85,28 @@ function mapRow(r: Record<string, unknown>): ScienceEvent {
  */
 export async function getEvents(): Promise<ScienceEvent[]> {
   const sb = createPublicClient();
-  const { data, error } = await sb.from("events").select("*").eq("is_published", true);
+  const [{ data, error }, { data: siteData }] = await Promise.all([
+    sb.from("events").select("*").eq("is_published", true),
+    sb.from("site_content").select("key,value").eq("key", "event_order").maybeSingle(),
+  ]);
+
   if (error) {
     console.error("[getEvents]", error.message);
     return [];
   }
 
+  const customOrder: string[] = Array.isArray(siteData?.value) ? siteData.value : [];
+  const orderMap = new Map<string, number>();
+  customOrder.forEach((id, idx) => orderMap.set(id, idx));
+
   const now = Date.now();
   const rows = (data ?? []).slice().sort((a, b) => {
+    if (orderMap.has(a.id) && orderMap.has(b.id)) {
+      return orderMap.get(a.id)! - orderMap.get(b.id)!;
+    }
+    if (orderMap.has(a.id)) return -1;
+    if (orderMap.has(b.id)) return 1;
+
     const da = new Date(a.event_date as string).getTime();
     const db = new Date(b.event_date as string).getTime();
     const au = da > now;

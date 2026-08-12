@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +8,8 @@ import {
   XCircle, ArrowUpRight, FolderPlus, LayoutGrid, List, Sparkles,
   Eye, EyeOff, MoveUp, MoveDown, Sliders
 } from "lucide-react";
-import { deleteEvent, saveEventCategory, deleteEventCategory, type EventCategoryItem, type CategoryFieldDef } from "@/lib/admin/event-actions";
+import { deleteEvent, saveEventCategory, deleteEventCategory, reorderEventsAction, type EventCategoryItem, type CategoryFieldDef } from "@/lib/admin/event-actions";
+import { getCategoryFieldLabels } from "@/lib/events";
 import { toast } from "@/components/ui/Toast";
 import { ConfirmModal, type ConfirmConfig } from "@/components/ui/ModalDialog";
 import { cn } from "@/lib/utils";
@@ -76,8 +77,14 @@ export function EventsWorkspaceClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const [orderedEvents, setOrderedEvents] = useState<AdminEvent[]>(events);
+
+  useEffect(() => {
+    setOrderedEvents(events);
+  }, [events]);
+
   // Filtered Events
-  const filteredEvents = events.filter((e) => {
+  const filteredEvents = orderedEvents.filter((e) => {
     if (selectedTerm !== "all" && (e.term || "2025-26") !== selectedTerm) return false;
     if (selectedCategory !== "all" && e.category !== selectedCategory) return false;
     const st = e.status || (e.is_published ? "open" : "draft");
@@ -96,6 +103,28 @@ export function EventsWorkspaceClient({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleMoveEvent = (id: string, direction: "up" | "down") => {
+    const idx = orderedEvents.findIndex((e) => e.id === id);
+    if (idx === -1) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= orderedEvents.length) return;
+
+    const newArr = [...orderedEvents];
+    const temp = newArr[idx];
+    newArr[idx] = newArr[targetIdx];
+    newArr[targetIdx] = temp;
+    setOrderedEvents(newArr);
+
+    startTransition(async () => {
+      try {
+        await reorderEventsAction(newArr.map((e) => e.id));
+        toast("Event order saved", "success");
+      } catch (err: unknown) {
+        toast((err as Error).message, "error");
+      }
+    });
+  };
 
   const handleDeleteEvent = (id: string, title: string) => {
     setConfirmConfig({
@@ -385,7 +414,7 @@ export function EventsWorkspaceClient({
                         <Link href={`/admin/events/${evt.id}/edit`} className="font-oswald text-lg font-bold text-navy uppercase hover:text-red transition-colors break-words whitespace-normal line-clamp-2 leading-tight">
                           {evt.title}
                         </Link>
-                        {evt.speaker && <p className="text-xs text-gray-500 mt-0.5 font-medium break-words whitespace-normal">Speaker: {evt.speaker}</p>}
+                        {evt.speaker && <p className="text-xs text-gray-500 mt-0.5 font-medium break-words whitespace-normal">{getCategoryFieldLabels(evt.category).speakerShortLabel}: {evt.speaker}</p>}
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -413,6 +442,22 @@ export function EventsWorkspaceClient({
                         </Link>
 
                         <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveEvent(evt.id, "up")}
+                            className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                            title="Move Up"
+                          >
+                            <MoveUp className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveEvent(evt.id, "down")}
+                            className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                            title="Move Down"
+                          >
+                            <MoveDown className="w-4 h-4" />
+                          </button>
                           <Link
                             href={`/admin/pagebuilder/event/${evt.id}`}
                             className="p-1.5 text-red/80 hover:text-red hover:bg-red/5 rounded-lg transition-colors"
@@ -482,7 +527,7 @@ export function EventsWorkspaceClient({
                                 <Link href={`/admin/events/${evt.id}/edit`} className="font-bold text-navy hover:text-red transition-colors break-words whitespace-normal block leading-snug">
                                   {evt.title}
                                 </Link>
-                                {evt.speaker && <div className="text-[11px] text-gray-400 break-words whitespace-normal mt-0.5">Speaker: {evt.speaker}</div>}
+                                {evt.speaker && <div className="text-[11px] text-gray-400 break-words whitespace-normal mt-0.5">{getCategoryFieldLabels(evt.category).speakerShortLabel}: {evt.speaker}</div>}
                               </div>
                             </div>
                           </td>
@@ -515,6 +560,22 @@ export function EventsWorkspaceClient({
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveEvent(evt.id, "up")}
+                                className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                title="Move Up"
+                              >
+                                <MoveUp className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveEvent(evt.id, "down")}
+                                className="p-1.5 text-navy/60 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                title="Move Down"
+                              >
+                                <MoveDown className="w-4 h-4" />
+                              </button>
                               <Link
                                 href={`/admin/pagebuilder/event/${evt.id}`}
                                 className="p-1.5 text-red/80 hover:text-red hover:bg-red/5 rounded-lg transition-colors"

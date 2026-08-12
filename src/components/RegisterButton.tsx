@@ -29,6 +29,8 @@ export function RegisterButton({
   opStatus = "open",
   formSlug,
   formId,
+  upiId,
+  upiName,
   className = "",
 }: {
   eventId: string;
@@ -40,6 +42,8 @@ export function RegisterButton({
   opStatus?: "open" | "closed" | "finished" | "draft";
   formSlug?: string | null;
   formId?: string | null;
+  upiId?: string;
+  upiName?: string;
   className?: string;
 }) {
   const router = useRouter();
@@ -48,13 +52,33 @@ export function RegisterButton({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [upiSettings] = useState({
-    upi_id: "scienceclub@okaxis",
-    upi_name: "Science Club ASIET",
+  const [upiSettings, setUpiSettings] = useState({
+    upi_id: upiId || "scienceclub@okaxis",
+    upi_name: upiName || "Science Club ASIET",
   });
 
   const [utrNumber, setUtrNumber] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
+
+  useEffect(() => {
+    if (!upiId || !upiName) {
+      const supabase = createClient();
+      supabase
+        .from("site_content")
+        .select("value")
+        .eq("key", "membership_settings")
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.value && typeof data.value === "object") {
+            const settings = data.value as { upi_id?: string; upi_name?: string };
+            setUpiSettings({
+              upi_id: settings.upi_id || "scienceclub@okaxis",
+              upi_name: settings.upi_name || "Science Club ASIET",
+            });
+          }
+        });
+    }
+  }, [upiId, upiName]);
 
   // Lock background Lenis scroll when modal is open
   useEffect(() => {

@@ -19,6 +19,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { ExecomMemberFull, PastExecomMember, CandidPhoto, ExecomCategory } from "@/lib/data/execom";
 import type { Achievement } from "@/lib/data/content";
+import { DossierCard } from "@/components/ExecomSection";
+import { ExecomMemberModal, type ExecomModalMember } from "@/components/ExecomMemberModal";
 
 // Custom LinkedIn SVG component
 const Linkedin = (props: React.SVGProps<SVGSVGElement>) => (
@@ -29,9 +31,6 @@ const Linkedin = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-// ─── HIGH-FIDELITY EXECOM DATA ───────────────────────────────────────────────
-
-// Achievement icon column is a name string in the DB → map to the lucide component.
 const ACH_ICONS: Record<string, LucideIcon> = { Trophy, Award, Cpu, GraduationCap, Globe };
 
 export interface ExecomMember {
@@ -45,28 +44,10 @@ export interface ExecomMember {
   linkedin?: string;
 }
 
-
-
-
-type CategoryFilter = "ALL" | "CORE LEADERSHIP" | "TECHNICAL LABS" | "MEDIA & CREATIVE" | "OPERATIONS & EVENTS";
-
-// --- ANIMATION VARIANTS ---
-
-
 const fadeUpVariant: Variants = {
   hidden: { opacity: 0, y: 40 },
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
 };
-
-
-interface CandidTrailCard {
-  id: number;
-  x: number;
-  y: number;
-  rotation: number;
-  photo: CandidPhoto;
-  duration: number; // Dynamic fade duration based on mouse velocity
-}
 
 export function ExecomView({
   members,
@@ -85,12 +66,9 @@ export function ExecomView({
 }) {
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // State for the interactive split screen hover
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
-  
-  // Accordion state for past years
   const [openYear, setOpenYear] = useState<string>("2023-24");
+  const [selectedModalMember, setSelectedModalMember] = useState<ExecomModalMember | null>(null);
 
   const togglePastYear = (year: string) => {
     setOpenYear(prev => (prev === year ? "" : year));
@@ -99,73 +77,6 @@ export function ExecomView({
         window.__lenis?.resize();
       }
     }, 320);
-  };
-
-  // Interactive Mouse Trail & Idle State for Hero
-  const [trailCards, setTrailCards] = useState<CandidTrailCard[]>([]);
-  const [isIdle, setIsIdle] = useState(false);
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastPosRef = useRef({ x: 0, y: 0, time: 0 });
-  const photoIndexRef = useRef(0);
-  const cardIdRef = useRef(0);
-
-  const handleHeroMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Reset idle state on mouse move
-    if (isIdle) setIsIdle(false);
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-
-    // Set 650ms idle timer to smoothly fade out images when mouse becomes still
-    idleTimerRef.current = setTimeout(() => {
-      setIsIdle(true);
-    }, 650);
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const now = Date.now();
-
-    const dx = x - lastPosRef.current.x;
-    const dy = y - lastPosRef.current.y;
-    const dt = Math.max(now - (lastPosRef.current.time || now), 10);
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // Calculate mouse velocity in px/ms
-    const velocity = dist / dt;
-
-    // Spawn card after mouse moves ~220px (spacious, strictly max 2 visible)
-    if (dist > 220) {
-      lastPosRef.current = { x, y, time: now };
-
-      const photo = candidPhotos[photoIndexRef.current % candidPhotos.length];
-      photoIndexRef.current += 1;
-
-      // Disappearance duration inversely proportional to velocity:
-      // Fast mouse movement (velocity > 1.5) = short fade duration (~0.4s)
-      // Slow mouse movement (velocity < 0.3) = long, lingering fade duration (~1.2s)
-      const fadeDuration = Math.min(Math.max(1.2 - velocity * 0.5, 0.4), 1.2);
-
-      const rotation = (Math.random() - 0.5) * 20; // -10deg to +10deg
-      const newCard: CandidTrailCard = {
-        id: cardIdRef.current++,
-        x,
-        y,
-        rotation,
-        photo,
-        duration: fadeDuration
-      };
-
-      setTrailCards(prev => {
-        const updated = [...prev, newCard];
-        if (updated.length > 2) {
-          return updated.slice(updated.length - 2); // Strictly max 2 cards!
-        }
-        return updated;
-      });
-    }
-  };
-
-  const handleHeroMouseLeave = () => {
-    setIsIdle(true);
   };
 
   // Scroll parallax for Hero section
@@ -246,12 +157,10 @@ export function ExecomView({
   return (
     <div className="bg-white text-navy font-inter min-h-screen selection:bg-red selection:text-white -mt-24">
       
-      {/* ─── 01. INTERACTIVE MOUSE-TRAIL HERO (Candid Group Photos Canvas) ─── */}
+      {/* ─── 01. HERO SECTION ─── */}
       <section 
         ref={heroRef}
-        onMouseMove={handleHeroMouseMove}
-        onMouseLeave={handleHeroMouseLeave}
-        className="pt-36 pb-20 md:pt-48 md:pb-28 px-4 lg:px-8 relative z-10 bg-navy text-white border-b border-white/10 overflow-hidden min-h-[85vh] lg:min-h-[90vh] flex flex-col justify-between cursor-crosshair"
+        className="pt-36 pb-20 md:pt-48 md:pb-28 px-4 lg:px-8 relative z-10 bg-navy text-white border-b border-white/10 overflow-hidden min-h-[85vh] lg:min-h-[90vh] flex flex-col justify-between"
       >
         {/* Subtle Architectural Grid Lines */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:5rem_5rem] pointer-events-none" />
@@ -268,54 +177,6 @@ export function ExecomView({
             <line x1="10" y1="250" x2="490" y2="250" />
           </svg>
         </div>
-
-        {/* Spawned Interactive Mouse Trail Candid Photos (Max 2 cards with velocity fade) */}
-        <AnimatePresence>
-          {trailCards.map((card, index) => {
-            const isOldest = trailCards.length > 1 && index === 0;
-
-            return (
-              <motion.div
-                key={card.id}
-                initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                animate={{ 
-                  opacity: (isIdle || isOldest) ? 0 : 1, 
-                  scale: (isIdle || isOldest) ? 0.85 : 1, 
-                  y: (isIdle || isOldest) ? -15 : 0, 
-                  rotate: card.rotation 
-                }}
-                exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                transition={{ 
-                  duration: isOldest ? card.duration : 0.4, 
-                  ease: [0.22, 1, 0.36, 1] 
-                }}
-                style={{
-                  left: card.x - 130,
-                  top: card.y - 140,
-                  position: "absolute"
-                }}
-                className="pointer-events-none z-20 w-60 sm:w-72 aspect-[16/11] rounded-2xl overflow-hidden border border-white/20 bg-navy/90 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-xl"
-              >
-                <Image
-                  src={card.photo.url}
-                  alt={card.photo.caption}
-                  fill
-                  sizes="300px"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/30 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <span className="font-oswald text-[9px] text-red font-bold uppercase tracking-widest block mb-0.5">
-                    {card.photo.tag}
-                  </span>
-                  <h4 className="font-oswald text-xs sm:text-sm font-bold uppercase tracking-tight truncate">
-                    {card.photo.caption}
-                  </h4>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
 
         <motion.div 
           style={{ opacity: heroOpacity, y: heroY }}
@@ -662,26 +523,26 @@ export function ExecomView({
                 >
                   <div className="overflow-hidden">
                     <div className="p-6 sm:p-8 pt-0">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 mb-8">
-                        {members.filter(m => m.category === "Core").slice(0, 4).map((member, j) => (
-                          <div key={j} className="flex flex-col items-center text-center group">
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-4 relative shadow-md border-2 border-gray-200">
-                              <Image src={member.img} alt={member.name} fill sizes="(max-width: 640px) 96px, 128px" className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                            </div>
-                            <span className="font-oswald text-lg font-bold text-navy uppercase block truncate w-full group-hover:text-red transition-colors">
-                              {member.name}
-                            </span>
-                            <span className="font-inter text-[10px] font-bold text-red uppercase tracking-widest block truncate w-full mt-1">
-                              {member.role}
-                            </span>
-                          </div>
+                      <div className="flex flex-wrap justify-center items-start gap-4 sm:gap-6 pt-6 mb-8">
+                        {members.map((member, j) => (
+                          <DossierCard
+                            key={j}
+                            member={{
+                              name: member.name,
+                              role: member.role,
+                              img: member.img,
+                              bio: `${member.name} served as ${member.role} for the ${year} Executive Committee term.`
+                            }}
+                            index={j}
+                            onSelect={() => setSelectedModalMember({
+                              name: member.name,
+                              role: member.role,
+                              img: member.img,
+                              year,
+                              bio: `${member.name} served as ${member.role} for the ${year} Executive Committee term.`
+                            })}
+                          />
                         ))}
-                      </div>
-                      <div className="flex justify-center pb-4">
-                        <Link href={`/info/execom/${year.replace("-", "")}`} className="flex items-center gap-2 font-oswald text-sm font-bold uppercase tracking-widest text-white bg-navy hover:bg-red transition-colors px-8 py-3.5 rounded-full shadow-md">
-                          <span>VIEW FULL ROSTER</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </Link>
                       </div>
                     </div>
                   </div>
@@ -771,6 +632,9 @@ export function ExecomView({
 
         </div>
       </section>
+
+      {/* Modal Detail Popup */}
+      <ExecomMemberModal member={selectedModalMember} onClose={() => setSelectedModalMember(null)} />
 
     </div>
   );

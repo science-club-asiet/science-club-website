@@ -1,13 +1,22 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 export function CtaSection() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setIsLoggedIn(true);
+    });
+  }, []);
+
   // Parallax for the massive background text
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -15,6 +24,8 @@ export function CtaSection() {
   });
 
   const bgTextX = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"]);
+
+  if (isLoggedIn) return null;
 
   return (
     <section 

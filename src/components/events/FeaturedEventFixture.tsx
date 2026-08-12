@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Calendar, MapPin, Clock, User, Users, Sparkles } from "lucide-react";
-import { ScienceEvent } from "@/lib/events";
+import { ScienceEvent, getCategoryFieldLabels } from "@/lib/events";
 
 interface FeaturedEventFixtureProps {
   event: ScienceEvent;
@@ -12,27 +12,33 @@ interface FeaturedEventFixtureProps {
 }
 
 export function FeaturedEventFixture({ event, onSelect }: FeaturedEventFixtureProps) {
-  // Live ticking countdown state
+  // Calculate real time remaining dynamically from event date
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
-    days: 14,
-    hours: 8,
-    minutes: 42,
-    seconds: 15
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
   });
 
-  // Ticking timer effect
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
+    function updateCountdown() {
+      const dateStr = event.dateYear ? `${event.dateMonth} ${event.dateDay}, ${event.dateYear} ${event.time || ""}` : null;
+      const targetTime = dateStr ? new Date(dateStr).getTime() : 0;
+      const now = Date.now();
+      const diff = Math.max(0, targetTime - now);
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    }
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [event]);
 
   // Framer Motion Damped Spring Mouse Physics (Butter-smooth entry, movement, and exit!)
   const mouseX = useMotionValue(0);
@@ -133,8 +139,8 @@ export function FeaturedEventFixture({ event, onSelect }: FeaturedEventFixturePr
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
                 <User className="w-4 h-4 text-red shrink-0" />
                 <div className="truncate">
-                  <span className="text-[9px] font-oswald uppercase font-bold text-white/60 block">KEYNOTE PRESENTER</span>
-                  <span className="font-semibold text-white truncate block">{event.speaker || "Academic Panel"}</span>
+                  <span className="text-[9px] font-oswald uppercase font-bold text-white/60 block">{getCategoryFieldLabels(event.type).speakerLabel}</span>
+                  <span className="font-semibold text-white truncate block">{event.speaker || "Science Club Team"}</span>
                 </div>
               </div>
             </div>

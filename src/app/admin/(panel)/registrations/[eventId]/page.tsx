@@ -22,7 +22,7 @@ export default async function RegistrationsPage({
 
   const { data: regs } = await supabase
     .from("event_registrations")
-    .select("id, attended, price_paid, registered_at, profiles(full_name, email)")
+    .select("id, attended, price_paid, form_data, registered_at, profiles(full_name, email)")
     .eq("event_id", eventId)
     .order("registered_at", { ascending: true });
 
@@ -54,14 +54,29 @@ export default async function RegistrationsPage({
         )}
         {(regs ?? []).map((r) => {
           const p = r.profiles as unknown as { full_name: string | null; email: string | null } | null;
+          const formData = (r.form_data as { utr_number?: string; group_registration?: boolean }) || null;
+          const utr = formData?.utr_number;
+
           return (
             <div key={r.id} className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-100 last:border-0">
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{p?.full_name || p?.email || "—"}</p>
-                {p?.full_name && <p className="text-sm text-gray-500 truncate">{p.email}</p>}
+                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                  {p?.full_name && <span className="text-xs text-gray-500 truncate">{p.email}</span>}
+                  {utr && (
+                    <span className="font-mono text-[11px] bg-red/10 text-red font-semibold px-2 py-0.5 rounded">
+                      UTR: {utr}
+                    </span>
+                  )}
+                  {formData?.group_registration && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-navy/10 text-navy px-2 py-0.5 rounded">
+                      Group Reg
+                    </span>
+                  )}
+                </div>
               </div>
-              <span className="text-sm text-gray-500">₹{Number(r.price_paid).toFixed(0)}</span>
-              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${r.attended ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              <span className="text-sm font-semibold text-navy">₹{Number(r.price_paid).toFixed(0)}</span>
+              <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${r.attended ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                 {r.attended ? "Attended" : "Registered"}
               </span>
               <form action={setAttendance.bind(null, eventId, r.id, !r.attended)}>

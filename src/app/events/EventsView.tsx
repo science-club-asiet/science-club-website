@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { EventGrid } from "@/components/EventGrid";
-import { CtaSection } from "@/components/CtaSection";
 import { EventHeroHorizon } from "@/components/events/EventHeroHorizon";
 import type { ScienceEvent } from "@/lib/events";
 
@@ -19,9 +18,9 @@ export function EventsView({ events }: { events: ScienceEvent[] }) {
       <EventHeroHorizon
         searchQuery={searchQuery}
         onSearchChange={(q) => setSearchQuery(q)}
+        events={events}
       />
       <EventGrid events={events} searchQuery={searchQuery} />
-      <CtaSection />
     </>
   );
 }

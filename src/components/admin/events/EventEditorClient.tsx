@@ -73,6 +73,7 @@ export type EventInitialData = {
   external_website_url?: string | null;
   winners?: EventWinnerItem[];
   requires_registration?: boolean;
+  has_pricing?: boolean;
   custom_metadata?: Record<string, string>;
 };
 
@@ -157,6 +158,9 @@ export function EventEditorClient({
   const [requiresRegistration, setRequiresRegistration] = useState<boolean>(
     initialData?.requires_registration !== false
   );
+  const [hasPricing, setHasPricing] = useState<boolean>(
+    initialData?.member_price !== null && initialData?.member_price !== undefined
+  );
   const [externalWebsiteUrl, setExternalWebsiteUrl] = useState<string>(
     initialData?.external_website_url || ""
   );
@@ -175,7 +179,13 @@ export function EventEditorClient({
   });
 
   // Per-field hide/show state for individual events
-  const [hiddenFieldIds, setHiddenFieldIds] = useState<Record<string, boolean>>({});
+  const [hiddenFieldIds, setHiddenFieldIds] = useState<Record<string, boolean>>(() => {
+    const hidden: Record<string, boolean> = {};
+    if (initialData?.member_price === null || initialData?.member_price === undefined || initialData?.has_pricing === false) {
+      hidden["pricing"] = true;
+    }
+    return hidden;
+  });
 
   const toggleFieldHidden = (fieldId: string) => {
     setHiddenFieldIds((prev) => ({ ...prev, [fieldId]: !prev[fieldId] }));
@@ -863,45 +873,86 @@ export function EventEditorClient({
 
           {/* Pricing & Seats */}
           {requiresRegistration && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-              <h2 className="font-oswald text-sm font-bold uppercase text-navy border-b border-gray-100 pb-2 flex items-center gap-2">
-                <IndianRupee className="w-4 h-4 text-red" /> Registration Pricing & Capacity
-              </h2>
+            <div className={cn("bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm", hiddenFieldIds["pricing"] && "opacity-60")}>
+              <input type="hidden" name="has_pricing" value={hiddenFieldIds["pricing"] ? "false" : "true"} />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Member Price (₹)</label>
-                  <input
-                    name="member_price"
-                    type="number"
-                    step="0.01"
-                    defaultValue={initialData?.member_price ?? 0}
-                    className="w-full border-gray-200 rounded-xl text-xs bg-white py-2.5 px-3 text-navy font-mono focus:outline-none focus:border-red"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Non-Member Price (₹)</label>
-                  <input
-                    name="non_member_price"
-                    type="number"
-                    step="0.01"
-                    defaultValue={initialData?.non_member_price ?? 0}
-                    className="w-full border-gray-200 rounded-xl text-xs bg-white py-2.5 px-3 text-navy font-mono focus:outline-none focus:border-red"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Seats Capacity</label>
-                  <input
-                    name="seats_remaining"
-                    type="number"
-                    defaultValue={initialData?.seats_remaining ?? ""}
-                    className="w-full border-gray-200 rounded-xl text-xs bg-white py-2.5 px-3 text-navy font-mono focus:outline-none focus:border-red"
-                    placeholder="Unlimited if empty"
-                  />
-                </div>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <h2 className="font-oswald text-sm font-bold uppercase text-navy flex items-center gap-2">
+                  <IndianRupee className="w-4 h-4 text-red" /> Registration Pricing & Capacity
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => toggleFieldHidden("pricing")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-navy/70 hover:text-navy px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors select-none cursor-pointer"
+                  title={hiddenFieldIds["pricing"] ? "Show Pricing on Website" : "Hide Pricing on Website"}
+                >
+                  {hiddenFieldIds["pricing"] ? (
+                    <>
+                      <EyeOff className="w-4 h-4 text-amber-600" />
+                      <span className="font-oswald uppercase text-amber-700 tracking-wider">Field Hidden</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 text-green-600" />
+                      <span className="font-oswald uppercase text-green-700 tracking-wider">Field Visible</span>
+                    </>
+                  )}
+                </button>
               </div>
+
+              {!hiddenFieldIds["pricing"] ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Member Price (₹)</label>
+                    <input
+                      name="member_price"
+                      type="number"
+                      step="0.01"
+                      defaultValue={initialData?.member_price ?? 0}
+                      className="w-full border-gray-200 rounded-xl text-xs bg-white py-2.5 px-3 text-navy font-mono focus:outline-none focus:border-red"
+                      placeholder="0 for Free"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">Set 0 for FREE event</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Non-Member Price (₹)</label>
+                    <input
+                      name="non_member_price"
+                      type="number"
+                      step="0.01"
+                      defaultValue={initialData?.non_member_price ?? 0}
+                      className="w-full border-gray-200 rounded-xl text-xs bg-white py-2.5 px-3 text-navy font-mono focus:outline-none focus:border-red"
+                      placeholder="0 for Free"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">Set 0 for FREE event</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-navy/70 mb-1">Seats Capacity</label>
+                    <input
+                      name="seats_remaining"
+                      type="number"
+                      defaultValue={initialData?.seats_remaining ?? ""}
+                      className="w-full border-gray-200 rounded-xl text-xs bg-white py-2.5 px-3 text-navy font-mono focus:outline-none focus:border-red"
+                      placeholder="Unlimited if empty"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-800 flex items-center justify-between">
+                  <span className="font-medium">
+                    <strong>Pricing Field Turned Off (Hidden):</strong> This event will NOT show any pricing tag or fee chip on the website (ideal for field trips / internal visits).
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleFieldHidden("pricing")}
+                    className="text-amber-800 underline font-bold text-[11px] ml-2 shrink-0 cursor-pointer"
+                  >
+                    Turn On Field
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

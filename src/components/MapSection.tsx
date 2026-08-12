@@ -56,7 +56,7 @@ export function MapSection({ location }: { location?: LocationContent }) {
             </div>
 
             <a 
-              href={location?.maps_url ?? "https://maps.app.goo.gl/3q4V3fXzX9Vz4H9Y8"}
+              href={location?.maps_url || "https://www.google.com/maps/search/?api=1&query=Adi+Shankara+Institute+of+Engineering+and+Technology+Kalady+Kerala"}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-10 inline-flex items-center gap-2 bg-navy text-white px-8 py-4 font-oswald uppercase tracking-widest font-bold hover:bg-red transition-colors duration-300 w-fit group"

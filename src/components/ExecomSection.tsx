@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight, Flame, Droplet, Zap, Fingerprint, Activity } from "lucide-react";
 import type { TeamWithMembers, ExecomMemberCard } from "@/lib/data/execom";
+import { ExecomMemberModal, type ExecomModalMember } from "./ExecomMemberModal";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -21,12 +22,15 @@ const ICONS = [Flame, Droplet, Zap, Fingerprint, Activity];
 
 // ─── Dossier Card Component ───────────────────────────────────────────────────
 
-function DossierCard({ member, index }: { member: Member; index: number }) {
+export function DossierCard({ member, index, onSelect }: { member: Member; index: number; onSelect?: (m: Member) => void }) {
   const Icon = ICONS[index % ICONS.length];
 
   return (
     // Fluid vh constraints completely eliminate vertical cutoff on smaller 1080p laptop screens
-    <div className="w-[155px] sm:w-[175px] lg:w-[clamp(140px,20vh,230px)] flex-shrink-0 group flex flex-col snap-center">
+    <div 
+      onClick={() => onSelect?.(member)}
+      className="w-[155px] sm:w-[175px] lg:w-[clamp(140px,20vh,230px)] flex-shrink-0 group flex flex-col snap-center cursor-pointer"
+    >
       
       {/* Perfect Square Aspect Ratio to save vertical height beautifully */}
       <div className="relative w-full aspect-square">
@@ -37,7 +41,7 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
           style={{ clipPath: "url(#dossier-cutout)" }}
         >
           <Image
-            src={member.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 0 1 60 0' fill='%2394a3b8'/></svg>"}
+            src={member.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 1 60 0' fill='%2394a3b8'/></svg>"}
             alt={member.name}
             fill
             unoptimized={!member.img || member.img.startsWith("data:") || member.img.endsWith(".svg")}
@@ -49,7 +53,14 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
 
         {/* Top-Left Nested Button */}
         {/* Pushed negatively to perfectly nest inside the white cavity without overlapping the image */}
-        <button aria-label={`View ${member.name}'s profile`} className="absolute -top-2 -left-2 md:-top-3 md:-left-3 w-8 h-8 md:w-10 md:h-10 lg:w-[clamp(2.5rem,5vh,3.5rem)] lg:h-[clamp(2.5rem,5vh,3.5rem)] bg-[#1a1c22] rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-300 hover:bg-red shadow-lg group-hover:-translate-y-0.5 z-20">
+        <button 
+          aria-label={`View ${member.name}'s profile`} 
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect?.(member);
+          }}
+          className="absolute -top-2 -left-2 md:-top-3 md:-left-3 w-8 h-8 md:w-10 md:h-10 lg:w-[clamp(2.5rem,5vh,3.5rem)] lg:h-[clamp(2.5rem,5vh,3.5rem)] bg-[#1a1c22] rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-300 hover:bg-red shadow-lg group-hover:-translate-y-0.5 z-20"
+        >
           <ArrowUpRight className="w-4 h-4 xl:w-5 xl:h-5" />
         </button>
 
@@ -79,7 +90,7 @@ function DossierCard({ member, index }: { member: Member; index: number }) {
 
 // ─── Team Panel ───────────────────────────────────────────────────────────────
 
-function TeamPanel({ team }: { team: TeamWithMembers }) {
+function TeamPanel({ team, onSelect }: { team: TeamWithMembers; onSelect: (m: Member) => void }) {
   const inViewRef = useRef<HTMLDivElement>(null);
   const inView = useInView(inViewRef, { once: true, margin: "-10%" });
 
@@ -119,7 +130,7 @@ function TeamPanel({ team }: { team: TeamWithMembers }) {
               animate={inView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
               transition={{ duration: 0.5, delay: 0.1 + (i * 0.05), ease: "easeOut" }}
             >
-              <DossierCard member={member} index={i} />
+              <DossierCard member={member} index={i} onSelect={onSelect} />
             </motion.div>
           ))}
         </div>
@@ -134,6 +145,7 @@ function TeamPanel({ team }: { team: TeamWithMembers }) {
 export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const [selectedMember, setSelectedMember] = useState<ExecomModalMember | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -144,17 +156,9 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
 
     const panels = teams.length;
 
-    // gsap.matchMedia only runs the horizontal-pin setup at >=1024px and
-    // automatically reverts it when the viewport crosses back below the
-    // breakpoint. The old raw `innerWidth < 1024` guard never re-ran on resize,
-    // leaving a broken/absent pin (and a stuck scroll height) after a resize.
     const mm = gsap.matchMedia();
 
     mm.add("(min-width: 1024px)", () => {
-      // Horizontal pinned track. NOTE: intentionally NO ScrollTrigger `snap` —
-      // ScrollTrigger's snap animates the native scroll position, which fights
-      // Lenis' smooth-scroll RAF and makes the page oscillate back/forth on its
-      // own once the user stops scrolling. Let Lenis own the scroll entirely.
       gsap.to(track, {
         x: () => -((panels - 1) * window.innerWidth),
         ease: "none",
@@ -171,7 +175,6 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
         },
       });
 
-      // Lightweight Header Fade Out
       const header = document.getElementById("main-nav-header");
       if (header) {
         gsap.to(header, {
@@ -197,11 +200,6 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
   return (
     <section className="bg-[#FAF9F8]">
       
-      {/* 
-        ─── GLOBAL SVG DEFS ─── 
-        Equally-proportioned concave SVG mask built for the aspect-square containers.
-        M 0.26 0 creates a mathematically perfect 26% indentation hole.
-      */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
           <clipPath id="dossier-cutout" clipPathUnits="objectBoundingBox">
@@ -232,7 +230,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
 
           <div ref={trackRef} className="flex h-full w-max will-change-transform">
             {teams.map((team) => (
-              <TeamPanel key={team.id} team={team} />
+              <TeamPanel key={team.id} team={team} onSelect={(m) => setSelectedMember(m)} />
             ))}
           </div>
           
@@ -241,7 +239,6 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
 
       {/* ── Mobile: Native smooth vertical stack (Scaled Down) ── */}
       <div className="lg:hidden border-t border-gray-200/50 relative overflow-hidden bg-[#FAF9F8]">
-        {/* Subtle decorative banner */}
         <div className="pt-24 pb-8 px-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-2">
             <span className="h-[2px] w-6 bg-red rounded-full" />
@@ -254,10 +251,13 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
         </div>
         <div className="flex flex-col">
           {teams.map((team) => (
-            <TeamPanel key={team.id} team={team} />
+            <TeamPanel key={team.id} team={team} onSelect={(m) => setSelectedMember(m)} />
           ))}
         </div>
       </div>
+
+      {/* Profile Detail Popup Modal */}
+      <ExecomMemberModal member={selectedMember} onClose={() => setSelectedMember(null)} />
       
     </section>
   );

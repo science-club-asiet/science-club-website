@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar as CalendarIcon, MapPin, Clock, ArrowRight, User, Sparkles, ChevronDown } from "lucide-react";
-import { ScienceEvent } from "@/lib/events";
+import { ScienceEvent, formatCategoryDisplayName, getCategoryFieldLabels } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
 interface EventCalendarWidgetProps {
@@ -16,17 +16,19 @@ const ALL_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP
 export function EventCalendarWidget({ events, onSelectEvent }: EventCalendarWidgetProps) {
   // Extract unique available years dynamically from events dataset (Built to scale for 50+ years!)
   const availableYears = useMemo(() => {
-    const years = new Set(events.map((e) => e.dateYear || "2025"));
-    // Always include a wide range for demonstration scaling
-    years.add("2024");
+    const curYear = new Date().getFullYear().toString();
+    const years = new Set(events.map((e) => e.dateYear || curYear));
+    years.add(curYear);
     years.add("2025");
     years.add("2026");
-    years.add("2027");
     return Array.from(years).sort();
   }, [events]);
 
-  const [selectedYear, setSelectedYear] = useState<string>("2025");
-  const [selectedMonth, setSelectedMonth] = useState<string>("OCT");
+  const currentYearStr = useMemo(() => new Date().getFullYear().toString(), []);
+  const currentMonthStr = useMemo(() => ALL_MONTHS[new Date().getMonth()], []);
+
+  const [selectedYear, setSelectedYear] = useState<string>(currentYearStr);
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
 
   // Months that have events for the selected year
   const monthsWithEvents = useMemo(() => {
@@ -136,8 +138,8 @@ export function EventCalendarWidget({ events, onSelectEvent }: EventCalendarWidg
 
         </div>
 
-        {/* Right Column (8/12): Full-Width Event Spotlight Cards (Fills layout completely!) */}
-        <div className="lg:col-span-8 flex flex-col justify-center min-h-[360px]">
+        {/* Right Column (8/12): Full-Width Event Spotlight Cards (Scrollable after 3 events!) */}
+        <div className="lg:col-span-8 flex flex-col justify-start min-h-[360px] relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${selectedYear}-${selectedMonth}`}
@@ -145,7 +147,7 @@ export function EventCalendarWidget({ events, onSelectEvent }: EventCalendarWidg
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full space-y-4"
+              className="w-full space-y-4 max-h-[510px] overflow-y-auto pr-3 [scrollbar-width:thin] [scrollbar-color:#001C58_#f3f4f6] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-navy/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100/80"
             >
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => (
@@ -171,7 +173,7 @@ export function EventCalendarWidget({ events, onSelectEvent }: EventCalendarWidg
                             {event.status}
                           </span>
                           <span className="text-[9px] font-oswald uppercase font-bold tracking-widest text-navy/40">
-                            {event.type}
+                            {formatCategoryDisplayName(event.type)}
                           </span>
                         </div>
 
@@ -197,9 +199,9 @@ export function EventCalendarWidget({ events, onSelectEvent }: EventCalendarWidg
                             </span>
                           )}
                           {event.speaker && (
-                            <span className="flex items-center gap-1.5 truncate hidden sm:inline-flex">
+                            <span className="flex items-center gap-1.5 truncate hidden sm:inline-flex" title={getCategoryFieldLabels(event.type).speakerLabel}>
                               <User className="w-3.5 h-3.5 text-red shrink-0" />
-                              <span className="truncate">{event.speaker}</span>
+                              <span className="truncate">{getCategoryFieldLabels(event.type).speakerShortLabel}: {event.speaker}</span>
                             </span>
                           )}
                         </div>

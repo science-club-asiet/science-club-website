@@ -36,8 +36,9 @@ export async function saveEvent(formData: FormData) {
   const location = (formData.get("location") as string || "").trim();
   const speaker = (formData.get("speaker") as string || "").trim();
   const speaker_role = (formData.get("speaker_role") as string || "").trim();
-  const member_price = parseFloat((formData.get("member_price") as string) || "0");
-  const non_member_price = parseFloat((formData.get("non_member_price") as string) || "0");
+  const has_pricing = formData.get("has_pricing") === "true";
+  const member_price = has_pricing ? parseFloat((formData.get("member_price") as string) || "0") : null;
+  const non_member_price = has_pricing ? parseFloat((formData.get("non_member_price") as string) || "0") : null;
   const seats_remaining = formData.get("seats_remaining") ? parseInt(formData.get("seats_remaining") as string, 10) : null;
   const cover_image_url = (formData.get("cover_image_url") as string || "").trim();
   const is_published = formData.get("is_published") === "on" || formData.get("is_published") === "true";
@@ -96,6 +97,7 @@ export async function saveEvent(formData: FormData) {
     registration_form_id,
     external_website_url,
     requires_registration,
+    has_pricing,
     winners,
     custom_metadata,
     gallery_images,
@@ -156,4 +158,24 @@ export async function deleteEventCategory(id: string) {
   const { error } = await supabase.from("event_categories").delete().eq("id", id);
   if (error) throw new Error("Failed to delete category: " + error.message);
   revalidatePath("/admin/events");
+}
+
+export async function reorderEventsAction(orderedIds: string[]) {
+  if (!orderedIds || orderedIds.length === 0) return;
+  const { supabase } = await requireAdmin();
+
+  for (let i = 0; i < orderedIds.length; i++) {
+    const id = orderedIds[i];
+    await supabase.from("events").update({ display_order: i, sort_order: i }).eq("id", id);
+  }
+
+  await supabase.from("site_content").upsert({
+    key: "event_order",
+    value: orderedIds,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "key" });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/events");
+  revalidatePath("/");
 }

@@ -5,6 +5,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Calendar, ArrowDown, Sparkles, Search } from "lucide-react";
 
+import type { ScienceEvent } from "@/lib/events";
+import { cn } from "@/lib/utils";
+
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -12,13 +15,16 @@ if (typeof window !== "undefined") {
 interface EventHeroHorizonProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  events?: ScienceEvent[];
 }
 
-export function EventHeroHorizon({ searchQuery, onSearchChange }: EventHeroHorizonProps) {
+export function EventHeroHorizon({ searchQuery, onSearchChange, events = [] }: EventHeroHorizonProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const textLeftRef = useRef<HTMLSpanElement>(null);
   const textRightRef = useRef<HTMLSpanElement>(null);
   const scheduleBarRef = useRef<HTMLDivElement>(null);
+
+  const tickerEvents = events.filter((e) => e.status === "UPCOMING");
 
   // Desktop-only GSAP ScrollTrigger soft scrub parallax (Zero magnetic pin pull force!)
   useEffect(() => {
@@ -130,45 +136,35 @@ export function EventHeroHorizon({ searchQuery, onSearchChange }: EventHeroHoriz
           </div>
         </div>
 
-        {/* Desktop Horizon Schedule Ticker Bar */}
-        <div 
-          ref={scheduleBarRef}
-          className="w-full max-w-4xl bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 md:p-6 hidden lg:flex items-center justify-around gap-4 text-left shadow-2xl"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red text-white flex items-center justify-center shrink-0 shadow-md">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-oswald text-[10px] uppercase font-bold text-white/60 tracking-widest block">UPCOMING NEXT</span>
-              <span className="font-oswald text-sm font-bold text-white uppercase tracking-tight">OCT 12 • AI HORIZONS SUMMIT</span>
-            </div>
+        {/* Dynamic Horizon Schedule Ticker Bar */}
+        {tickerEvents.length > 0 && (
+          <div 
+            ref={scheduleBarRef}
+            className="w-full max-w-4xl bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 md:p-6 hidden lg:flex items-center justify-around gap-4 text-left shadow-2xl"
+          >
+            {tickerEvents.slice(0, 3).map((evt, idx) => (
+              <React.Fragment key={evt.id || idx}>
+                {idx > 0 && <div className="w-[1px] h-8 bg-white/20" />}
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md",
+                    idx === 0 ? "bg-red text-white" : "bg-white/15 text-white"
+                  )}>
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="font-oswald text-[10px] uppercase font-bold text-white/60 tracking-widest block">
+                      {idx === 0 ? "UPCOMING NEXT" : `${evt.dateMonth} ${evt.dateDay}`}
+                    </span>
+                    <span className="font-oswald text-sm font-bold text-white uppercase tracking-tight line-clamp-1">
+                      {evt.title}
+                    </span>
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
           </div>
-
-          <div className="w-[1px] h-8 bg-white/20" />
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 text-white flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-oswald text-[10px] uppercase font-bold text-white/60 tracking-widest block">OCTOBER 18</span>
-              <span className="font-oswald text-sm font-bold text-white uppercase tracking-tight">QUANTUM COMPUTING</span>
-            </div>
-          </div>
-
-          <div className="w-[1px] h-8 bg-white/20" />
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 text-white flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-oswald text-[10px] uppercase font-bold text-white/60 tracking-widest block">NOVEMBER 04</span>
-              <span className="font-oswald text-sm font-bold text-white uppercase tracking-tight">ROBOTICS BUILD V2</span>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Scroll Indicator */}
         <div className="mt-10 flex items-center gap-2 font-oswald text-xs uppercase tracking-[0.2em] text-white/60">

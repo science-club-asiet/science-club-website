@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent, MotionValue } from "framer-motion";
 import { Atom, Search, User, ChevronDown, ArrowRight, ArrowUpRight, Sparkles } from "lucide-react";
@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { formatCategoryDisplayName } from "@/lib/events";
 
 const NAV_LINKS = [
   { 
@@ -25,8 +26,7 @@ const NAV_LINKS = [
     subLinks: [
       { name: "About Science Club", href: "/info/about" },
       { name: "Execom", href: "/info/execom" },
-      { name: "Our Mission", href: "/info/mission" },
-      { name: "Join Us", href: "/login?mode=signup" }
+      { name: "Our Mission", href: "/info/mission" }
     ]
   },
   { 
@@ -34,8 +34,6 @@ const NAV_LINKS = [
     href: "/events",
     subLinks: [
       { name: "All Events", href: "/events" },
-      { name: "Guest Seminars", href: "/events" },
-      { name: "Workshops", href: "/events" }
     ]
   },
 ];
@@ -84,15 +82,14 @@ const FULL_STAGE_ITEMS: NavigationCategory[] = [
     num: "03",
     name: "INFO",
     href: "/info/about",
-    badge: "FOUNDATION",
-    description: "Explore our founding story, executive committee leadership rosters, core strategic mission, and recruitment portals.",
+    badge: "DIRECTORY",
+    description: "Discover our founding mission, executive team roster, core operational labs, and student membership structure.",
     img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
     stats: "EST. 2018 • ASIET",
     subLinks: [
       { name: "About Science Club", href: "/info/about" },
       { name: "Execom Leaderboard", href: "/info/execom" },
-      { name: "Our Mission", href: "/info/mission" },
-      { name: "Join Us", href: "/login?mode=signup" }
+      { name: "Our Mission", href: "/info/mission" }
     ]
   },
   {
@@ -106,8 +103,10 @@ const FULL_STAGE_ITEMS: NavigationCategory[] = [
     stats: "12 ANNUAL FIXTURES",
     subLinks: [
       { name: "All Events", href: "/events" },
-      { name: "Guest Seminars", href: "/events" },
-      { name: "Workshops", href: "/events" }
+      { name: "Field Trips & Expeditions", href: "/events?category=trip" },
+      { name: "Gaming & Competitions", href: "/events?category=game" },
+      { name: "Hands-on Workshops", href: "/events?category=workshop" },
+      { name: "Guest Talks & Seminars", href: "/events?category=talk" },
     ]
   }
 ];
@@ -206,6 +205,51 @@ export function Header() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
+
+  const [eventCategoryLinks, setEventCategoryLinks] = useState<{ name: string; href: string }[]>([
+    { name: "Field Trips & Expeditions", href: "/events?category=trip" },
+    { name: "Gaming & Competitions", href: "/events?category=game" },
+    { name: "Hands-on Workshops", href: "/events?category=workshop" },
+    { name: "Guest Talks & Seminars", href: "/events?category=talk" },
+  ]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("events")
+      .select("category")
+      .eq("is_published", true)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const catSet = new Set<string>(["trip", "game", "workshop", "talk"]);
+          data.forEach((e) => {
+            if (e.category && typeof e.category === "string" && e.category.trim()) {
+              catSet.add(e.category.trim().toLowerCase());
+            }
+          });
+          const categorySubLinks = Array.from(catSet).map((cat) => ({
+            name: formatCategoryDisplayName(cat),
+            href: `/events?category=${encodeURIComponent(cat)}`,
+          }));
+          setEventCategoryLinks(categorySubLinks);
+        }
+      });
+  }, []);
+
+  const navLinks = useMemo(() => {
+    return NAV_LINKS.map((link) => {
+      if (link.name === "EVENTS") {
+        return {
+          ...link,
+          subLinks: [
+            { name: "All Events", href: "/events" },
+            ...eventCategoryLinks,
+          ],
+        };
+      }
+      return link;
+    });
+  }, [eventCategoryLinks]);
 
   // Auth State Detection for Header Account Button
   const [currentUser, setCurrentUser] = useState<{ email: string; name: string; isStaff: boolean } | null>(null);
@@ -321,7 +365,7 @@ export function Header() {
               />
               
               <nav className="hidden lg:flex items-center gap-8 h-full">
-                {NAV_LINKS.map((link) => (
+                {navLinks.map((link) => (
                   <div 
                     key={link.name} 
                     className="h-full flex flex-col justify-center relative"
@@ -396,27 +440,8 @@ export function Header() {
               </Link>
             </div>
 
-            {/* Right side: Search, User Profile & CTA */}
+            {/* Right side: User Profile & CTA */}
             <div className="flex items-center justify-end gap-4 md:gap-6 flex-[1.5] h-full">
-              
-              {/* Expanding Search Pill */}
-              <motion.button 
-                aria-label="Search"
-                style={{ backgroundColor: isHomePage || isScrolled ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }}
-                className="hidden sm:flex items-center justify-start overflow-hidden rounded-full transition-all duration-500 ease-[0.22,1,0.36,1] w-10 h-10 hover:w-[130px] group px-[9px] cursor-pointer"
-              >
-                <motion.div style={{ color: iconColor }}>
-                  <Search className="w-5 h-5 flex-shrink-0 group-hover:text-red transition-colors" />
-                </motion.div>
-                <motion.span 
-                  style={{ color: textColor }}
-                  className="ml-3 text-[13px] font-oswald tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap mt-0.5 flex-shrink-0"
-                >
-                  SEARCH...
-                </motion.span>
-              </motion.button>
-
-              {/* Logged Out Actions: LOG IN link + JOIN US CTA */}
               {currentUser ? (
                 <div className="relative hidden sm:block">
                   <motion.button

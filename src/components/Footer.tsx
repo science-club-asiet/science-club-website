@@ -1,9 +1,9 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { Atom, Globe, MessageCircle, Share2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { Atom, MapPin, Mail, Clock, Globe, MessageCircle, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const LINK_MAP: Record<string, string> = {
@@ -11,14 +11,10 @@ const LINK_MAP: Record<string, string> = {
   "First Team": "/info/execom",
   "Club History": "/info/about",
   "Join The Board": "/login?mode=signup",
-  "My Account": "/admin",
+  "My Account": "/account",
   "Events & Experiences": "/events",
   "Resources": "/info/mission",
-  "Campus Tour": "/info/about",
-  "Legal Notice": "/info/about",
-  "Privacy Policy": "/info/about",
-  "Help Center": "/login?mode=signup",
-  "Cookie Preferences": "/info/about",
+  "Contact Us": "/#contact",
 };
 
 const footerLinks = [
@@ -28,140 +24,180 @@ const footerLinks = [
   },
   {
     heading: "Explore",
-    links: ["My Account", "Events & Experiences", "Resources", "Campus Tour"],
-  },
-  {
-    heading: "Help",
-    links: ["Legal Notice", "Privacy Policy", "Help Center", "Cookie Preferences"],
+    links: ["My Account", "Events & Experiences", "Resources", "Contact Us"],
   },
 ];
 
 export function Footer() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [subState, setSubState] = useState<"idle" | "done" | "error">("idle");
+  const [firstTeamLink, setFirstTeamLink] = useState("/info/execom");
 
-  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formEl = e.currentTarget;
-    if ((formEl.querySelector<HTMLInputElement>("#nl_hp")?.value ?? "").trim()) return; // honeypot
-    const email = (formEl.querySelector<HTMLInputElement>("#nl_email")?.value ?? "").trim();
-    if (!email) return;
-    const { error } = await createClient().from("newsletter_subscribers").insert({ email });
-    // Duplicate email (already subscribed) counts as success.
-    if (error && error.code !== "23505") {
-      setSubState("error");
-      return;
-    }
-    formEl.reset();
-    setSubState("done");
-  };
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("execom_members")
+      .select("term")
+      .order("term", { ascending: true })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data[0]?.term) {
+          setFirstTeamLink(`/info/execom`);
+        }
+      });
+  }, []);
 
   return (
-    <footer ref={ref} className="bg-navy pt-24 pb-12 font-inter text-white">
-      <div className="container mx-auto px-4 lg:px-6">
+    <footer className="bg-navy pt-20 pb-12 font-inter text-white border-t border-white/10 overflow-hidden">
+      <div className="container mx-auto px-4 lg:px-8">
 
-        {/* Top: Logo + Social */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-12 mb-12"
-        >
-          <Link href="/" className="flex items-center gap-4 group mb-8 md:mb-0">
-            <Atom className="w-12 h-12 text-red transition-transform duration-700 group-hover:rotate-180" />
-            <span className="font-oswald text-4xl uppercase font-bold tracking-wide group-hover:text-red transition-colors duration-300">
-              Science Club
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <span className="font-oswald uppercase text-lg hidden md:block opacity-60 mr-4 tracking-wider">
-              Follow Us
-            </span>
-            {[Globe, MessageCircle, Share2].map((Icon, i) => (
-              <motion.a
-                key={i}
-                href="#"
-                className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-navy transition-colors duration-300"
-                whileHover={{ scale: 1.1, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 18 }}
-              >
-                <Icon className="w-5 h-5" />
-              </motion.a>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Main Links Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          {footerLinks.map((col, ci) => (
-            <motion.div
-              key={col.heading}
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: ci * 0.08 }}
-            >
-              <h4 className="font-oswald text-xl uppercase font-bold mb-6 tracking-wider text-white/50">
-                {col.heading}
-              </h4>
-              <ul className="space-y-4">
-                {col.links.map((label) => (
-                  <li key={label}>
-                    <Link
-                      href={LINK_MAP[label] || "/"}
-                      className="group flex items-center gap-2 opacity-70 hover:opacity-100 font-medium transition-all duration-200 hover:text-red"
-                    >
-                      <span className="w-0 h-[1px] bg-red group-hover:w-4 transition-all duration-300 ease-out" />
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
-
-          {/* Newsletter */}
+        {/* Main 4-Column Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-16 items-start">
+          
+          {/* Brand & Mission Column (4/12) */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.28 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-4 flex flex-col justify-between"
+          >
+            <div>
+              <Link href="/" className="flex items-center gap-4 group mb-6 w-fit">
+                <Atom className="w-12 h-12 text-red transition-transform duration-700 group-hover:rotate-180" />
+                <span className="font-oswald text-3xl sm:text-4xl uppercase font-bold tracking-wide group-hover:text-red transition-colors duration-300">
+                  Science Club
+                </span>
+              </Link>
+              <p className="text-white/70 text-sm leading-relaxed max-w-sm font-medium mb-6">
+                Empowering student innovators, scientific researchers, and technology pioneers through hands-on labs, guest lectures, and interdisciplinary engineering challenges at ASIET.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 font-oswald uppercase tracking-widest w-fit">
+                <span className="w-2 h-2 rounded-full bg-red animate-pulse" />
+                EST. 2018 • ASIET KALADY
+              </div>
+
+              <div className="flex items-center gap-2">
+                {[Globe, MessageCircle, Share2].map((Icon, i) => (
+                  <motion.a
+                    key={i}
+                    href="#"
+                    aria-label="Social Link"
+                    className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:bg-white hover:text-navy transition-colors duration-300"
+                    whileHover={{ scale: 1.15, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </motion.a>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Science Club Links (2/12) */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-2"
           >
             <h4 className="font-oswald text-xl uppercase font-bold mb-6 tracking-wider text-white/50">
-              Newsletter
+              Science Club
             </h4>
-            <p className="opacity-60 mb-6 font-medium text-sm leading-relaxed">
-              Subscribe for the latest campus science news and tech updates.
-            </p>
-            <form onSubmit={handleSubscribe} className="flex w-full rounded-2xl overflow-hidden border border-white/10 focus-within:border-red transition-colors duration-300">
-              <input id="nl_hp" name="company" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-              <input
-                id="nl_email"
-                type="email"
-                required
-                placeholder="Enter your email"
-                className="bg-white/5 px-4 py-3 outline-none focus:bg-white/10 transition-colors flex-1 min-w-0 text-sm"
-              />
-              <motion.button
-                type="submit"
-                className="bg-red hover:bg-white hover:text-navy transition-colors px-6 font-oswald uppercase tracking-wider font-bold text-sm"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                Go
-              </motion.button>
-            </form>
-            {subState === "done" && <p className="text-xs mt-3 text-white/60">Thanks — you&apos;re subscribed.</p>}
-            {subState === "error" && <p className="text-xs mt-3 text-red">Couldn&apos;t subscribe. Try again.</p>}
+            <ul className="space-y-4">
+              {footerLinks[0].links.map((label) => {
+                const href = label === "First Team" ? firstTeamLink : LINK_MAP[label] || "/";
+                return (
+                  <li key={label}>
+                    <Link
+                      href={href}
+                      className="group flex items-center gap-2 text-white/70 hover:text-white font-medium text-sm transition-all duration-200 hover:text-red"
+                    >
+                      <span className="w-0 h-[1px] bg-red group-hover:w-4 transition-all duration-300 ease-out" />
+                      <span className="transform group-hover:translate-x-1 transition-transform duration-200">{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </motion.div>
+
+          {/* Explore Links (2/12) */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-2"
+          >
+            <h4 className="font-oswald text-xl uppercase font-bold mb-6 tracking-wider text-white/50">
+              Explore
+            </h4>
+            <ul className="space-y-4">
+              {footerLinks[1].links.map((label) => {
+                const href = LINK_MAP[label] || "/";
+                return (
+                  <li key={label}>
+                    <Link
+                      href={href}
+                      className="group flex items-center gap-2 text-white/70 hover:text-white font-medium text-sm transition-all duration-200 hover:text-red"
+                    >
+                      <span className="w-0 h-[1px] bg-red group-hover:w-4 transition-all duration-300 ease-out" />
+                      <span className="transform group-hover:translate-x-1 transition-transform duration-200">{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </motion.div>
+
+          {/* Headquarters & Contact Summary Card (4/12) */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-4 bg-white/5 border border-white/10 p-6 sm:p-7 rounded-2xl flex flex-col gap-4 shadow-xl hover:border-white/20 transition-colors"
+          >
+            <h4 className="font-oswald text-lg uppercase font-bold tracking-wider text-white flex items-center gap-2 border-b border-white/10 pb-3">
+              <MapPin className="w-4 h-4 text-red" />
+              Headquarters
+            </h4>
+            
+            <div className="space-y-3.5 text-xs text-white/70 font-medium">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-white/40 shrink-0 mt-0.5" />
+                <span>Adi Shankara Institute of Engineering and Technology, Kalady, Kerala - 683574</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-white/40 shrink-0" />
+                <a href="mailto:scienceclub@adishankara.ac.in" className="hover:text-red transition-colors">
+                  scienceclub@adishankara.ac.in
+                </a>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-white/40 shrink-0" />
+                <span>Mon - Fri • 9:00 AM - 4:00 PM</span>
+              </div>
+            </div>
+          </motion.div>
+
         </div>
 
         {/* Copyright */}
-        <div className="flex flex-col md:flex-row items-center justify-center pt-8 border-t border-white/10 gap-4 text-sm opacity-40">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+          className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/10 gap-4 text-xs opacity-50"
+        >
           <p>&copy; {new Date().getFullYear()} Science Club ASIET. All rights reserved.</p>
-        </div>
+          <p className="font-oswald uppercase tracking-widest text-[11px]">Driven by Curiosity & Technical Excellence</p>
+        </motion.div>
 
       </div>
     </footer>

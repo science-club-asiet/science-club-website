@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSessionProfile } from "@/lib/admin/auth";
-import { Calendar, ClipboardList, Inbox, Users, Plus, ArrowRight, type LucideIcon } from "lucide-react";
+import { Calendar, ClipboardList, Plus, ArrowRight, type LucideIcon } from "lucide-react";
 import { Card, EmptyState, btnGhostCls } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
@@ -40,15 +40,12 @@ export default async function Home() {
   const { profile, supabase } = await getSessionProfile();
   const nowIso = new Date().toISOString();
 
-  const [pendingApps, upcoming, draftPosts, draftEvents, members] = await Promise.all([
-    supabase.from("membership_applications").select("id, name, email, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
+  const [upcoming, draftPosts, draftEvents] = await Promise.all([
     supabase.from("events").select("id, title, event_date").gt("event_date", nowIso).order("event_date", { ascending: true }).limit(5),
     supabase.from("posts").select("id, title").eq("status", "draft").limit(4),
     supabase.from("events").select("id, title").eq("is_published", false).limit(4),
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
   ]);
 
-  const pending = pendingApps.data ?? [];
   const events = upcoming.data ?? [];
   const drafts = [
     ...(draftPosts.data ?? []).map((d) => ({ id: d.id, title: d.title, type: "Post" })),
@@ -72,20 +69,13 @@ export default async function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <Panel title="Pending applications" href="/admin/applications" icon={Inbox} count={pending.length}>
-          {pending.length === 0 ? <div className="p-3"><EmptyState title="Nothing to review 🎉" /></div> :
-            pending.map((a) => <Row key={a.id} title={a.name} sub={a.email} right={fmt(a.created_at)} />)}
-        </Panel>
-        <Panel title="Drafts to finish" href="/admin/posts" icon={ClipboardList} count={drafts.length}>
-          {drafts.length === 0 ? <div className="p-3"><EmptyState title="No drafts" /></div> :
-            drafts.map((d) => <Row key={d.type + d.id} title={d.title} sub={d.type} right="Draft" />)}
-        </Panel>
         <Panel title="Upcoming events" href="/admin/events" icon={Calendar} count={events.length}>
           {events.length === 0 ? <div className="p-3"><EmptyState title="No upcoming events" /></div> :
             events.map((e) => <Row key={e.id} title={e.title} right={fmt(e.event_date)} />)}
         </Panel>
-        <Panel title="Members" href="/admin/members" icon={Users} count={members.count ?? 0}>
-          <p className="px-5 py-6 text-sm text-gray-500">Manage roles, membership and access.</p>
+        <Panel title="Drafts to finish" href="/admin/posts" icon={ClipboardList} count={drafts.length}>
+          {drafts.length === 0 ? <div className="p-3"><EmptyState title="No drafts" /></div> :
+            drafts.map((d) => <Row key={d.type + d.id} title={d.title} sub={d.type} right="Draft" />)}
         </Panel>
       </div>
     </div>

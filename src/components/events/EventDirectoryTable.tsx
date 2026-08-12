@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { ScienceEvent } from "@/lib/events";
+import { ScienceEvent, formatCategoryDisplayName } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
 interface EventDirectoryTableProps {
@@ -54,7 +54,7 @@ export function EventDirectoryTable({ events, onSelect }: EventDirectoryTablePro
                     {event.status}
                   </span>
                   <span className="text-[9px] font-oswald uppercase font-bold tracking-widest text-navy/50 group-hover:text-white/60">
-                    {event.type}
+                    {formatCategoryDisplayName(event.type)}
                   </span>
                 </div>
                 <h3 className="font-oswald text-xl font-bold uppercase tracking-tight group-hover:text-white transition-colors">
