@@ -159,22 +159,87 @@ export async function setApplicationStage(
 
 // ─── Members / profiles ─────────────────────────────────────────────────────
 
+import { recordProfileAuditLog, type ProfileChange } from "@/lib/admin/audit-logger";
+
 export async function setMembership(profileId: string, isMember: boolean): Promise<void> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user, profile: adminProfile } = await requireAdmin();
+
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("full_name, is_member")
+    .eq("id", profileId)
+    .single();
+
   await supabase.from("profiles").update({ is_member: isMember }).eq("id", profileId);
+
+  const action = isMember ? "GRANT_PREMIUM" : "REVOKE_PREMIUM";
+  const summary = isMember
+    ? "Granted Premium / Paid Membership status"
+    : "Revoked Premium / Paid Membership status";
+
+  await recordProfileAuditLog({
+    adminEmail: adminProfile?.email || user.email || "Admin",
+    adminId: user.id,
+    targetId: profileId,
+    targetName: current?.full_name || "Member",
+    action,
+    summary,
+    changes: [
+      {
+        field: "Premium Membership",
+        from: current?.is_member ? "Active Premium" : "Standard User",
+        to: isMember ? "Active Premium" : "Standard User",
+      },
+    ],
+  });
+
   revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${profileId}`);
 }
 
 export async function setRole(profileId: string, formData: FormData): Promise<void> {
-  const { supabase } = await requireOwner();
+  const { supabase, user, profile: adminProfile } = await requireOwner();
   const role = String(formData.get("role") ?? "member");
+
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("full_name, role")
+    .eq("id", profileId)
+    .single();
+
   await supabase.from("profiles").update({ role }).eq("id", profileId);
+
+  if (current && current.role !== role) {
+    await recordProfileAuditLog({
+      adminEmail: adminProfile?.email || user.email || "Owner",
+      adminId: user.id,
+      targetId: profileId,
+      targetName: current?.full_name || "Member",
+      action: "CHANGE_ROLE",
+      summary: `Changed system role from '${current.role}' to '${role}'`,
+      changes: [
+        {
+          field: "System Role",
+          from: current.role,
+          to: role,
+        },
+      ],
+    });
+  }
+
   revalidatePath("/admin/members");
   revalidatePath(`/admin/members/${profileId}`);
 }
 
 export async function updateProfile(profileId: string, formData: FormData): Promise<{ error?: string }> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user, profile: adminProfile } = await requireAdmin();
+
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("full_name, department, year_of_study")
+    .eq("id", profileId)
+    .single();
+
   const full_name = String(formData.get("full_name") ?? "").trim() || null;
   const department = String(formData.get("department") ?? "").trim() || null;
   const year_of_study = String(formData.get("year_of_study") ?? "").trim() || null;
@@ -185,19 +250,75 @@ export async function updateProfile(profileId: string, formData: FormData): Prom
     .eq("id", profileId);
     
   if (error) return { error: error.message };
+
+  const changes: ProfileChange[] = [];
+  if (current) {
+    if ((current.full_name || null) !== full_name) {
+      changes.push({ field: "Full Name", from: current.full_name, to: full_name });
+    }
+    if ((current.department || null) !== department) {
+      changes.push({ field: "Department", from: current.department, to: department });
+    }
+    if ((current.year_of_study || null) !== year_of_study) {
+      changes.push({ field: "Year of Study", from: current.year_of_study, to: year_of_study });
+    }
+  }
+
+  if (changes.length > 0) {
+    const summaryList = changes.map(c => `${c.field}: '${c.from || "—"}' → '${c.to || "—"}'`).join(", ");
+    await recordProfileAuditLog({
+      adminEmail: adminProfile?.email || user.email || "Admin",
+      adminId: user.id,
+      targetId: profileId,
+      targetName: full_name || current?.full_name || "Member",
+      action: "UPDATE_PROFILE",
+      summary: `Updated profile details (${summaryList})`,
+      changes,
+    });
+  }
+
   revalidatePath(`/admin/members`);
   revalidatePath(`/admin/members/${profileId}`);
   return {};
 }
 
 export async function updateTags(profileId: string, tags: string[]): Promise<{ error?: string }> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user, profile: adminProfile } = await requireAdmin();
+
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("full_name, tags")
+    .eq("id", profileId)
+    .single();
+
   const { error } = await supabase
     .from("profiles")
     .update({ tags })
     .eq("id", profileId);
     
   if (error) return { error: error.message };
+
+  const oldTagsStr = (current?.tags || []).join(", ") || "none";
+  const newTagsStr = tags.join(", ") || "none";
+
+  if (oldTagsStr !== newTagsStr) {
+    await recordProfileAuditLog({
+      adminEmail: adminProfile?.email || user.email || "Admin",
+      adminId: user.id,
+      targetId: profileId,
+      targetName: current?.full_name || "Member",
+      action: "UPDATE_TAGS",
+      summary: `Updated member tags from [${oldTagsStr}] to [${newTagsStr}]`,
+      changes: [
+        {
+          field: "Tags",
+          from: oldTagsStr,
+          to: newTagsStr,
+        },
+      ],
+    });
+  }
+
   revalidatePath(`/admin/members`);
   revalidatePath(`/admin/members/${profileId}`);
   return {};

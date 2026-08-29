@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { SINGLETONS } from "@/lib/admin/singletons";
 import { saveSingletonAction } from "@/lib/admin/actions";
 import { EditorForm } from "@/components/admin/EditorForm";
+import { AdminBackButton } from "@/components/admin/AdminBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function SiteContentPage() {
 
   return (
     <div>
+      <AdminBackButton href="/admin/website" label="Back to Website Hub" />
       <h1 className="font-oswald text-3xl font-bold uppercase mb-2">Site Content</h1>
       <p className="text-gray-500 text-sm mb-8">Hero copy, marquee, contact, location, footer and the current execom term.</p>
       <div className="grid gap-6 max-w-2xl">

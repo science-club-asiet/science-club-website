@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
 import { setAttendance } from "@/lib/admin/actions";
+import { AdminBackButton } from "@/components/admin/AdminBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +31,7 @@ export default async function RegistrationsPage({
 
   return (
     <div>
-      <Link href="/admin/events" className="text-xs font-semibold uppercase tracking-widest text-navy/50 hover:text-red">
-        ← Events
-      </Link>
+      <AdminBackButton href="/admin/events" label="Back to Events" />
       <div className="flex items-center justify-between gap-4 mt-3 mb-8">
         <div>
           <h1 className="font-oswald text-3xl font-bold uppercase">{event.title}</h1>

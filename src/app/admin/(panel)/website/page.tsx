@@ -6,7 +6,6 @@ export const dynamic = "force-dynamic";
 const GROUPS: { title: string; items: [string, string, string][] }[] = [
   { title: "Global", items: [
     ["Site content", "Hero, marquee, contact, location, footer, term", "/admin/site"],
-    ["Teams", "Home Execom carousel headers", "/admin/teams"],
   ]},
   { title: "Mission page", items: [
     ["Pillars", "Core Pillars", "/admin/pillars"],

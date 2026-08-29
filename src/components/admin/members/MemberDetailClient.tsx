@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, User, Calendar, Award, Shield, Check, X, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, User, Calendar, Award, Shield, Check, X, Download, Sparkles, History } from "lucide-react";
 import { updateProfile, updateTags, setRole, setMembership } from "@/lib/admin/actions";
+import { toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
+import { DEPARTMENTS, YEARS } from "@/lib/constants";
+import type { ParsedAuditLog } from "@/lib/admin/audit-logger";
 
 export type DetailProfile = { id: string; full_name: string | null; email: string; department: string | null; year_of_study: string | null; role: string; is_member: boolean; tags: string[] | null };
 export type Registration = {
@@ -20,13 +24,54 @@ export type Registration = {
   } | null;
 };
 
-export default function MemberDetailClient({ profile, registrations, isOwner }: { profile: DetailProfile, registrations: Registration[], isOwner: boolean }) {
+export default function MemberDetailClient({
+  profile,
+  registrations,
+  isOwner,
+}: {
+  profile: DetailProfile;
+  registrations: Registration[];
+  isOwner: boolean;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [tab, setTab] = useState<"profile" | "participation" | "certificates" | "controls">("profile");
+
+  // Resolve matching department value for select dropdown
+  const currentDept = DEPARTMENTS.find(
+    (d) => d.name === profile.department || d.code === profile.department
+  )?.name || profile.department || "";
+
+  // Resolve matching year value for select dropdown
+  const currentYear = YEARS.find((y) => y === profile.year_of_study)?.toString() || profile.year_of_study || "";
   
+  // Controlled form state
+  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [department, setDepartment] = useState(currentDept);
+  const [yearOfStudy, setYearOfStudy] = useState(currentYear);
+
   // Tag editor state
   const [tags, setTags] = useState<string[]>(profile.tags || []);
   const [newTag, setNewTag] = useState("");
   const [isSavingTags, setIsSavingTags] = useState(false);
+
+  const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("full_name", fullName);
+    formData.append("department", department);
+    formData.append("year_of_study", yearOfStudy);
+
+    startTransition(async () => {
+      const res = await updateProfile(profile.id, formData);
+      if (res?.error) {
+        toast("Failed to update profile: " + res.error, "error");
+      } else {
+        toast("Profile updated successfully!", "success");
+        router.refresh();
+      }
+    });
+  };
 
   const handleAddTag = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,23 +118,30 @@ export default function MemberDetailClient({ profile, registrations, isOwner }: 
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="font-oswald text-3xl font-bold uppercase">{profile.full_name || "Unknown Member"}</h1>
+          <h1 className="font-oswald text-3xl font-bold uppercase flex items-center gap-3">
+            <span>{profile.full_name || "Unknown Member"}</span>
+            {profile.is_member && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-oswald uppercase tracking-widest font-bold bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                <Sparkles className="w-3 h-3 text-amber-600" /> Premium Member
+              </span>
+            )}
+          </h1>
           <p className="text-gray-500 text-sm">{profile.email}</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 gap-6 overflow-x-auto">
-        <button onClick={() => setTab("profile")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap", tab === "profile" ? "border-navy text-navy" : "border-transparent text-gray-500 hover:text-gray-900")}>
+        <button onClick={() => setTab("profile")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer", tab === "profile" ? "border-navy text-navy font-bold" : "border-transparent text-gray-500 hover:text-gray-900")}>
           <span className="flex items-center gap-2"><User className="w-4 h-4" /> Profile & Tags</span>
         </button>
-        <button onClick={() => setTab("participation")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap", tab === "participation" ? "border-navy text-navy" : "border-transparent text-gray-500 hover:text-gray-900")}>
+        <button onClick={() => setTab("participation")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer", tab === "participation" ? "border-navy text-navy font-bold" : "border-transparent text-gray-500 hover:text-gray-900")}>
           <span className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Participation</span>
         </button>
-        <button onClick={() => setTab("certificates")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap", tab === "certificates" ? "border-navy text-navy" : "border-transparent text-gray-500 hover:text-gray-900")}>
+        <button onClick={() => setTab("certificates")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer", tab === "certificates" ? "border-navy text-navy font-bold" : "border-transparent text-gray-500 hover:text-gray-900")}>
           <span className="flex items-center gap-2"><Award className="w-4 h-4" /> Certificates</span>
         </button>
-        <button onClick={() => setTab("controls")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap", tab === "controls" ? "border-navy text-navy" : "border-transparent text-gray-500 hover:text-gray-900")}>
+        <button onClick={() => setTab("controls")} className={cn("pb-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer", tab === "controls" ? "border-navy text-navy font-bold" : "border-transparent text-gray-500 hover:text-gray-900")}>
           <span className="flex items-center gap-2"><Shield className="w-4 h-4" /> Controls</span>
         </button>
       </div>
@@ -100,20 +152,55 @@ export default function MemberDetailClient({ profile, registrations, isOwner }: 
         {tab === "profile" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Form */}
-            <form action={async (fd) => { await updateProfile(profile.id, fd); }} className="space-y-4">
+            <form onSubmit={handleProfileSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Full Name</label>
-                <input name="full_name" defaultValue={profile.full_name || ""} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-navy" />
+                <input
+                  name="full_name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-navy"
+                />
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Department</label>
-                <input name="department" defaultValue={profile.department || ""} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-navy" />
+                <select
+                  name="department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-navy cursor-pointer"
+                >
+                  <option value="">Select Department...</option>
+                  {DEPARTMENTS.map((d) => (
+                    <option key={d.code} value={d.name}>
+                      {d.name} ({d.code})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Year of Study</label>
-                <input name="year_of_study" defaultValue={profile.year_of_study || ""} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-navy" />
+                <select
+                  name="year_of_study"
+                  value={yearOfStudy}
+                  onChange={(e) => setYearOfStudy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-navy cursor-pointer"
+                >
+                  <option value="">Select Year...</option>
+                  {YEARS.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <button className="bg-navy text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors">Save Profile</button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="bg-navy text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isPending ? "Saving..." : "Save Profile"}
+              </button>
             </form>
 
             {/* Tags */}
@@ -254,7 +341,7 @@ export default function MemberDetailClient({ profile, registrations, isOwner }: 
                     <select name="role" defaultValue={profile.role} className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white">
                       {["member", "execom", "admin", "owner"].map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
-                    <button className="text-xs font-bold uppercase tracking-widest bg-navy text-white px-3 py-1.5 rounded-lg hover:bg-navy/90 transition-colors">Set</button>
+                    <button className="text-xs font-bold uppercase tracking-widest bg-navy text-white px-3 py-1.5 rounded-lg hover:bg-navy/90 transition-colors cursor-pointer">Set</button>
                   </div>
                 </form>
               )}

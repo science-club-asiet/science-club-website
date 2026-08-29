@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { RESOURCES, reorderSortField } from "@/lib/admin/resources";
 import { requireAdmin } from "@/lib/admin/auth";
 import { SortableList, type Row } from "@/components/admin/SortableList";
+import { AdminBackButton } from "@/components/admin/AdminBackButton";
 
 export const dynamic = "force-dynamic";
+
+const WEBSITE_RESOURCE_KEYS = new Set(["pillars", "goals", "impact_stories", "story_eras", "perks", "faqs", "achievements"]);
 
 export default async function ResourceListPage({
   params,
@@ -33,8 +36,13 @@ export default async function ResourceListPage({
     };
   });
 
+  const isWebsiteResource = WEBSITE_RESOURCE_KEYS.has(res.key);
+  const backHref = isWebsiteResource ? "/admin/website" : "/admin";
+  const backLabel = isWebsiteResource ? "Back to Website Hub" : "Back to Dashboard";
+
   return (
     <div>
+      <AdminBackButton href={backHref} label={backLabel} />
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-oswald text-3xl font-bold uppercase">{res.label}</h1>
         {!res.hideCreate && (

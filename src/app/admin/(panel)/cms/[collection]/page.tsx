@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCollectionBySlug, getItems, deleteItem } from "@/lib/admin/cmsActions";
 import { PageHeader, Card, EmptyState, btnPrimaryCls, btnGhostCls, rowLinkCls, badgeCls } from "@/components/ui/primitives";
+import { AdminBackButton } from "@/components/admin/AdminBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function CollectionItemsPage({ params }: { params: Promise<
 
   return (
     <div className="max-w-4xl">
+      <AdminBackButton href="/admin/cms" label="Back to Collections" />
       <PageHeader
         title={c.collection.name}
         subtitle={`${items.length} ${items.length === 1 ? "entry" : "entries"}`}

@@ -49,6 +49,7 @@ export default async function SettingsPage() {
     { data: recentForms },
     { data: recentPages },
     { data: recentSiteContent },
+    { data: auditLogs },
   ] = await Promise.all([
     supabase.from("site_content").select("*"),
     supabase
@@ -64,6 +65,7 @@ export default async function SettingsPage() {
     supabase.from("forms").select("id, title, created_at, updated_at").order("updated_at", { ascending: false }).limit(10),
     supabase.from("pages").select("id, title, slug, updated_at").order("updated_at", { ascending: false }).limit(10),
     supabase.from("site_content").select("key, updated_at").order("updated_at", { ascending: false }).limit(10),
+    supabase.from("tasks").select("id, title, created_by, created_at").eq("entity_type", "profile_audit").order("created_at", { ascending: false }).limit(20),
   ]);
 
   const dbLatency = Date.now() - startTime;
@@ -110,6 +112,41 @@ export default async function SettingsPage() {
 
   // Build comprehensive dynamic activity stream across all platform entities
   const activities: ActivityItem[] = [
+    ...(auditLogs ?? []).map((log) => {
+      let actionText = "User Profile Updated";
+      let actorName = fallbackAdminName;
+      let actorRole = adminRole;
+
+      try {
+        const payload = JSON.parse(log.title);
+        const name = payload.targetName || "User";
+        if (payload.action === "GRANT_PREMIUM") {
+          actionText = `Granted Membership '${name}'`;
+        } else if (payload.action === "REVOKE_PREMIUM") {
+          actionText = `Revoked Membership '${name}'`;
+        } else if (payload.action === "CHANGE_ROLE") {
+          actionText = `Updated Role '${name}'`;
+        } else if (payload.action === "UPDATE_TAGS") {
+          actionText = `Updated Tags '${name}'`;
+        } else {
+          actionText = `Updated Member '${name}'`;
+        }
+
+        if (payload.adminEmail) {
+          actorName = getDisplayName(null, payload.adminEmail, fallbackAdminName);
+        }
+      } catch {
+        actionText = log.title;
+      }
+
+      return {
+        action: actionText,
+        user: actorName,
+        userRole: actorRole,
+        category: "User",
+        created_at: log.created_at,
+      };
+    }),
     ...(recentEvents ?? []).map((e) => {
       const actor = resolveActor(e.profiles, e.created_by, fallbackAdminName, adminRole);
       return {
