@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import gsap from "gsap";
 import { Globe, MessageCircle, Share2 } from "lucide-react";
@@ -18,12 +19,19 @@ const LINK_MAP: Record<string, string> = {
 };
 
 export function Footer() {
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith("/admin") || pathname.startsWith("/account");
+
   const [firstTeamLink, setFirstTeamLink] = useState("/info/execom");
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
   const footerRef = useRef<HTMLElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  if (isDashboard) {
+    return null;
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -90,10 +98,10 @@ export function Footer() {
       {/* 100% Opaque Watts Arched / Pill Card Container - Spans w-screen with 0px left margin */}
       <div
         ref={cardRef}
-        className="fixed bottom-0 left-0 bg-[#DA291C] text-white opacity-100 rounded-t-[50px] sm:rounded-t-[70px] lg:rounded-l-[220px] lg:rounded-r-none p-6 sm:p-10 lg:pl-20 lg:pr-12 lg:py-12 overflow-hidden shadow-[0_-25px_60px_rgba(0,0,0,0.6)] w-screen min-w-full ml-0 mr-0 flex flex-col justify-between gap-8 z-[100] pointer-events-auto"
+        className="fixed -bottom-4 left-0 bg-[#DA291C] text-white opacity-100 rounded-t-[42px] sm:rounded-t-[56px] lg:rounded-l-[180px] lg:rounded-r-none p-5 sm:p-7 lg:pl-16 lg:pr-10 lg:py-8 overflow-hidden shadow-[0_-20px_48px_rgba(0,0,0,0.5)] w-screen min-w-full ml-0 mr-0 flex flex-col justify-between gap-6 z-[100] pointer-events-auto"
       >
         {/* Top & Middle Section: 4-column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8 items-start relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-6 items-start relative z-10">
           
           {/* Tagline & Copyright (4 cols on lg) */}
           <div className="lg:col-span-4 space-y-3">

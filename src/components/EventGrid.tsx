@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ScienceEvent } from "@/lib/events";
@@ -24,12 +25,33 @@ interface EventGridProps {
 }
 
 export function EventGrid({ events, searchQuery = "" }: EventGridProps) {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
   const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
   const [viewMode, setViewMode] = useState<ViewMode>("GRID");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedEvent, setSelectedEvent] = useState<ScienceEvent | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [selectedTerm, setSelectedTerm] = useState<string>("ALL");
+
+  // Sync category state from URL query parameter (e.g. /events?category=workshop)
+  useEffect(() => {
+    if (categoryParam) {
+      const paramUpper = categoryParam.toUpperCase().trim();
+      const match = availableCategories.find(
+        (c) => c.toUpperCase() === paramUpper
+      );
+      if (match) {
+        setSelectedCategory(match);
+      } else if (paramUpper) {
+        setSelectedCategory(paramUpper);
+      }
+      setCurrentPage(1);
+    } else {
+      setSelectedCategory("ALL");
+    }
+  }, [categoryParam]);
 
   // Available categories that actually have events
   const availableCategories = useMemo(() => {

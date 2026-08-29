@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Science Club Platform — Complete Consolidated Database Schema
--- Aligned to SRS & System Design v1.0 and all migrations (0001 through 0016).
+-- Aligned to SRS & System Design v1.0 and all migrations (0001 through 0019).
 --
 -- Storage: images live in UploadThing (per SRS) — every *_url / img / photo
 -- column stores the URL string. Supabase never stores the raw file itself.
@@ -19,7 +19,7 @@ create extension if not exists "pgcrypto";  -- gen_random_uuid()
 
 -- ─── Enums ──────────────────────────────────────────────────────────────────
 do $$ begin create type user_role         as enum ('member','execom','admin','owner');                exception when duplicate_object then null; end $$;
-do $$ begin create type event_category    as enum ('talk','workshop','game','trip');                  exception when duplicate_object then null; end $$;
+do $$ begin create type event_category    as enum ('talk','workshop','game','trip','hackathon');      exception when duplicate_object then null; end $$;
 do $$ begin create type execom_role_type  as enum ('student','faculty_advisor');                      exception when duplicate_object then null; end $$;
 do $$ begin create type post_type         as enum ('news','article','paper','blog','announcement');   exception when duplicate_object then null; end $$;
 do $$ begin create type post_status       as enum ('draft','published','archived');                   exception when duplicate_object then null; end $$;
@@ -37,7 +37,7 @@ end;
 $$;
 
 -- ============================================================================
--- profiles (mirrors auth.users; holds role, membership, and member CRM tags)
+-- profiles (mirrors auth.users; holds role, membership, member_id, and CRM tags)
 -- ============================================================================
 create table if not exists public.profiles (
   id                     uuid primary key references auth.users(id) on delete cascade,
@@ -48,10 +48,28 @@ create table if not exists public.profiles (
   role                   user_role   not null default 'member',
   is_member              boolean     not null default false,   -- paid annual fee → discounted pricing
   membership_expires_at  date,
+  member_id              text unique,
   tags                   text[]      not null default '{}',
   created_at             timestamptz not null default now(),
   updated_at             timestamptz not null default now()
 );
+
+-- Function to generate a unique Member ID in format SC-YYYY-XXXXX
+create or replace function public.generate_unique_member_id()
+returns text language plpgsql as $$
+declare
+  new_id text;
+  done boolean := false;
+begin
+  while not done loop
+    new_id := 'SC-' || to_char(now(), 'YYYY') || '-' || lpad(floor(random() * 90000 + 10000)::text, 5, '0');
+    if not exists (select 1 from public.profiles where member_id = new_id) then
+      done := true;
+    end if;
+  end loop;
+  return new_id;
+end;
+$$;
 
 -- Role checks. SECURITY DEFINER so they read profiles without tripping RLS recursion.
 create or replace function public.is_owner()
@@ -69,17 +87,18 @@ returns boolean language sql security definer stable set search_path = public as
   select exists (select 1 from public.profiles where id = auth.uid() and role in ('execom','admin','owner'));
 $$;
 
--- First signup → owner, everyone else → member. Auto-creates the profile row.
+-- First signup → owner, everyone else → member. Auto-creates the profile row with member_id.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, email, full_name, role)
+  insert into public.profiles (id, email, full_name, role, member_id)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'),
     case when (select count(*) from public.profiles) = 0
-         then 'owner'::user_role else 'member'::user_role end
+         then 'owner'::user_role else 'member'::user_role end,
+    public.generate_unique_member_id()
   );
   return new;
 end;
@@ -90,7 +109,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Non-admins may edit their own profile but NOT their role / membership fields.
+-- Non-admins may edit their own profile but NOT their role, membership, or member_id fields.
 create or replace function public.protect_profile_columns()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -101,6 +120,9 @@ begin
     if new.is_member is distinct from old.is_member
        or new.membership_expires_at is distinct from old.membership_expires_at then
       raise exception 'Only admins can change membership status';
+    end if;
+    if new.member_id is distinct from old.member_id then
+      raise exception 'Only admins can change Member ID';
     end if;
   end if;
   new.updated_at = now();
@@ -171,6 +193,7 @@ create table if not exists public.event_categories (
   slug        text unique not null,
   tagline     text,
   sort_order  int not null default 0,
+  field_schema jsonb default '[]'::jsonb,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -290,7 +313,7 @@ create table if not exists public.events (
   id                   uuid primary key default gen_random_uuid(),
   title                text not null,
   slug                 text unique,
-  category             event_category not null default 'talk',
+  category             text not null default 'talk',
   description          text,
   event_date           timestamptz,
   location             text,
@@ -311,6 +334,12 @@ create table if not exists public.events (
   nexus_data           jsonb,
   registration_form_id uuid references public.forms(id) on delete set null,
   registration_code    text,                          -- optional access/join code
+  external_website_url text,
+  winners              jsonb not null default '[]'::jsonb,
+  requires_registration boolean not null default true,
+  custom_metadata      jsonb not null default '{}'::jsonb,
+  allowed_departments  text[] not null default '{}',
+  allowed_years        text[] not null default '{}',
   album_id             uuid references public.media_albums(id) on delete set null,
   is_published         boolean not null default true,
   created_by           uuid references public.profiles(id) on delete set null,

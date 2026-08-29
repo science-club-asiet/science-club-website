@@ -39,7 +39,7 @@ export const RESOURCES: Record<string, Resource> = {
     fields: [
       { name: "title", label: "Title", type: "text" },
       { name: "slug", label: "Slug", type: "text", help: "URL-safe id, e.g. ai-summit-26" },
-      { name: "category", label: "Category", type: "select", options: ["talk", "workshop", "game", "trip"] },
+      { name: "category", label: "Category", type: "select", options: ["talk", "workshop", "game", "trip", "hackathon"] },
       { name: "event_date", label: "Date & time", type: "date" },
       { name: "location", label: "Location", type: "text" },
       { name: "description", label: "Description", type: "textarea" },

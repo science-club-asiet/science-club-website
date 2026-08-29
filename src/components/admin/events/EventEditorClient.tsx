@@ -232,6 +232,7 @@ export function EventEditorClient({
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     fd.set("status", status);
+    fd.set("has_pricing", String(hasPricing));
     fd.set("registration_form_id", selectedFormId);
     fd.set("gallery_images_json", JSON.stringify(galleryImages));
     fd.set("requires_registration", String(requiresRegistration));

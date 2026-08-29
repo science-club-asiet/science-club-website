@@ -27,16 +27,16 @@ export function DossierCard({ member, index, onSelect }: { member: Member; index
 
   return (
     // Fluid vh constraints completely eliminate vertical cutoff on smaller 1080p laptop screens
-    <div 
+    <div
       onClick={() => onSelect?.(member)}
       className="w-[155px] sm:w-[175px] lg:w-[clamp(140px,20vh,230px)] flex-shrink-0 group flex flex-col snap-center cursor-pointer"
     >
-      
+
       {/* Perfect Square Aspect Ratio to save vertical height beautifully */}
       <div className="relative w-full aspect-square">
-        
+
         {/* The Clipped Image Layer */}
-        <div 
+        <div
           className="absolute inset-0 bg-gray-200 overflow-hidden transform-gpu"
           style={{ clipPath: "url(#dossier-cutout)" }}
         >
@@ -53,8 +53,8 @@ export function DossierCard({ member, index, onSelect }: { member: Member; index
 
         {/* Top-Left Nested Button */}
         {/* Pushed negatively to perfectly nest inside the white cavity without overlapping the image */}
-        <button 
-          aria-label={`View ${member.name}'s profile`} 
+        <button
+          aria-label={`View ${member.name}'s profile`}
           onClick={(e) => {
             e.stopPropagation();
             onSelect?.(member);
@@ -97,14 +97,14 @@ function TeamPanel({ team, onSelect }: { team: TeamWithMembers; onSelect: (m: Me
   return (
     // CSS clamps map directly to `vh` so the padding compresses perfectly on smaller screens
     <div className="w-full lg:w-screen flex-shrink-0 flex flex-col items-center justify-start h-auto lg:h-screen bg-[#FAF9F8] relative overflow-hidden py-24 lg:py-0 lg:pt-[clamp(5rem,12vh,8rem)] border-b lg:border-r border-gray-200/50">
-      
+
       {/* Aesthetic Background Numbers */}
       <span className="absolute top-[8%] left-1/2 -translate-x-1/2 font-oswald text-[16rem] lg:text-[18vw] xl:text-[22vw] font-bold text-gray-100/40 leading-none select-none pointer-events-none tracking-tighter mix-blend-multiply z-0">
         {team.label}
       </span>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 relative z-10 flex flex-col items-center h-full">
-        
+
         {/* Top Centered Header Block */}
         <div ref={inViewRef} className="text-center mb-10 lg:mb-[clamp(1.5rem,4vh,4rem)]">
           <div className="flex items-center justify-center gap-3 mb-2 lg:mb-[clamp(0.5rem,1.5vh,1rem)]">
@@ -165,9 +165,9 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
         scrollTrigger: {
           id: "execom-st",
           trigger: container,
-          start: "top top",
-          end: () => `+=${(panels - 1) * window.innerWidth}`,
-          scrub: 1.0,
+          start: "top 90%",
+          end: () => `+=${panels * window.innerWidth}`,
+          scrub: true,
           pin: true,
           pinSpacing: true,
           anticipatePin: 1,
@@ -186,12 +186,17 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
           scrollTrigger: {
             trigger: container,
             start: "top 10%",
-            end: () => `+=${((panels - 1) * window.innerWidth) + window.innerHeight * 0.8}`,
+            end: () => `+=${(panels * window.innerWidth) + window.innerHeight * 0.8}`,
             toggleActions: "play reverse play reverse",
             invalidateOnRefresh: true,
           },
         });
       }
+
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+        window.__lenis?.resize();
+      });
     });
 
     return () => mm.revert();
@@ -199,7 +204,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
 
   return (
     <section className="bg-[#FAF9F8]">
-      
+
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
           <clipPath id="dossier-cutout" clipPathUnits="objectBoundingBox">
@@ -213,7 +218,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
               C 0.08 1 0 0.92 0 0.85 
               L 0 0.26 
               C 0.15 0.26 0.26 0.15 0.26 0 
-              Z" 
+              Z"
             />
           </clipPath>
         </defs>
@@ -222,7 +227,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
       {/* ── Desktop: Horizontal Presentation Snapping timeline ── */}
       <div className="hidden lg:block border-t border-gray-200/50">
         <div ref={containerRef} className="h-screen w-full relative bg-[#FAF9F8] overflow-hidden">
-          
+
           <div className="absolute top-8 left-12 xl:left-20 z-40 flex items-center gap-4 text-navy/40 pointer-events-none">
             <span className="w-8 h-[2px] bg-navy/20" />
             <span className="font-oswald uppercase text-xs tracking-[0.25em] font-bold">Execom Roster</span>
@@ -233,7 +238,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
               <TeamPanel key={team.id} team={team} onSelect={(m) => setSelectedMember(m)} />
             ))}
           </div>
-          
+
         </div>
       </div>
 
@@ -258,7 +263,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
 
       {/* Profile Detail Popup Modal */}
       <ExecomMemberModal member={selectedMember} onClose={() => setSelectedMember(null)} />
-      
+
     </section>
   );
 }

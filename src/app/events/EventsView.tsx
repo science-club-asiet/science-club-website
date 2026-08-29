@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { EventGrid } from "@/components/EventGrid";
 import { EventHeroHorizon } from "@/components/events/EventHeroHorizon";
 import type { ScienceEvent } from "@/lib/events";
@@ -20,7 +20,9 @@ export function EventsView({ events }: { events: ScienceEvent[] }) {
         onSearchChange={(q) => setSearchQuery(q)}
         events={events}
       />
-      <EventGrid events={events} searchQuery={searchQuery} />
+      <Suspense fallback={<div className="min-h-[50vh] bg-white" />}>
+        <EventGrid events={events} searchQuery={searchQuery} />
+      </Suspense>
     </>
   );
 }

@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Row Level Security (RLS) Policies for Science Club Platform
 -- Comprehensive consolidated policies covering all tables from 
--- migrations 0001_init.sql through 0016_form_categories_and_presets_seed.sql
+-- migrations 0001_init.sql through 0019_event_restrictions.sql
 -- ============================================================================
 
 -- ─── Helper Functions ────────────────────────────────────────────────────────
