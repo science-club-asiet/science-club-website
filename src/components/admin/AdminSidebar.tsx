@@ -8,7 +8,7 @@ import { SignOutButton } from "./SignOutButton";
 import { cn } from "@/lib/utils";
 
 const WEBSITE_PATHS = [
-  "/admin/website", "/admin/site", "/admin/teams", "/admin/pillars", "/admin/goals",
+  "/admin/website", "/admin/site", "/admin/pillars", "/admin/goals",
   "/admin/impact_stories", "/admin/story_eras", "/admin/perks", "/admin/faqs", "/admin/achievements",
 ];
 
