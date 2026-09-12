@@ -4,8 +4,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Globe, MessageCircle, Share2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const LINK_MAP: Record<string, string> = {
   "News": "/news",
@@ -25,6 +30,7 @@ export function Footer() {
   const [firstTeamLink, setFirstTeamLink] = useState("/info/execom");
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [bgColor, setBgColor] = useState<string>("transparent");
 
   const footerRef = useRef<HTMLElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -47,39 +53,65 @@ export function Footer() {
       });
   }, []);
 
-  // The footer never contributes document height. A downward wheel gesture at
-  // the true scroll limit reveals it; an upward gesture hides it again.
+  // Dynamically detect and match the background color of the preceding section/page
+  useEffect(() => {
+    const updateBg = () => {
+      if (!footerRef.current) return;
+      let prev = footerRef.current.previousElementSibling as HTMLElement | null;
+      if (prev && prev.tagName.toLowerCase() === "main") {
+        const lastChild = prev.lastElementChild as HTMLElement | null;
+        if (lastChild) prev = lastChild;
+      }
+      if (prev) {
+        let bg = window.getComputedStyle(prev).backgroundColor;
+        let curr: HTMLElement | null = prev;
+        while (curr && (bg === "rgba(0, 0, 0, 0)" || bg === "transparent")) {
+          curr = curr.parentElement;
+          if (curr) bg = window.getComputedStyle(curr).backgroundColor;
+        }
+        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+          setBgColor(bg);
+        }
+      }
+    };
+
+    updateBg();
+    const timer = setTimeout(updateBg, 250);
+    window.addEventListener("resize", updateBg);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateBg);
+    };
+  }, [pathname]);
+
+  // Smooth slide-in animation when scrolling into the footer spacer zone
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!cardRef.current) return;
+    if (!cardRef.current || !footerRef.current) return;
 
     const card = cardRef.current;
-    let isOpen = false;
+    const footer = footerRef.current;
+
     gsap.set(card, { x: 0, xPercent: 100 });
 
-    const isAtPageEnd = () =>
-      window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+    const st = ScrollTrigger.create({
+      trigger: footer,
+      start: "top 92%",
+      end: "bottom bottom",
+      toggleActions: "play reverse play reverse",
+      onEnter: () => {
+        gsap.to(card, { xPercent: 0, duration: 0.9, ease: "power3.out", overwrite: true });
+      },
+      onLeaveBack: () => {
+        gsap.to(card, { xPercent: 100, duration: 0.7, ease: "power3.inOut", overwrite: true });
+      },
+    });
 
-    const onWheel = (event: WheelEvent) => {
-      if (event.deltaY > 0 && !isOpen && isAtPageEnd()) {
-        event.preventDefault();
-        isOpen = true;
-        gsap.to(card, { x: 0, xPercent: 0, duration: 1.1, ease: "power3.out", overwrite: true });
-      }
-
-      if (event.deltaY < 0 && isOpen) {
-        event.preventDefault();
-        isOpen = false;
-        gsap.to(card, { x: 0, xPercent: 100, duration: 0.9, ease: "power3.inOut", overwrite: true });
-      }
-    };
-
-    window.addEventListener("wheel", onWheel, { passive: false });
     return () => {
-      window.removeEventListener("wheel", onWheel);
+      st.kill();
       gsap.killTweensOf(card);
     };
-  }, []);
+  }, [pathname]);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,12 +125,13 @@ export function Footer() {
   return (
     <footer 
       ref={footerRef} 
-      className="relative z-50 h-0 w-full overflow-visible pointer-events-none p-0 m-0 border-none bg-transparent"
+      style={{ backgroundColor: bgColor }}
+      className="relative z-40 w-full overflow-hidden pt-16 sm:pt-24 pb-0 flex flex-col justify-end transition-colors duration-500"
     >
       {/* 100% Opaque Watts Arched / Pill Card Container - Spans w-screen with 0px left margin */}
       <div
         ref={cardRef}
-        className="fixed -bottom-4 left-0 bg-[#DA291C] text-white opacity-100 rounded-t-[42px] sm:rounded-t-[56px] lg:rounded-l-[180px] lg:rounded-r-none p-5 sm:p-7 lg:pl-16 lg:pr-10 lg:py-8 overflow-hidden shadow-[0_-20px_48px_rgba(0,0,0,0.5)] w-screen min-w-full ml-0 mr-0 flex flex-col justify-between gap-6 z-[100] pointer-events-auto"
+        className="w-full bg-[#DA291C] text-white opacity-100 rounded-t-[42px] sm:rounded-t-[56px] lg:rounded-l-[180px] lg:rounded-r-none p-5 sm:p-7 lg:pl-16 lg:pr-10 lg:py-8 overflow-hidden shadow-[0_-20px_48px_rgba(0,0,0,0.35)] flex flex-col justify-between gap-6 pointer-events-auto will-change-transform"
       >
         {/* Top & Middle Section: 4-column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-6 items-start relative z-10">
