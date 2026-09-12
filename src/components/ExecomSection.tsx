@@ -160,7 +160,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
           id: "execom-st",
           trigger: container,
           start: "top top",
-          end: () => `+=${panels * window.innerWidth}`,
+          end: () => `+=${(panels - 1) * window.innerWidth}`,
           scrub: true,
           pin: true,
           pinSpacing: true,
@@ -180,17 +180,31 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
           scrollTrigger: {
             trigger: container,
             start: "top top",
-            end: () => `+=${(panels * window.innerWidth) + window.innerHeight * 0.8}`,
+            end: () => `+=${((panels - 1) * window.innerWidth) + window.innerHeight * 0.8}`,
             toggleActions: "play reverse play reverse",
             invalidateOnRefresh: true,
           },
         });
       }
 
-      requestAnimationFrame(() => {
+      const refreshAll = () => {
         ScrollTrigger.refresh();
         window.__lenis?.resize();
-      });
+      };
+
+      refreshAll();
+      const t1 = setTimeout(refreshAll, 100);
+      const t2 = setTimeout(refreshAll, 400);
+      const t3 = setTimeout(refreshAll, 1000);
+
+      window.addEventListener("resize", refreshAll);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        window.removeEventListener("resize", refreshAll);
+      };
     });
 
     return () => mm.revert();
