@@ -5,7 +5,7 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isUnoptimizedImage } from "@/lib/utils";
 import type { ScienceEvent } from "@/lib/events";
 
 const AUTO_SCROLL_INTERVAL = 4000; // 4 seconds per card
@@ -273,6 +273,7 @@ export function EventCenter({ events }: { events: ScienceEvent[] }) {
                     src={event.img && event.img.trim() && !event.img.startsWith("blob:") ? event.img.trim() : "https://images.unsplash.com/photo-1517976487492-5750f3195933?q=80&w=1200&auto=format&fit=crop"}
                     alt={event.title}
                     fill
+                    unoptimized={isUnoptimizedImage(event.img)}
                     sizes="(max-width: 640px) 78vw, (max-width: 1024px) 58vw, 440px"
                     className="object-cover transition-transform duration-[1.5s] ease-[0.22,1,0.36,1] group-hover:scale-105"
                   />

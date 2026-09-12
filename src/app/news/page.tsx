@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getPublishedPosts } from "@/lib/data/posts";
+import { isUnoptimizedImage } from "@/lib/utils";
 
 export const revalidate = 300;
 
@@ -26,7 +27,7 @@ export default async function NewsIndexPage() {
               <Link key={p.slug} href={`/news/${p.slug}`} className="group flex flex-col">
                 <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-gray-100 mb-4">
                   {p.cover && (
-                    <Image src={p.cover} alt={p.title} fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <Image src={p.cover} alt={p.title} fill unoptimized={isUnoptimizedImage(p.cover)} sizes="(max-width:1024px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs font-oswald uppercase tracking-widest font-bold text-red mb-2">

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, isUnoptimizedImage } from "@/lib/utils";
 import type { NewsItem } from "@/lib/data/posts";
 
 const NEWS_INTERVAL = 6000; // 6 seconds per article
@@ -83,7 +83,7 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
                   isExpanded ? "opacity-100" : "opacity-0"
                 )}>
                   {/* Photo bleeds through the navy at ~35% — faint enough to keep text crisp */}
-                  <Image src={item.img} alt={item.title} fill sizes="100vw" className="object-cover" />
+                  <Image src={item.img} alt={item.title} fill unoptimized={isUnoptimizedImage(item.img)} sizes="100vw" className="object-cover" />
                   <div className="absolute inset-0 bg-navy/75" />
                 </div>
 

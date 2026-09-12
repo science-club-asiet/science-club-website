@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import type { Album } from "@/lib/data/gallery";
-import { cn } from "@/lib/utils";
+import { cn, isUnoptimizedImage } from "@/lib/utils";
 
 export function GalleryView({ albums }: { albums: Album[] }) {
   const [active, setActive] = useState<Album | null>(null);
@@ -48,7 +48,7 @@ export function GalleryView({ albums }: { albums: Album[] }) {
           <button key={a.id} onClick={() => setActive(a)} className="group text-left">
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
               {a.cover && (
-                <Image src={a.cover} alt={a.title} fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                <Image src={a.cover} alt={a.title} fill unoptimized={isUnoptimizedImage(a.cover)} sizes="(max-width:1024px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <span className="absolute bottom-3 left-4 text-white font-oswald uppercase font-bold text-xl">{a.title}</span>
@@ -81,7 +81,7 @@ export function GalleryView({ albums }: { albums: Album[] }) {
                 {active.images.map((img) => (
                   <figure key={img.id} className="break-inside-avoid rounded-xl overflow-hidden bg-white/5">
                     <div className="relative w-full aspect-[4/3]">
-                      <Image src={img.url} alt={img.caption} fill sizes="(max-width:1024px) 100vw, 33vw" className="object-cover" />
+                      <Image src={img.url} alt={img.caption} fill unoptimized={isUnoptimizedImage(img.url)} sizes="(max-width:1024px) 100vw, 33vw" className="object-cover" />
                     </div>
                     {img.caption && <figcaption className="text-white/70 text-xs p-2.5">{img.caption}</figcaption>}
                   </figure>

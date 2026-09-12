@@ -17,7 +17,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { ScienceEvent, formatCategoryDisplayName, getCategoryFieldLabels, formatEventPricingDisplay } from "@/lib/events";
-import { cn } from "@/lib/utils";
+import { cn, isUnoptimizedImage } from "@/lib/utils";
 import { RegisterButton } from "@/components/RegisterButton";
 
 interface EventModalProps {
@@ -125,6 +125,7 @@ export function EventModal({ event, onClose }: EventModalProps) {
             alt={event.title}
             fill
             priority
+            unoptimized={isUnoptimizedImage(event.img)}
             sizes="(max-width: 1024px) 100vw, 80vw"
             className="object-cover opacity-20 transform scale-105"
           />

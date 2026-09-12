@@ -5,6 +5,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Calendar, MapPin, Clock, User, Users, Sparkles } from "lucide-react";
 import { ScienceEvent, getCategoryFieldLabels } from "@/lib/events";
+import { isUnoptimizedImage } from "@/lib/utils";
 
 interface FeaturedEventFixtureProps {
   event: ScienceEvent;
@@ -83,6 +84,7 @@ export function FeaturedEventFixture({ event, onSelect }: FeaturedEventFixturePr
             alt={event.title}
             fill
             priority
+            unoptimized={isUnoptimizedImage(event.img)}
             sizes="100vw"
             className="object-cover opacity-35 group-hover:scale-105 transition-transform duration-700 ease-out"
           />

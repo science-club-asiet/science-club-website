@@ -19,6 +19,7 @@ export function MissionCta() {
   return (
     <section
       ref={containerRef}
+      style={{ position: "relative" }}
       className="bg-navy text-white py-32 md:py-48 relative overflow-hidden flex flex-col items-center border-t border-white/10"
     >
       {/* Mega Scroll-Parallax Background Typography */}

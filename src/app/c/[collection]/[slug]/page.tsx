@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getPublishedItem } from "@/lib/admin/cmsActions";
+import { isUnoptimizedImage } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -33,7 +34,7 @@ export default async function CollectionItemPage({ params }: { params: Promise<{
           {title && <h1 className="font-oswald text-4xl md:text-6xl font-bold uppercase text-navy leading-[0.95] tracking-tight mb-8">{title}</h1>}
           {cover && (
             <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100 mb-10">
-              <Image src={cover} alt={title} fill sizes="(max-width:1024px) 100vw, 768px" className="object-cover" />
+              <Image src={cover} alt={title} fill unoptimized={isUnoptimizedImage(cover)} sizes="(max-width:1024px) 100vw, 768px" className="object-cover" />
             </div>
           )}
           <div className="space-y-6">

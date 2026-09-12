@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isUnoptimizedImage } from "@/lib/utils";
 import { ScienceEvent, formatCategoryDisplayName } from "@/lib/events";
 
 interface EventGridCardProps {
@@ -34,6 +34,7 @@ export function EventGridCard({ event, onClick }: EventGridCardProps) {
           src={event.img}
           alt={event.title}
           fill
+          unoptimized={isUnoptimizedImage(event.img)}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-[1.5s] ease-[0.22,1,0.36,1] group-hover:scale-105"
         />

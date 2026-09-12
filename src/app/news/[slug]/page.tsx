@@ -7,6 +7,7 @@ import { getPostBySlug } from "@/lib/data/posts";
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 import { NexusRenderer } from "@/packages/nexus-builder/NexusRenderer";
 import type { Block } from "@/lib/blocks/types";
+import { isUnoptimizedImage } from "@/lib/utils";
 
 export const revalidate = 300;
 
@@ -38,7 +39,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </h1>
           {post.cover && (
             <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100 mb-10">
-              <Image src={post.cover} alt={post.title} fill priority sizes="(max-width:1024px) 100vw, 768px" className="object-cover" />
+              <Image src={post.cover} alt={post.title} fill priority unoptimized={isUnoptimizedImage(post.cover)} sizes="(max-width:1024px) 100vw, 768px" className="object-cover" />
             </div>
           )}
           {post.nexus_data ? (

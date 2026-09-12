@@ -16,7 +16,7 @@ import {
   ChevronDown,
   type LucideIcon
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isUnoptimizedImage } from "@/lib/utils";
 import type { ExecomMemberFull, PastExecomMember, CandidPhoto, ExecomCategory } from "@/lib/data/execom";
 import type { Achievement } from "@/lib/data/content";
 import { DossierCard } from "@/components/ExecomSection";
@@ -160,6 +160,7 @@ export function ExecomView({
       {/* ─── 01. HERO SECTION ─── */}
       <section 
         ref={heroRef}
+        style={{ position: "relative" }}
         className="pt-36 pb-20 md:pt-48 md:pb-28 px-4 lg:px-8 relative z-10 bg-navy text-white border-b border-white/10 overflow-hidden min-h-[85vh] lg:min-h-[90vh] flex flex-col justify-between"
       >
         {/* Subtle Architectural Grid Lines */}
@@ -350,10 +351,10 @@ export function ExecomView({
                         <div className="block lg:hidden mt-6 overflow-hidden">
                           <div className="aspect-[4/5] sm:aspect-video relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
                             <Image
-                              src={member.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 0 1 60 0' fill='%2394a3b8'/></svg>"}
+                              src={member.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 1 60 0' fill='%2394a3b8'/></svg>"}
                               alt={member.name}
                               fill
-                              unoptimized={!member.img || member.img.startsWith("data:") || member.img.endsWith(".svg")}
+                              unoptimized={isUnoptimizedImage(member.img)}
                               className="object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/40 to-transparent" />
@@ -397,10 +398,10 @@ export function ExecomView({
                       className="absolute inset-0"
                     >
                       <Image 
-                        src={activeHoveredMember.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 0 1 60 0' fill='%2394a3b8'/></svg>"} 
+                        src={activeHoveredMember.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 1 60 0' fill='%2394a3b8'/></svg>"} 
                         alt={activeHoveredMember.name} 
                         fill 
-                        unoptimized={!activeHoveredMember.img || activeHoveredMember.img.startsWith("data:") || activeHoveredMember.img.endsWith(".svg")}
+                        unoptimized={isUnoptimizedImage(activeHoveredMember.img)}
                         sizes="(max-width: 1200px) 50vw, 40vw"
                         priority
                         className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500 ease-out"
@@ -556,6 +557,7 @@ export function ExecomView({
       {/* ─── 05. JOIN CTA (High-Energy Red Section) ─── */}
       <section 
         ref={ctaRef}
+        style={{ position: "relative" }}
         className="bg-red text-white py-32 lg:py-48 relative overflow-hidden flex flex-col items-center border-t border-red-500/30"
       >
         {/* Mega Background Typography */}

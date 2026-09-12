@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight, Flame, Droplet, Zap, Fingerprint, Activity } from "lucide-react";
 import type { TeamWithMembers, ExecomMemberCard } from "@/lib/data/execom";
 import { ExecomMemberModal, type ExecomModalMember } from "./ExecomMemberModal";
+import { isUnoptimizedImage } from "@/lib/utils";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -44,7 +45,7 @@ export function DossierCard({ member, index, onSelect }: { member: Member; index
             src={member.img || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231e293b'/><circle cx='50' cy='38' r='20' fill='%2394a3b8'/><path d='M20 85 a30 30 0 1 60 0' fill='%2394a3b8'/></svg>"}
             alt={member.name}
             fill
-            unoptimized={!member.img || member.img.startsWith("data:") || member.img.endsWith(".svg")}
+            unoptimized={isUnoptimizedImage(member.img)}
             sizes="(max-width: 1024px) 175px, 230px"
             className="object-cover transition-transform duration-[800ms] ease-[0.22,1,0.36,1] group-hover:scale-105"
           />
@@ -91,9 +92,6 @@ export function DossierCard({ member, index, onSelect }: { member: Member; index
 // ─── Team Panel ───────────────────────────────────────────────────────────────
 
 function TeamPanel({ team, onSelect }: { team: TeamWithMembers; onSelect: (m: Member) => void }) {
-  const inViewRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(inViewRef, { once: true, margin: "-10%" });
-
   return (
     // CSS clamps map directly to `vh` so the padding compresses perfectly on smaller screens
     <div className="w-full lg:w-screen flex-shrink-0 flex flex-col items-center justify-start h-auto lg:h-screen bg-[#FAF9F8] relative overflow-hidden py-24 lg:py-0 lg:pt-[clamp(5rem,12vh,8rem)] border-b lg:border-r border-gray-200/50">
@@ -106,7 +104,7 @@ function TeamPanel({ team, onSelect }: { team: TeamWithMembers; onSelect: (m: Me
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 relative z-10 flex flex-col items-center h-full">
 
         {/* Top Centered Header Block */}
-        <div ref={inViewRef} className="text-center mb-10 lg:mb-[clamp(1.5rem,4vh,4rem)]">
+        <div className="text-center mb-10 lg:mb-[clamp(1.5rem,4vh,4rem)]">
           <div className="flex items-center justify-center gap-3 mb-2 lg:mb-[clamp(0.5rem,1.5vh,1rem)]">
             <span className="h-[2px] w-4 lg:w-6 bg-red rounded-full" />
             <span className="font-oswald text-red uppercase text-xs lg:text-[clamp(10px,1.5vh,14px)] tracking-[0.2em] font-bold">{team.name}</span>
@@ -124,14 +122,9 @@ function TeamPanel({ team, onSelect }: { team: TeamWithMembers; onSelect: (m: Me
         {/* Fluid gap scaling relative to vertical height */}
         <div className="w-full flex flex-wrap justify-center items-start gap-x-2 sm:gap-x-4 lg:gap-x-6 xl:gap-x-10 gap-y-8 lg:gap-y-[clamp(1rem,3.5vh,3rem)] xl:gap-y-[clamp(1.5rem,4vh,3rem)] shrink-0">
           {team.members.map((member, i) => (
-            <motion.div
-              key={member.name}
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
-              animate={inView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 16 }}
-              transition={{ duration: 0.5, delay: 0.1 + (i * 0.05), ease: "easeOut" }}
-            >
+            <div key={member.name} className="transition-transform duration-300 hover:-translate-y-1">
               <DossierCard member={member} index={i} onSelect={onSelect} />
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -155,6 +148,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
     if (!container || !track) return;
 
     const panels = teams.length;
+    if (panels === 0) return;
 
     const mm = gsap.matchMedia();
 
@@ -165,7 +159,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
         scrollTrigger: {
           id: "execom-st",
           trigger: container,
-          start: "top 90%",
+          start: "top top",
           end: () => `+=${panels * window.innerWidth}`,
           scrub: true,
           pin: true,
@@ -185,7 +179,7 @@ export function ExecomSection({ teams }: { teams: TeamWithMembers[] }) {
           ease: "power2.inOut",
           scrollTrigger: {
             trigger: container,
-            start: "top 10%",
+            start: "top top",
             end: () => `+=${(panels * window.innerWidth) + window.innerHeight * 0.8}`,
             toggleActions: "play reverse play reverse",
             invalidateOnRefresh: true,
