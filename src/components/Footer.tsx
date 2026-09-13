@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState, Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -22,6 +22,14 @@ const LINK_MAP: Record<string, string> = {
   "Resources": "/info/mission",
   "Contact Us": "/#contact",
 };
+
+function SearchWatcher({ onChange }: { onChange: () => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    onChange();
+  }, [searchParams, onChange]);
+  return null;
+}
 
 export function Footer() {
   const pathname = usePathname();
@@ -157,29 +165,65 @@ export function Footer() {
     const card = cardRef.current;
     const footer = footerRef.current;
 
-    gsap.set(card, { x: 0, xPercent: 100 });
+    const checkInView = () => {
+      const rect = footer.getBoundingClientRect();
+      return rect.top <= window.innerHeight * 1.05;
+    };
+
+    // If footer is already visible on the screen (e.g. short/filtered pages), show immediately
+    if (checkInView()) {
+      gsap.set(card, { x: 0, xPercent: 0 });
+    } else {
+      gsap.set(card, { x: 0, xPercent: 100 });
+    }
 
     const st = ScrollTrigger.create({
       trigger: footer,
-      start: "top 95%",
+      start: "top bottom",
       end: "bottom bottom",
       toggleActions: "play reverse play reverse",
       onEnter: () => {
         gsap.to(card, { xPercent: 0, duration: 0.8, ease: "power3.out", overwrite: true });
       },
       onLeaveBack: () => {
-        gsap.to(card, { xPercent: 100, duration: 0.6, ease: "power3.inOut", overwrite: true });
+        const rect = footer.getBoundingClientRect();
+        if (rect.top > window.innerHeight) {
+          gsap.to(card, { xPercent: 100, duration: 0.6, ease: "power3.inOut", overwrite: true });
+        }
       },
       onRefresh: (self) => {
-        if (self.progress > 0) {
+        const rect = footer.getBoundingClientRect();
+        if (self.progress > 0 || rect.top <= window.innerHeight) {
           gsap.set(card, { xPercent: 0 });
         }
       },
     });
 
+    const handleLayoutChange = () => {
+      st.refresh();
+      if (checkInView()) {
+        gsap.to(card, { xPercent: 0, duration: 0.4, ease: "power3.out", overwrite: true });
+      }
+    };
+
+    // Listen to document body resizing (triggered when category filter shrinks/grows event list)
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && document.body) {
+      ro = new ResizeObserver(() => {
+        handleLayoutChange();
+      });
+      ro.observe(document.body);
+    }
+
+    window.addEventListener("resize", handleLayoutChange);
+    window.addEventListener("popstate", handleLayoutChange);
+
     return () => {
       st.kill();
       gsap.killTweensOf(card);
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", handleLayoutChange);
+      window.removeEventListener("popstate", handleLayoutChange);
     };
   }, [pathname]);
 
@@ -192,12 +236,25 @@ export function Footer() {
     }
   };
 
+  const onSearchParamChange = React.useCallback(() => {
+    if (!footerRef.current || !cardRef.current) return;
+    ScrollTrigger.refresh();
+    const rect = footerRef.current.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 1.05) {
+      gsap.to(cardRef.current, { xPercent: 0, duration: 0.4, ease: "power3.out", overwrite: true });
+    }
+  }, []);
+
   return (
-    <footer 
-      ref={footerRef} 
-      style={{ backgroundColor: bgColor }}
-      className="relative z-40 w-full overflow-hidden pt-0 pb-0 flex flex-col justify-end"
-    >
+    <>
+      <Suspense fallback={null}>
+        <SearchWatcher onChange={onSearchParamChange} />
+      </Suspense>
+      <footer 
+        ref={footerRef} 
+        style={{ backgroundColor: bgColor }}
+        className="relative z-40 w-full overflow-hidden pt-0 pb-0 flex flex-col justify-end"
+      >
       {/* Watts Arched / Pill Card Container - Spans ~95% width with seamless background */}
       <div
         ref={cardRef}
@@ -320,5 +377,6 @@ export function Footer() {
         </div>
       </div>
     </footer>
+    </>
   );
 }
