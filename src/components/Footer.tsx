@@ -30,7 +30,8 @@ export function Footer() {
   const [firstTeamLink, setFirstTeamLink] = useState("/info/execom");
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const [bgColor, setBgColor] = useState<string>("transparent");
+  const defaultBg = pathname === "/" ? "#001C58" : "transparent";
+  const [bgColor, setBgColor] = useState<string>(defaultBg);
 
   const footerRef = useRef<HTMLElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -53,33 +54,97 @@ export function Footer() {
       });
   }, []);
 
-  // Dynamically detect and match the background color of the preceding section/page
+  // Dynamically detect and extend the background color of the section just above the footer
   useEffect(() => {
     const updateBg = () => {
-      if (!footerRef.current) return;
-      let prev = footerRef.current.previousElementSibling as HTMLElement | null;
-      if (prev && prev.tagName.toLowerCase() === "main") {
-        const lastChild = prev.lastElementChild as HTMLElement | null;
-        if (lastChild) prev = lastChild;
-      }
-      if (prev) {
-        let bg = window.getComputedStyle(prev).backgroundColor;
-        let curr: HTMLElement | null = prev;
-        while (curr && (bg === "rgba(0, 0, 0, 0)" || bg === "transparent")) {
-          curr = curr.parentElement;
-          if (curr) bg = window.getComputedStyle(curr).backgroundColor;
+      const footer = footerRef.current;
+      if (!footer) return;
+
+      const isValidBg = (color?: string | null) => {
+        if (!color) return false;
+        if (
+          color === "transparent" ||
+          color === "rgba(0, 0, 0, 0)" ||
+          color.startsWith("rgba(0, 0, 0, 0")
+        ) {
+          return false;
         }
-        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+        return true;
+      };
+
+      // 1. Find all section elements in document
+      const sections = Array.from(document.querySelectorAll("section"));
+      // Filter for sections that appear physically before the footer
+      const preceding = sections.filter((sec) => {
+        if (sec === footer || footer.contains(sec)) return false;
+        return (sec.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      });
+
+      const lastSection = preceding[preceding.length - 1];
+      if (lastSection) {
+        // A. Direct class detection (fast & resilient)
+        const classNames = typeof lastSection.className === "string" ? lastSection.className : "";
+        if (classNames.includes("bg-navy")) {
+          setBgColor("#001C58");
+          return;
+        }
+        if (classNames.includes("bg-white")) {
+          setBgColor("#FFFFFF");
+          return;
+        }
+        const hexMatch = classNames.match(/bg-\[#([0-9a-fA-F]+)\]/);
+        if (hexMatch) {
+          setBgColor(`#${hexMatch[1]}`);
+          return;
+        }
+
+        // B. Computed background color on the section
+        const bg = window.getComputedStyle(lastSection).backgroundColor;
+        if (isValidBg(bg)) {
           setBgColor(bg);
+          return;
         }
+      }
+
+      // 2. Check the previous container element (e.g. <main>)
+      const prev = footer.previousElementSibling as HTMLElement | null;
+      if (prev) {
+        const prevClasses = typeof prev.className === "string" ? prev.className : "";
+        if (prevClasses.includes("bg-navy")) {
+          setBgColor("#001C58");
+          return;
+        }
+        const prevBg = window.getComputedStyle(prev).backgroundColor;
+        if (isValidBg(prevBg)) {
+          setBgColor(prevBg);
+          return;
+        }
+      }
+
+      // 3. Fallback: on homepage, default to navy; otherwise check body
+      if (pathname === "/") {
+        setBgColor("#001C58");
+        return;
+      }
+
+      const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+      if (isValidBg(bodyBg)) {
+        setBgColor(bodyBg);
+      } else {
+        setBgColor("#FFFFFF");
       }
     };
 
     updateBg();
-    const timer = setTimeout(updateBg, 250);
+    const t1 = setTimeout(updateBg, 50);
+    const t2 = setTimeout(updateBg, 250);
+    const t3 = setTimeout(updateBg, 700);
     window.addEventListener("resize", updateBg);
+
     return () => {
-      clearTimeout(timer);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener("resize", updateBg);
     };
   }, [pathname]);
@@ -96,14 +161,19 @@ export function Footer() {
 
     const st = ScrollTrigger.create({
       trigger: footer,
-      start: "top 92%",
+      start: "top 95%",
       end: "bottom bottom",
       toggleActions: "play reverse play reverse",
       onEnter: () => {
-        gsap.to(card, { xPercent: 0, duration: 0.9, ease: "power3.out", overwrite: true });
+        gsap.to(card, { xPercent: 0, duration: 0.8, ease: "power3.out", overwrite: true });
       },
       onLeaveBack: () => {
-        gsap.to(card, { xPercent: 100, duration: 0.7, ease: "power3.inOut", overwrite: true });
+        gsap.to(card, { xPercent: 100, duration: 0.6, ease: "power3.inOut", overwrite: true });
+      },
+      onRefresh: (self) => {
+        if (self.progress > 0) {
+          gsap.set(card, { xPercent: 0 });
+        }
       },
     });
 
@@ -126,12 +196,12 @@ export function Footer() {
     <footer 
       ref={footerRef} 
       style={{ backgroundColor: bgColor }}
-      className="relative z-40 w-full overflow-hidden pt-16 sm:pt-24 pb-0 flex flex-col justify-end transition-colors duration-500"
+      className="relative z-40 w-full overflow-hidden pt-0 pb-0 flex flex-col justify-end"
     >
-      {/* 100% Opaque Watts Arched / Pill Card Container - Spans w-screen with 0px left margin */}
+      {/* Watts Arched / Pill Card Container - Spans ~95% width with seamless background */}
       <div
         ref={cardRef}
-        className="w-full bg-[#DA291C] text-white opacity-100 rounded-t-[42px] sm:rounded-t-[56px] lg:rounded-l-[180px] lg:rounded-r-none p-5 sm:p-7 lg:pl-16 lg:pr-10 lg:py-8 overflow-hidden shadow-[0_-20px_48px_rgba(0,0,0,0.35)] flex flex-col justify-between gap-6 pointer-events-auto will-change-transform"
+        className="w-full md:w-[96%] lg:w-[95%] xl:w-[95%] ml-auto bg-[#DA291C] text-white opacity-100 rounded-t-[42px] sm:rounded-t-[56px] md:rounded-l-[140px] md:rounded-r-none lg:rounded-l-[180px] lg:rounded-r-none p-5 sm:p-7 lg:pl-16 lg:pr-10 lg:py-8 overflow-hidden flex flex-col justify-between gap-6 pointer-events-auto will-change-transform"
       >
         {/* Top & Middle Section: 4-column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-6 items-start relative z-10">
@@ -142,7 +212,7 @@ export function Footer() {
               Fueling curious minds, scientific pioneers. One lab at a time!
             </h3>
             <p className="text-white/90 text-xs sm:text-sm font-medium pt-1">
-              © {new Date().getFullYear()} Science Club ASIET / Site & Brand by Science Club
+              © {new Date().getFullYear()} Science Club ASIET • Site & Brand by Science Club
             </p>
           </div>
 

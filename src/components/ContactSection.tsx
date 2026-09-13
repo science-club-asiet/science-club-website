@@ -44,10 +44,10 @@ export function ContactSection({ contact }: { contact?: ContactContent }) {
   };
 
   return (
-    <section id="contact" className="bg-navy py-24 lg:py-32 relative overflow-hidden">
+    <section id="contact" className="bg-navy pt-20 sm:pt-24 lg:pt-32 pb-8 sm:pb-10 lg:pb-12 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-red/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-white/5 rounded-full blur-[100px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
+      <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] pointer-events-none -translate-x-1/2" />
 
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         <div className="flex flex-col lg:flex-row gap-16 lg:gap-24">
