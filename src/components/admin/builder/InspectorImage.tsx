@@ -16,7 +16,7 @@ export function InspectorImage({ value, onChange }: { value: string; onChange: (
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
       const f = res?.[0];
-      if (f) onChange(f.serverData?.url ?? f.ufsUrl);
+      if (f) onChange(f.serverData?.url ?? f.url);
       setProgress(0);
       toast("Image uploaded & compressed", "success");
     },

@@ -131,7 +131,7 @@ export async function syncUploadThingAssets() {
           url,
           name: f.name || `UploadThing Asset (${f.key.slice(0, 6)})`,
           mime: "image/jpeg",
-          size: f.size || 0,
+          size: 0,
           folder: "general",
           created_by: user.id,
         });

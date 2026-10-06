@@ -233,7 +233,7 @@ export function ExecomWorkspaceClient({
 
   const { startUpload } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
-      const url = res?.[0]?.url || res?.[0]?.ufsUrl;
+      const url = res?.[0]?.url;
       if (url) {
         setEditingMember((prev) => (prev ? { ...prev, photo_url: url } : null));
         toast("Cropped photo uploaded!", "success");

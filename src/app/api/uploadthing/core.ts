@@ -32,13 +32,13 @@ export const ourFileRouter = {
     .onUploadComplete(async ({ metadata, file }) => {
       const supabase = await createClient();
       await supabase.from("media_assets").insert({
-        url: file.ufsUrl,
+        url: file.url,
         name: file.name,
         mime: file.type ?? "image/jpeg",
         size: file.size,
         created_by: metadata.userId,
       });
-      return { url: file.ufsUrl, uploadedBy: metadata.userId };
+      return { url: file.url, uploadedBy: metadata.userId };
     }),
 
   /**
@@ -56,14 +56,14 @@ export const ourFileRouter = {
       // doesn't silently reject the insert for anonymous form submitters.
       const supabase = createAdminClient();
       await supabase.from("media_assets").insert({
-        url: file.ufsUrl,
+        url: file.url,
         name: file.name,
         mime: file.type ?? "application/octet-stream",
         size: file.size,
         folder: metadata.folder,
         created_by: null,
       });
-      return { url: file.ufsUrl, folder: metadata.folder };
+      return { url: file.url, folder: metadata.folder };
     }),
 } satisfies FileRouter;
 

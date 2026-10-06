@@ -28,7 +28,7 @@ export function ImageUploader({ name, initial, initialAlt }: { name: string; ini
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
       const first = res?.[0];
-      if (first) setUrl(first.serverData?.url ?? first.ufsUrl);
+      if (first) setUrl(first.serverData?.url ?? first.url);
       setProgress(0);
       toast("Image uploaded successfully (compressed & optimized)", "success");
     },
