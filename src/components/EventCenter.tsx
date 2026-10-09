@@ -252,12 +252,12 @@ export function EventCenter({ events }: { events: ScienceEvent[] }) {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={inView ? { opacity: 1, scale: 1 } : {}}
+                initial={{ opacity: 0 }}
+                animate={inView ? { opacity: 1 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => goTo(realIndex)}
                 className={cn(
-                  "relative min-w-[78vw] h-[380px] sm:min-w-[58vw] sm:h-[420px] md:min-w-[400px] md:h-[520px] lg:min-w-[440px] flex-shrink-0 snap-center rounded-2xl md:rounded-[2rem] flex flex-col group cursor-pointer overflow-hidden transition-all duration-500 isolate",
+                  "relative w-[78vw] min-w-[78vw] max-w-[78vw] h-[380px] min-h-[380px] max-h-[380px] sm:w-[58vw] sm:min-w-[58vw] sm:max-w-[58vw] sm:h-[420px] sm:min-h-[420px] sm:max-h-[420px] md:w-[400px] md:min-w-[400px] md:max-w-[400px] md:h-[520px] md:min-h-[520px] md:max-h-[520px] lg:w-[440px] lg:min-w-[440px] lg:max-w-[440px] lg:h-[520px] lg:min-h-[520px] lg:max-h-[520px] flex-shrink-0 snap-center rounded-2xl md:rounded-[2rem] flex flex-col group cursor-pointer overflow-hidden transition-all duration-500 isolate",
                   event.status === "UPCOMING" 
                     ? "border-2 border-transparent hover:border-red" 
                     : "border-2 border-transparent hover:border-navy",
@@ -295,9 +295,9 @@ export function EventCenter({ events }: { events: ScienceEvent[] }) {
                 </div>
 
                 {/* Main Content Block */}
-                <div className="relative z-10 mt-auto p-5 md:p-8 flex flex-col h-full justify-end overflow-hidden">
+                <div className="relative z-10 mt-auto p-5 md:p-8 flex flex-col h-full justify-end overflow-hidden w-full">
                   
-                  <div className="flex items-start gap-4 md:gap-5 transform translate-y-0 md:translate-y-8 md:group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1] mb-2">
+                  <div className="flex items-start gap-4 md:gap-5 transform translate-y-0 md:translate-y-8 md:group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1] mb-2 w-full min-w-0">
                     
                     {/* Date Block */}
                     <div className="flex flex-col items-center justify-center shrink-0 mt-0 md:mt-1">
@@ -314,7 +314,7 @@ export function EventCenter({ events }: { events: ScienceEvent[] }) {
                     
                     <div className="w-[1px] h-[30px] md:h-[50px] bg-white/30 shrink-0 mt-1" />
                     
-                    <h3 className="font-oswald uppercase text-white text-xl sm:text-2xl md:text-3xl lg:text-[2.5rem] leading-[1.05] font-bold line-clamp-3 md:line-clamp-2 tracking-tight drop-shadow-md">
+                    <h3 className="font-oswald uppercase text-white text-xl sm:text-2xl md:text-3xl lg:text-[2.5rem] leading-[1.05] font-bold tracking-tight drop-shadow-md min-w-0 flex-1 break-words">
                       {event.title}
                     </h3>
                   </div>
@@ -324,7 +324,7 @@ export function EventCenter({ events }: { events: ScienceEvent[] }) {
                       {event.status === "UPCOMING" ? "Register Now" : "View Recap"}
                     </span>
                     <div className={cn(
-                      "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-transform duration-500 ease-out md:group-hover:rotate-45",
+                      "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-transform duration-500 ease-out md:group-hover:rotate-45 shrink-0",
                       event.status === "UPCOMING" ? "bg-red text-white" : "bg-white/20 text-white backdrop-blur-md"
                     )}>
                       <ArrowRight className="w-4 h-4 md:w-5 md:h-5 -rotate-45 md:-rotate-45" />

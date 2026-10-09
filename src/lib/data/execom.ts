@@ -54,6 +54,17 @@ function sanitizePhotoUrl(url: string | null | undefined): string {
   return url.trim();
 }
 
+export function formatExecomBio(rawBio: string | null | undefined): string {
+  if (!rawBio) return "";
+  const trimmed = rawBio.trim();
+  if (trimmed.length <= 70) return trimmed;
+  const firstSentence = trimmed.split(/(?<=[.!?])\s+/)[0]?.trim();
+  if (firstSentence && firstSentence.length <= 70) return firstSentence;
+  const truncated = trimmed.slice(0, 65);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return (lastSpace > 35 ? truncated.slice(0, lastSpace) : truncated).trim() + ".";
+}
+
 export async function getCurrentTerm(): Promise<string> {
   const sb = createPublicClient();
   const { data } = await sb.from("site_content").select("value").eq("key", "current_term").maybeSingle();
@@ -112,7 +123,7 @@ export async function getTeamsWithMembers(): Promise<TeamWithMembers[]> {
         .map((m) => ({
           name: m.name,
           role: m.position,
-          bio: m.bio ?? "",
+          bio: formatExecomBio(m.bio),
           img: sanitizePhotoUrl(m.photo_url),
         })),
     }))
@@ -160,7 +171,7 @@ export async function getCurrentExecom(): Promise<ExecomMemberFull[]> {
     role: m.position,
     category: teamOrderMap.get(m.team_slug ?? "")?.name || TEAM_CATEGORY[m.team_slug ?? ""] || (m.team_slug ? m.team_slug.toUpperCase() : "CORE LEADERSHIP"),
     team_slug: m.team_slug ?? "core",
-    bio: m.bio ?? "",
+    bio: formatExecomBio(m.bio),
     img: sanitizePhotoUrl(m.photo_url),
     email: m.email ?? undefined,
     linkedin: m.linkedin ?? undefined,

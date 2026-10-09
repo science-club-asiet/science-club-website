@@ -361,7 +361,7 @@ export function ExecomView({
                             
                             {/* Mobile Bio overlay */}
                             <div className="absolute bottom-0 left-0 w-full p-5 sm:p-6 text-white">
-                              <p className="font-inter text-sm font-normal opacity-90 line-clamp-3 mb-5">
+                              <p className="font-inter text-sm font-normal opacity-90 line-clamp-2 mb-5 text-balance">
                                 {member.bio}
                               </p>
                               <div className="flex items-center gap-3">
@@ -424,7 +424,7 @@ export function ExecomView({
                           <h4 className="font-oswald text-3xl xl:text-4xl font-bold uppercase mb-3 leading-none text-white">
                             {activeHoveredMember.name}
                           </h4>
-                          <p className="font-inter text-sm xl:text-base text-white/80 font-normal leading-relaxed mb-6 max-w-sm">
+                          <p className="font-inter text-sm xl:text-base text-white/80 font-normal leading-relaxed mb-6 max-w-sm line-clamp-2 text-balance">
                             {activeHoveredMember.bio}
                           </p>
                           

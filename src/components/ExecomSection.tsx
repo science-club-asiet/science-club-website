@@ -30,7 +30,7 @@ export function DossierCard({ member, index, onSelect }: { member: Member; index
     // Fluid vh constraints completely eliminate vertical cutoff on smaller 1080p laptop screens
     <div
       onClick={() => onSelect?.(member)}
-      className="w-[155px] sm:w-[175px] lg:w-[clamp(140px,20vh,230px)] flex-shrink-0 group flex flex-col snap-center cursor-pointer"
+      className="w-[165px] sm:w-[185px] lg:w-[clamp(160px,21vh,230px)] flex-shrink-0 group flex flex-col snap-center cursor-pointer"
     >
 
       {/* Perfect Square Aspect Ratio to save vertical height beautifully */}
@@ -73,14 +73,14 @@ export function DossierCard({ member, index, onSelect }: { member: Member; index
       </div>
 
       {/* Typography Block */}
-      <div className="mt-2 lg:mt-[clamp(0.5rem,1.5vh,1.25rem)] px-1 lg:px-2 flex flex-col items-center text-center bg-transparent">
-        <h4 className="font-oswald text-[1.1rem] sm:text-lg md:text-xl lg:text-[clamp(1.1rem,2vh,1.5rem)] font-bold uppercase text-navy leading-none mb-1 group-hover:text-red transition-colors duration-300 line-clamp-1">
+      <div className="mt-2.5 lg:mt-[clamp(0.5rem,1.5vh,1.25rem)] px-1 lg:px-2 flex flex-col items-center text-center bg-transparent w-full">
+        <h4 className="font-oswald text-[1.05rem] sm:text-lg lg:text-[clamp(1rem,2vh,1.35rem)] font-bold uppercase text-navy leading-snug mb-1 group-hover:text-red transition-colors duration-300 line-clamp-2 text-balance break-words">
           {member.name}
         </h4>
-        <p className="font-inter text-red text-[9px] lg:text-[clamp(9px,1.2vh,12px)] font-bold uppercase tracking-wider mb-1 lg:mb-[clamp(0.25rem,0.8vh,0.5rem)] opacity-90 line-clamp-1">
+        <p className="font-inter text-red text-[10px] lg:text-[clamp(10px,1.2vh,11px)] font-bold uppercase tracking-wider mb-1 lg:mb-[clamp(0.25rem,0.8vh,0.5rem)] opacity-90 line-clamp-2 leading-tight text-balance break-words">
           {member.role}
         </p>
-        <p className="font-inter text-gray-500 text-[10px] lg:text-[clamp(10px,1.4vh,12px)] leading-relaxed line-clamp-2">
+        <p className="font-inter text-gray-500 text-[10.5px] lg:text-[clamp(10.5px,1.35vh,12px)] leading-snug text-balance break-words">
           {member.bio}
         </p>
       </div>
@@ -104,16 +104,16 @@ function TeamPanel({ team, onSelect }: { team: TeamWithMembers; onSelect: (m: Me
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 relative z-10 flex flex-col items-center h-full">
 
         {/* Top Centered Header Block */}
-        <div className="text-center mb-10 lg:mb-[clamp(1.5rem,4vh,4rem)]">
+        <div className="text-center mb-10 lg:mb-[clamp(1.5rem,4vh,4rem)] max-w-3xl mx-auto px-4">
           <div className="flex items-center justify-center gap-3 mb-2 lg:mb-[clamp(0.5rem,1.5vh,1rem)]">
             <span className="h-[2px] w-4 lg:w-6 bg-red rounded-full" />
             <span className="font-oswald text-red uppercase text-xs lg:text-[clamp(10px,1.5vh,14px)] tracking-[0.2em] font-bold">{team.name}</span>
             <span className="h-[2px] w-4 lg:w-6 bg-red rounded-full" />
           </div>
-          <h3 className="font-oswald text-3xl md:text-4xl lg:text-[clamp(2rem,4.5vh,3rem)] border-navy font-bold uppercase text-navy leading-tight tracking-tight mb-2 lg:mb-[clamp(0.5rem,1.5vh,1rem)]">
+          <h3 className="font-oswald text-3xl md:text-4xl lg:text-[clamp(2rem,4.5vh,3rem)] border-navy font-bold uppercase text-navy leading-tight tracking-tight mb-2 lg:mb-[clamp(0.5rem,1.5vh,1rem)] text-balance">
             {team.tagline}
           </h3>
-          <p className="font-inter text-gray-500 text-sm lg:text-[clamp(12px,1.8vh,16px)] leading-relaxed max-w-2xl mx-auto px-4">
+          <p className="font-inter text-gray-500 text-sm lg:text-[clamp(12px,1.8vh,16px)] leading-relaxed max-w-2xl mx-auto line-clamp-2 text-balance">
             {team.description}
           </p>
         </div>
